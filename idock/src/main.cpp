@@ -136,8 +136,6 @@ int main(int argc, char* argv[])
 				cnt.increment();
 			});
 		}
-
-		// Wait until all the scoring function tasks are completed.
 		cnt.wait();
 	}
 
