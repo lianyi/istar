@@ -286,7 +286,6 @@ int main(int argc, char* argv[])
 				cnt.init(num_gm_tasks);
 				for (size_t x = 0; x < num_gm_tasks; ++x)
 				{
-//					tp.push_back(packaged_task<void()>(bind(grid_map_task, std::ref(grid_maps), cref(atom_types_to_populate), x, cref(sf), cref(b), cref(rec))));
 					io.post([&,x]()
 					{
 						grid_map_task(grid_maps, atom_types_to_populate, x, sf, b, rec);
@@ -304,7 +303,6 @@ int main(int argc, char* argv[])
 				BOOST_ASSERT(result_containers[i].empty());
 				BOOST_ASSERT(result_containers[i].capacity() == 1);
 				const size_t s = rng();
-//				tp.push_back(packaged_task<void()>(bind(monte_carlo_task, std::ref(result_containers[i]), cref(lig), rng(), cref(alphas), cref(sf), cref(b), cref(grid_maps))));
 				io.post([&,i,s]()
 				{
 					monte_carlo_task(result_containers[i], lig, s, alphas, sf, b, grid_maps);
@@ -518,7 +516,6 @@ int main(int argc, char* argv[])
 					cnt.init(num_gm_tasks);
 					for (size_t x = 0; x < num_gm_tasks; ++x)
 					{
-//						tp.push_back(packaged_task<void()>(bind(grid_map_task, std::ref(grid_maps), cref(atom_types_to_populate), x, cref(sf), cref(b), cref(rec))));
 						io.post([&,x]()
 						{
 							grid_map_task(grid_maps, atom_types_to_populate, x, sf, b, rec);
