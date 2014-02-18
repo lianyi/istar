@@ -20,6 +20,7 @@ Components
 * [jQuery UI] v1.10.4
 * [three.js] r66
 * [zlib.js] v0.1.8
+* [jquery-dateFormat] v1.0.0
 
 ### Web server
 
@@ -121,6 +122,7 @@ Logo
 [jQuery UI]: https://github.com/jquery/jquery-ui
 [three.js]: https://github.com/mrdoob/three.js
 [zlib.js]: https://github.com/imaya/zlib.js
+[jquery-dateFormat]: https://github.com/phstc/jquery-dateFormat
 [node.js]: https://github.com/joyent/node
 [mongodb]: https://github.com/mongodb/node-mongodb-native
 [express]: https://github.com/visionmedia/express
