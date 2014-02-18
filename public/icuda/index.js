@@ -1,6 +1,5 @@
 $(function() {
 	$('.section img').lazyload({
-//		event: 'expand',
 		effect: 'fadeIn',
 	});
 	var style = function (lang) {
