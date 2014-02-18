@@ -21,6 +21,7 @@ Components
 * [three.js] r66
 * [zlib.js] v0.1.8
 * [jquery-dateFormat] v1.0.0
+* [jquery_lazyload] v1.9.3
 
 ### Web server
 
@@ -123,6 +124,7 @@ Logo
 [three.js]: https://github.com/mrdoob/three.js
 [zlib.js]: https://github.com/imaya/zlib.js
 [jquery-dateFormat]: https://github.com/phstc/jquery-dateFormat
+[jquery_lazyload]: https://github.com/tuupola/jquery_lazyload
 [node.js]: https://github.com/joyent/node
 [mongodb]: https://github.com/mongodb/node-mongodb-native
 [express]: https://github.com/visionmedia/express
