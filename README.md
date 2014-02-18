@@ -19,7 +19,7 @@ Components
 * [jQuery] v2.1.0
 * [jQuery UI] v1.10.4
 * [three.js] r66
-* [zlib.js] v0.1.7
+* [zlib.js] v0.1.8
 
 ### Web server
 
