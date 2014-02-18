@@ -33,6 +33,7 @@ public:
 inline bool operator<(const summary& a, const summary& b)
 {
 	return a.energy < b.energy;
+//	return a.rfscore > b.rfscore;
 }
 
 #endif
