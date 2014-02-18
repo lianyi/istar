@@ -1,5 +1,5 @@
 $(function() {
-	$('img').lazyload({
+	$('.section img').lazyload({
 //		event: 'expand',
 		effect: 'fadeIn',
 	});

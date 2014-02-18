@@ -337,7 +337,7 @@ sum = 13
         <div class="col-md-12">
           <h2 id="nvcc">Compiler: nvcc</h2>
           <p>This figure shows the internal structure of the various CUDA compilation phases. It is reprinted from <a href="http://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/graphics/cuda-compilation-from-cu-to-cu-cpp-ii.png">http://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/graphics/cuda-compilation-from-cu-to-cu-cpp-ii.png</a>.</p>
-          <p><img class="img-responsive" src="http://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/graphics/cuda-compilation-from-cu-to-cu-cpp-ii.png" alt="nvcc"></p>
+          <p><img class="img-responsive" src="/grey.gif" data-original="http://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/graphics/cuda-compilation-from-cu-to-cu-cpp-ii.png" alt="nvcc"></p>
           <p>The <code>cudafe++</code> front end preprocessor will be called multiple times.</p>
 <pre class="sh">
 <b class="text-info">hjli@hpc1:~></b> echo "int main() { int dummy; }" > test.cu
@@ -448,7 +448,7 @@ SSMem: Static shared memory allocated per CUDA block.
 DSMem: Dynamic shared memory allocated per CUDA block.
 </pre>
           <p><code>nvvp</code> can import *.nvprof and visualize the timeline data. File -> Import -> Nvprof -> Timeline data file -> Finish. Zoom in the main part.</p>
-          <p><img class="img-responsive" src="hpc1-47304.png" alt="nvprof"></p>
+          <p><img class="img-responsive" src="/grey.gif" data-original="hpc1-47304.png" alt="nvprof"></p>
           <p>Refer to <a href="http://on-demand.gputechconf.com/gtc/2013/webinar/gtc-express-guided-analysis-nvidia-visual-profiler.pdf">Guided Performance Analysis with NVIDIA Visual Profiler</a>, <a href="http://on-demand.gputechconf.com/gtc/2012/presentations/S0419B-GTC2012-Profiling-Profiling-Tools.pdf">Optimizing Application Performance with CUDA Profiling Tools</a> and <a href="http://on-demand.gputechconf.com/gtc/2013/presentations/S3046-Performance-Optimization-Strategies-for-GPU-Accelerated-Apps.pdf">Performance Optimization Strategies For GPU-Accelerated Applications</a> for more detail.</p>
           <h2 id="nsight">IDE: Nsight</h2>
           <p><a href="https://developer.nvidia.com/nvidia-nsight-visual-studio-edition">Visual Studio Edition for Windows</a> and <a href="https://developer.nvidia.com/nsight-eclipse-edition">Eclipse Edition for Linux</a>.</p>
@@ -777,7 +777,7 @@ _Z9vectorAddPKfS0_Pfi:
 <pre class="sh">
 <b class="text-info">hjli@hpc1:~/cudart/vectorAdd></b> nvdisasm -cfg ./vectorAdd.cubin | dot -Tpng -ovectorAdd.png
 </pre>
-          <p><img class="img-responsive" src="vectorAdd.png" alt="vectorAdd.png"></p>
+          <p><img class="img-responsive" src="/grey.gif" data-original="vectorAdd.png" alt="vectorAdd.png"></p>
         </div>
       </div>
     </section>
