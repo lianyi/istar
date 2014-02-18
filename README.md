@@ -28,7 +28,7 @@ Components
 * [node.js] v0.10.25
 * [mongodb] v1.3.23
 * [express] v3.4.8
-* [spdy] v1.19.1
+* [spdy] v1.19.2
 
 ### Database
 
