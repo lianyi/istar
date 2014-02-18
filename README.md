@@ -15,24 +15,24 @@ Components
 
 ### Web client
 
-* [Twitter Bootstrap] v3.1.1
-* [jQuery] v2.1.0
-* [jQuery UI] v1.10.4
-* [three.js] r66
-* [zlib.js] v0.1.8
-* [jquery-dateFormat] v1.0.0
-* [jquery_lazyload] v1.9.3
+* [Twitter Bootstrap]
+* [jQuery]
+* [jQuery UI]
+* [three.js]
+* [zlib.js]
+* [jquery-dateFormat]
+* [jquery_lazyload]
 
 ### Web server
 
-* [node.js] v0.10.25
-* [mongodb] v1.3.23
-* [express] v3.4.8
-* [spdy] v1.19.2
+* [node.js]
+* [mongodb]
+* [express]
+* [spdy]
 
 ### Database
 
-* [MongoDB] v2.4.9
+* [MongoDB]
 
 ### Workstations and daemons
 
