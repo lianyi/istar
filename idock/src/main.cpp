@@ -431,8 +431,13 @@ int main(int argc, char* argv[])
 					tokens.push_back(line.substr(comma0, comma1 - comma0));
 					comma0 = comma1 + 1;
 				}
+				// Validate the correctness of the current csv line.
 //				BOOST_ASSERT(tokens.size() >= 12);
-				if (tokens.size() < 12) continue;
+				if (tokens.size() < 12)
+				{
+					cerr << "tokens.size() < 12 at line " << line << " in " << slice_csv_path << endl;
+					continue;
+				}
 				conformation conf(tokens.size() - 12);
 				conf.position = vec3(lexical_cast<fl>(tokens[5]), lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]));
 				conf.orientation = qtn4(lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]), lexical_cast<fl>(tokens[10]), lexical_cast<fl>(tokens[11]));
@@ -498,6 +503,14 @@ int main(int argc, char* argv[])
 
 				// Parse the ligand.
 				ligand lig(ligands);
+
+				// Validate the correctness of the current summary.
+//				BOOST_ASSERT(s.conf.torsions.size() == lig.num_active_torsions);
+				if (s.conf.torsions.size() != lig.num_active_torsions)
+				{
+					cerr << "Inequal numbers of torsions of ligand " << s.index << " with s.conf.torsions.size() = " << s.conf.torsions.size() << " and lig.num_active_torsions = " << lig.num_active_torsions << endl;
+					continue;
+				}
 
 				// Create grid maps on the fly if necessary.
 				BOOST_ASSERT(atom_types_to_populate.empty());
