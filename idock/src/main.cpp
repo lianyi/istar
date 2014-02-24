@@ -431,7 +431,8 @@ int main(int argc, char* argv[])
 					tokens.push_back(line.substr(comma0, comma1 - comma0));
 					comma0 = comma1 + 1;
 				}
-				BOOST_ASSERT(tokens.size() >= 12);
+//				BOOST_ASSERT(tokens.size() >= 12);
+				if (tokens.size() < 12) continue;
 				conformation conf(tokens.size() - 12);
 				conf.position = vec3(lexical_cast<fl>(tokens[5]), lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]));
 				conf.orientation = qtn4(lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]), lexical_cast<fl>(tokens[10]), lexical_cast<fl>(tokens[11]));
