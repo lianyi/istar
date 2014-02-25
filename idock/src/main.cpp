@@ -408,9 +408,10 @@ int main(int argc, char* argv[])
 		// If the number of completed slices is not equal to the number of total slices, loop again to fetch another slice.
 		if (!conn.query(collection, QUERY("_id" << _id << "completed" << static_cast<unsigned int>(num_slices)))->more()) continue;
 
-		// Combine and delete multiple slice csv's.
+		// Combine multiple slice csv's.
 		cout << now() << "Executing job " << _id << " phase 2" << endl;
 		ptr_vector<summary> summaries(num_ligands);
+		bool token_error = false;
 		for (size_t s = 0; s < num_slices; ++s)
 		{
 			// Parse slice csv.
@@ -435,6 +436,7 @@ int main(int argc, char* argv[])
 //				BOOST_ASSERT(tokens.size() >= 12);
 				if (tokens.size() < 12)
 				{
+					token_error = true;
 					cerr << "tokens.size() < 12 at line " << line << " in " << slice_csv_path << endl;
 					continue;
 				}
@@ -447,7 +449,16 @@ int main(int argc, char* argv[])
 				}
 				summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), lexical_cast<fl>(tokens[3]), static_cast<string&&>(tokens[4]), conf));
 			}
-			remove(slice_csv_path);
+		}
+
+		// Delete multiple slice csv's in case of no parsing errors.
+		if (!token_error)
+		{
+			for (size_t s = 0; s < num_slices; ++s)
+			{
+				const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
+				remove(slice_csv_path);
+			}
 		}
 
 		// Sort summaries.
