@@ -1275,6 +1275,7 @@ void main()\n\
 		dg = false;
 	});
 	canvas.bind('mousedown touchstart', function (e) {
+		e.preventDefault();
 		var x = e.pageX;
 		var y = e.pageY;
 		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
@@ -1292,6 +1293,7 @@ void main()\n\
 		cf = sf;
 	});
 	canvas.bind('mousemove touchmove', function (e) {
+		e.preventDefault();
 		if (!dg) return;
 		var x = e.pageX;
 		var y = e.pageY;
