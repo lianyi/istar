@@ -848,7 +848,7 @@ void main()\n\
 		var obj = new THREE.Object3D();
 		for (var i in atoms) {
 			var atom = atoms[i];
-			var bb = createLabel(atom.name, 24, '#dddddd');
+			var bb = createLabel(atom.name === 'CA' ? atom.chain + ':' + atom.resn + ':' + atom.resi : atom.name, 24, '#dddddd');
 			bb.position = atom.coord;
 			obj.add(bb);
 		}
@@ -991,7 +991,7 @@ void main()\n\
 				refresh: function () {
 					refreshMolecule(protein);
 				}
-			}, atoms = protein.atoms;
+			}, atoms = protein.atoms, patoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
 				var line = lines[i];
@@ -1201,6 +1201,16 @@ void main()\n\
 									});
 									labels['p' + pa.serial] = pa;
 									labels['l' + la.serial] = la;
+									for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
+										if (ps.name === 'CA') {
+											labels['p' + ps.serial] = ps;
+										}
+									}
+									for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
+										if (ps.name === 'CA') {
+											labels['p' + ps.serial] = ps;
+										}
+									}
 								}
 							}
 						}
@@ -1216,6 +1226,16 @@ void main()\n\
 									});
 									labels['p' + pa.serial] = pa;
 									labels['l' + la.serial] = la;
+									for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
+										if (ps.name === 'CA') {
+											labels['p' + ps.serial] = ps;
+										}
+									}
+									for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
+										if (ps.name === 'CA') {
+											labels['p' + ps.serial] = ps;
+										}
+									}
 								}
 							}
 						}
