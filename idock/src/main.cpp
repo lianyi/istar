@@ -437,7 +437,7 @@ int main(int argc, char* argv[])
 				if (tokens.size() < 12)
 				{
 					token_error = true;
-					cerr << "tokens.size() < 12 at line " << line << " in " << slice_csv_path << endl;
+					cerr << now() << "tokens.size() < 12 at line " << line << " in " << slice_csv_path << endl;
 					continue;
 				}
 				conformation conf(tokens.size() - 12);
@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
 //				BOOST_ASSERT(s.conf.torsions.size() == lig.num_active_torsions);
 				if (s.conf.torsions.size() != lig.num_active_torsions)
 				{
-					cerr << "Inequal numbers of torsions of ligand " << s.index << " with s.conf.torsions.size() = " << s.conf.torsions.size() << " and lig.num_active_torsions = " << lig.num_active_torsions << endl;
+					cerr << now() << "Inequal numbers of torsions of ligand " << s.index << " with s.conf.torsions.size() = " << s.conf.torsions.size() << " and lig.num_active_torsions = " << lig.num_active_torsions << endl;
 					continue;
 				}
 
