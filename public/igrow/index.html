@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Hongjian Li">
+  <meta name="description" content="igrow: a multithreaded computational ligand synthesis tool">
+  <title>igrow: a multithreaded computational ligand synthesis tool</title>
+  <link rel="stylesheet" href="/bootstrap.min.css">
+  <link rel="stylesheet" href="/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/jquery-ui-1.10.4.custom.min.css">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+  <script>
+    var _gaq=[['_setAccount','UA-20604862-1'],['_trackPageview']];
+    (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+    s.parentNode.insertBefore(g,s)}(document,'script'));
+  </script>
+</head>
+<body>
+  <a class="sr-only" href="#content">Skip navigation</a>
+  <a href="//github.com/HongjianLi/istar" class="ribbon"></a>
+  <header class="navbar navbar-inverse navbar-static-top" role="banner">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      </div>
+      <nav class="collapse navbar-collapse" role="navigation">
+        <ul class="nav navbar-nav">
+          <li>
+            <a href="/"><img src="/logo.png" alt="istar logo">istar: software as a service</a>
+          </li>
+          <li>
+            <a href="/idock"><img src="/idock/logo.png" alt="idock logo">idock: protein-ligand docking</a>
+          </li>
+          <li>
+            <a href="/iview"><img src="/iview/logo.png" alt="iview logo">iview: interactive WebGL visualizer</a>
+          </li>
+          <li class="active">
+            <a href="/igrow"><img src="/igrow/logo.png" alt="igrow logo">igrow: computational ligand synthesis</a>
+          </li>
+          <li>
+            <a href="/igrep"><img src="/igrep/logo.png" alt="igrep logo">igrep: DNA sequence matching</a>
+          </li>
+          <li>
+            <a href="/icuda"><img src="/icuda/logo.png" alt="icuda logo">icuda: introduction to CUDA</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="jumbotron" id="content" role="main">
+    <div class="container">
+      <h1><img src="logo.png" alt="logo" class="logo">igrow</h1>
+      <p>a multithreaded computational ligand synthesis tool</p>
+    </div>
+  </div>
+  <div class="container">
+    <section>
+      <div class="page-header">
+        <h1>Jobs</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12" id="pager">
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h1>New job</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>The input to igrow is threefold:</p>
+          <ul>
+            <li>A completed <a href="/idock">idock</a> job.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>The output from igrow is twofold:</p>
+          <ul>
+            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: the predicted free energy, RF-Score, hydrogen bonds, molecular properties of the synthesized ligands.</li>
+            <li><img src="/molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: the synthesized ligands.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row" role="form">
+        <div class="col-md-5">
+          <div class="form-group">
+            <label for="receptor"><a title="must conform to PDB specification" id="receptor_label">Protein in PDB format</a></label> <input type="file" id="receptor">
+          </div>
+        </div>
+      </div>
+      <div class="row" role="form">
+        <div class="col-md-1">
+          <div class="form-group">
+            <label for="generations"><a title="within [-999, 999]" id="generations_label">generations</a></label>
+            <input type="number" class="form-control" id="generations" placeholder="150">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="email"><a title="compulsory" id="email_label">Email to receive completion notification</a></label>
+            <div class="input-group">
+              <span class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></span>
+              <input type="email" class="form-control" id="email" placeholder="Jacky@cuhk.edu.hk">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-group">
+            <button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h1>Tutorials</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="ui-accordion">
+            <h3>How to submit a new job</h3>
+            <div>
+              <p>Take the CCR5 chemokine receptor (PDB code: <a href="http://www.pdb.org/pdb/explore/explore.do?structureId=4MBS">4MBS</a>) as an example.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer role="contentinfo">
+    <div class="container">
+      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2014 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+    </div>
+  </footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+  <script src="/bootstrap.min.js"></script>
+  <script src="/jquery-ui-1.10.4.custom.min.js"></script>
+  <script src="/jquery-dateFormat.min.js"></script>
+  <script src="/jquery.pager.js"></script>
+  <script src="/jquery.lazyload.min.js"></script>
+  <script src="/istar.js"></script>
+  <script src="/validator.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
