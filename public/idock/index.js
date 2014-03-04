@@ -49,7 +49,7 @@ $(function() {
 					pager.pager('source', jobs);
 					pager.pager('refresh', len, jobs.length, 0, 6, true);
 				}
-				for (skip = jobs.length; skip && !jobs[skip - 1].done; --skip);
+				for (; skip < jobs.length && jobs[skip].done; ++skip);
 			}
 			setTimeout(tick, 1000);
 		});
