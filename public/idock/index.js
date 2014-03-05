@@ -880,13 +880,12 @@ $(function() {
 				keys.forEach(function(key) {
 					$('#' + key + '_label').tooltip('show');
 				});
+				submit.prop('disabled', false);
 			} else {
 				$('html, body').animate({ scrollTop: pager.offset().top });
 //				window.scrollTo(pager.offset().left, pager.offset().top);
 			}
-		}, 'json').always(function() {
-			submit.prop('disabled', false);
-		});
+		}, 'json');
 	});
 
 	// Apply accordion to tutorials
