@@ -218,7 +218,7 @@ if (cluster.isMaster) {
 				});
 				sync(function() {
 					if (!(1 <= ligands && ligands <= 1000000)) {
-						res.json({'ligands': 'the number of filtered ligands must be within [1, 1,000,000]'});
+						return res.json({'ligands': 'the number of filtered ligands must be within [1, 1,000,000]'});
 					}
 					v.res.ligands = ligands;
 					v.res.scheduled = 0;
