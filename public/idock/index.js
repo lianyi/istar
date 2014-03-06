@@ -833,7 +833,7 @@ $(function() {
 			.field('size_y').message('must be an integer within [10, 30]').float().min(10).max(30)
 			.field('size_z').message('must be an integer within [10, 30]').float().min(10).max(30)
 			.field('email').message('must be valid').email()
-			.field('ligands').message('must be an integer within [1, 1,000,000]').int().min(1).max(1000000)
+			.field('ligands').message('must be an integer within [1, 100,000]').int().min(1).max(100000)
 			.failed()) {
 			var keys = Object.keys(v.err);
 			keys.forEach(function(key) {
