@@ -227,9 +227,9 @@ int main(int argc, char* argv[])
 			grid_maps.clear();
 			grid_maps.resize(XS_TYPE_SIZE);
 		}
-		const auto slice = job["scheduled"].Int();
 
 		// Perform phase 1.
+		const auto slice = job["scheduled"].Int();
 		cout << now() << "Executing job " << _id << " slice " << slice << endl;
 		const auto slice_key = lexical_cast<string>(slice);
 		const auto beg_lig = slices[slice];
