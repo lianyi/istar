@@ -68,25 +68,23 @@ if (cluster.isMaster) {
 			// Configure express server
 			var express = require('express');
 			var app = express();
-			app.configure(function() {
-				app.use(express.compress());
-				app.use(express.json());
-				app.use(express.urlencoded());
-				app.use(app.router);
-			});
-			app.configure('development', function() {
+			app.use(express.compress());
+			app.use(express.json());
+			app.use(express.urlencoded());
+			app.use(app.router);
+			var env = process.env.NODE_ENV || 'development';
+			if (env == 'development') {
 				app.use(express.static(__dirname + '/public'));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public'));
 				app.use(express.favicon(__dirname + '/public'));
 				app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-			});
-			app.configure('production', function() {
+			} else if (env == 'production') {
 				var oneYear = 31557600000; // 1000 * 60 * 60 * 24 * 365.25
 				app.use(express.static(__dirname + '/public', { maxAge: oneYear }));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneYear }));
 				app.use(express.favicon(__dirname + '/public', { maxAge: oneYear }));
 				app.use(express.errorHandler());
-			});
+			};
 			// Define helper variables and functions
 			var child_process = require('child_process');
 			var validator = require('./public/validator');
