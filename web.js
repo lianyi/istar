@@ -79,9 +79,11 @@ if (cluster.isMaster) {
 				app.use(express.favicon(__dirname + '/public'));
 				app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 			} else if (env == 'production') {
-				var oneYear = 31557600000; // 1000 * 60 * 60 * 24 * 365.25
-				app.use(express.static(__dirname + '/public', { maxAge: oneYear }));
-				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneYear }));
+				var oneDay = 1000 * 60 * 60 * 24;
+				var oneWeek = oneDay * 7;
+				var oneYear = oneDay * 365.25;
+				app.use(express.static(__dirname + '/public', { maxAge: oneWeek }));
+				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneWeek }));
 				app.use(express.favicon(__dirname + '/public', { maxAge: oneYear }));
 				app.use(express.errorHandler());
 			};
