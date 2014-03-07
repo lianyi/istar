@@ -13,7 +13,7 @@ $(function() {
 			for (var i = 0; i < job.scheduled; ++i) {
 				num_completed_ligands += parseInt(job[i.toString()]);
 			}
-			progress = num_completed_ligands / job.ligands;
+			progress = num_completed_ligands / Math.min(job.ligands, 1e+5);
 		} else {
 			status = 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
@@ -833,7 +833,7 @@ $(function() {
 			.field('size_y').message('must be an integer within [10, 30]').float().min(10).max(30)
 			.field('size_z').message('must be an integer within [10, 30]').float().min(10).max(30)
 			.field('email').message('must be valid').email()
-			.field('ligands').message('must be an integer within [1, 100,000]').int().min(1).max(100000)
+			.field('ligands').message('must be at least 1').int().min(1)
 			.failed()) {
 			var keys = Object.keys(v.err);
 			keys.forEach(function(key) {
