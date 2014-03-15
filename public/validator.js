@@ -57,7 +57,11 @@
 	};
 	validator.prototype.range = function(key0, key1) {
 		if (!(this.res[key0] <= this.res[key1])) {
-			this.err[key0] = this.err[key1] = key0 + ' must be less than or equal to ' + key1;
+			this.msg = key0 + ' must be less than or equal to ' + key1;
+			this.key = key0;
+			this.error();
+			this.key = key1;
+			this.error();
 		}
 		return this;
 	};
