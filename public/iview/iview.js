@@ -901,14 +901,14 @@ void main()\n\
 			points.push(p0.smoothen ? p0.clone().add(p1).multiplyScalar(0.5) : p0);
 		}
 		points.push(_points[_points.length - 1]);
-		for (var i = -1, size = points.length; i <= size - 3; ++i) {
+		for (var i = -1, size = points.length, DIVINV = 1 / DIV; i <= size - 3; ++i) {
 			var p0 = points[i == -1 ? 0 : i];
 			var p1 = points[i + 1], p2 = points[i + 2];
 			var p3 = points[i == size - 3 ? size - 1 : i + 3];
 			var v0 = p2.clone().sub(p0).multiplyScalar(0.5);
 			var v1 = p3.clone().sub(p1).multiplyScalar(0.5);
 			for (var j = 0; j < DIV; ++j) {
-				var t = 1.0 / DIV * j;
+				var t = DIVINV * j;
 				var x = p1.x + t * v0.x
 						 + t * t * (-3 * p1.x + 3 * p2.x - 2 * v0.x - v1.x)
 						 + t * t * t * (2 * p1.x - 2 * p2.x + v0.x + v1.x);
@@ -930,9 +930,9 @@ void main()\n\
 		div = div || 5;
 		var points = this.subdivide(_points, div);
 		var geo = new THREE.Geometry();
-		for (var i = 0; i < points.length; ++i) {
+		for (var i = 0, divInv = 1 / div; i < points.length; ++i) {
 			geo.vertices.push(points[i]);
-			geo.colors.push(new THREE.Color(colors[i == 0 ? 0 : Math.round((i - 1) / div)]));
+			geo.colors.push(new THREE.Color(colors[i == 0 ? 0 : Math.round((i - 1) * divInv)]));
 		}
 		this.mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: width, vertexColors: true }), THREE.LineStrip));
 	};
@@ -980,8 +980,8 @@ void main()\n\
 			vs.push(a1v); // 7
 		}
 		var faces = [[0, 2, -6, -8], [-4, -2, 6, 4], [7, 3, -5, -1], [-3, -7, 1, 5]];
-		for (var i = 1, lim = p0.length; i < lim; ++i) {
-			var offset = 8 * i, color = new THREE.Color(colors[Math.round((i - 1) / div)]);
+		for (var i = 1, lim = p0.length, divInv = 1 / div; i < lim; ++i) {
+			var offset = 8 * i, color = new THREE.Color(colors[Math.round((i - 1) * divInv)]);
 			for (var j = 0; j < 4; ++j) {
 				fs.push(new THREE.Face3(offset + faces[j][0], offset + faces[j][1], offset + faces[j][2], undefined, color));
 				fs.push(new THREE.Face3(offset + faces[j][3], offset + faces[j][0], offset + faces[j][2], undefined, color));
@@ -1036,8 +1036,8 @@ void main()\n\
 					O.multiplyScalar(ss === 'coil' ? coilWidth : helixSheetWidth);
 					if (prevCO != undefined && O.dot(prevCO) < 0) O.negate();
 					prevCO = O;
-					for (var j = 0; j < num; ++j) {
-						var delta = -1 + 2 / (num - 1) * j;
+					for (var j = 0, numM1Inv2 = 2 / (num - 1); j < num; ++j) {
+						var delta = -1 + numM1Inv2 * j;
 						var v = new THREE.Vector3(currentCA.x + prevCO.x * delta, currentCA.y + prevCO.y * delta, currentCA.z + prevCO.z * delta);
 						if (!doNotSmoothen && ss === 'sheet') v.smoothen = true;
 						points[j].push(v);
@@ -1053,11 +1053,12 @@ void main()\n\
 	iview.prototype.createTubeSub = function (_points, colors, radii) {
 		if (_points.length < 2) return;
 		var circleDiv = this.tubeDIV, axisDiv = this.axisDIV;
+		var circleDivInv = 1 / circleDiv, axisDivInv = 1 / axisDiv;
 		var geo = new THREE.Geometry();
 		var points = this.subdivide(_points, axisDiv);
 		var prevAxis1 = new THREE.Vector3(), prevAxis2;
 		for (var i = 0, lim = points.length; i < lim; ++i) {
-			var r, idx = (i - 1) / axisDiv;
+			var r, idx = (i - 1) * axisDivInv;
 			if (i == 0) r = radii[0];
 			else {
 				if (idx % 1 == 0) r = radii[idx];
@@ -1081,13 +1082,13 @@ void main()\n\
 				axis1 = prevAxis1; axis2 = prevAxis2;
 			}
 			for (var j = 0; j < circleDiv; ++j) {
-				var angle = 2 * Math.PI / circleDiv * j; //* dir  + offset;
+				var angle = 2 * Math.PI * circleDivInv * j; //* dir  + offset;
 				geo.vertices.push(points[i].clone().add(axis1.clone().multiplyScalar(Math.cos(angle))).add(axis2.clone().multiplyScalar(Math.sin(angle))));
 			}
 		}
 		var offset = 0;
 		for (var i = 0, lim = points.length - 1; i < lim; ++i) {
-			var c = new THREE.Color(colors[Math.round((i - 1) / axisDiv)]);
+			var c = new THREE.Color(colors[Math.round((i - 1) * axisDivInv)]);
 			var reg = 0;
 			var r1 = geo.vertices[offset].clone().sub(geo.vertices[offset + circleDiv]).lengthSq();
 			var r2 = geo.vertices[offset].clone().sub(geo.vertices[offset + circleDiv + 1]).lengthSq();
@@ -1233,10 +1234,10 @@ void main()\n\
 		this.scene.fog = new THREE.Fog(background, 100, 200);
 		switch (this.options.colorBy) {
 			case 'spectrum':
-				var idx = 0;
+				var idx = 0, lastTerSerialInv = 1 / this.lastTerSerial;
 				for (var i in this.atoms) {
 					var atom = this.atoms[i];
-					atom.color = atom.het ? this.atomColors[atom.elem] || this.defaultAtomColor : new THREE.Color().setHSL(2 / 3 * (1 - idx++ / this.lastTerSerial), 1, 0.45);
+					atom.color = atom.het ? this.atomColors[atom.elem] || this.defaultAtomColor : new THREE.Color().setHSL(2 / 3 * (1 - idx++ * lastTerSerialInv), 1, 0.45);
 				}
 				break;
 			case 'chain':

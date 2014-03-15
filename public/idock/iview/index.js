@@ -1101,8 +1101,8 @@ void main()\n\
 			surface.pmin = pmin;
 			surface.pmax = pmax;
 			var maxD = pmax.distanceTo(pmin);
-			sn = -maxD / 2;
-			sf =  maxD / 4;
+			sn = -maxD * 0.50;
+			sf =  maxD * 0.25;
 			rot.position.z = maxD * 0.08 / Math.tan(Math.PI / 180.0 * 10) - 150;
 			rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
 			$.ajax({
