@@ -559,7 +559,7 @@ void main()\n\
 	float aspect = projectionMatrix[1][1] / projectionMatrix[0][0];\n\
 	gl_Position = mat * vec4(position, 1.0);\n\
 	gl_Position /= gl_Position.w;\n\
-	gl_Position += vec4(uv.x * width / 1000.0, uv.y * height * aspect / 1000.0, 0.0, 0.0);\n\
+	gl_Position += vec4(uv.x * width * 1e-3, uv.y * height * aspect * 1e-3, 0.0, 0.0);\n\
 	gl_Position.z = -0.9;\n\
 }';
 		this.labelFragmentShader = '\
@@ -800,8 +800,8 @@ void main()\n\
 		this.mdl.position = psum.clone().multiplyScalar(-1 / cnt);
 		var maxD = pmax.distanceTo(pmin);
 		if (maxD < 25) maxD = 25;
-		this.slabNear = -maxD / 2;
-		this.slabFar = maxD / 4;
+		this.slabNear = -maxD * 0.50;
+		this.slabFar  =  maxD * 0.25;
 		this.rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
 		this.rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
 		this.render();
@@ -1261,7 +1261,7 @@ void main()\n\
 					}
 					this.middB = (maxB + minB) * 0.5;
 					this.spanB = (maxB - minB) * 0.5;
-					this.spanBinv = 1.0 / this.spanB;
+					this.spanBinv = 1 / this.spanB;
 				}
 				for (var i in this.atoms) {
 					var atom = this.atoms[i];

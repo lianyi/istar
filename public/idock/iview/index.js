@@ -682,7 +682,7 @@ void main()\n\
 	float aspect = projectionMatrix[1][1] / projectionMatrix[0][0];\n\
 	gl_Position = mat * vec4(position, 1.0);\n\
 	gl_Position /= gl_Position.w;\n\
-	gl_Position += vec4(uv.x * width / 1000.0, uv.y * height * aspect / 1000.0, 0.0, 0.0);\n\
+	gl_Position += vec4(uv.x * width * 1e-3, uv.y * height * aspect * 1e-3, 0.0, 0.0);\n\
 	gl_Position.z = -0.9;\n\
 }';
 	var labelFragmentShader = '\
