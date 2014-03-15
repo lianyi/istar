@@ -815,8 +815,8 @@ $(function() {
 		var ligands = $('#ligands').text().uncomma();
 		var v = new validator({
 			email: email,
-			receptor: receptor,
 			description: description,
+			receptor: receptor,
 			center_x: center_x,
 			center_y: center_y,
 			center_z: center_z,
@@ -826,15 +826,15 @@ $(function() {
 			ligands: ligands,
 		});
 		if (v
-			.field('receptor').message('must conform to PDB specification').length(1, 10485760).receptor()
+			.field('email').message('must be valid').email()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
+			.field('receptor').message('must conform to PDB specification').length(1, 10485760).receptor()
 			.field('center_x').message('must be a decimal within [-999, 999]').float().min(-999).max(999)
 			.field('center_y').message('must be a decimal within [-999, 999]').float().min(-999).max(999)
 			.field('center_z').message('must be a decimal within [-999, 999]').float().min(-999).max(999)
 			.field('size_x').message('must be an integer within [10, 30]').float().min(10).max(30)
 			.field('size_y').message('must be an integer within [10, 30]').float().min(10).max(30)
 			.field('size_z').message('must be an integer within [10, 30]').float().min(10).max(30)
-			.field('email').message('must be valid').email()
 			.field('ligands').message('must be at least 1').int().min(1)
 			.failed()) {
 			var keys = Object.keys(v.err);
