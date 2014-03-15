@@ -631,7 +631,7 @@ $(function() {
 					bmax.max(coord);
 				}
 				bctr = bmax.clone().add(bmin).multiplyScalar(0.5);
-				bsiz = bmax.clone().sub(bmin).multiplyScalar(1.5);
+				bsiz = bmax.clone().sub(bmin).multiplyScalar(1.5).addScalar(4);
 			}
 			bsiz.clamp(bsizmin, bsizmax);
 			var r = function () {
