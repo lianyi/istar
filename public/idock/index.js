@@ -273,6 +273,8 @@ $(function() {
 	var linewidth = 2;
 
 	var canvas = $('canvas');
+	canvas.widthInv  = 1 / canvas.width();
+	canvas.heightInv = 1 / canvas.height();
 	canvas.bind('contextmenu', function (e) {
 		e.preventDefault();
 	});
@@ -552,8 +554,8 @@ $(function() {
 			receptor = concat2(plines) + concat2(ilines) + concat(clines);
 			var pavg = psum.clone().multiplyScalar(1 / cnt);
 			var maxD = pmax.distanceTo(pmin);
-			sn = -maxD / 2;
-			sf =  maxD / 4;
+			sn = -maxD * 0.50;
+			sf =  maxD * 0.25;
 			rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
 			rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
 			mdl.position = pavg.clone().multiplyScalar(-1);
@@ -681,8 +683,8 @@ $(function() {
 					x = e.originalEvent.targetTouches[0].pageX;
 					y = e.originalEvent.targetTouches[0].pageY;
 				}
-				var dx = (x - cx) / canvas.width();
-				var dy = (y - cy) / canvas.height();
+				var dx = (x - cx) * canvas.widthInv;
+				var dy = (y - cy) * canvas.heightInv;
 				if (e.ctrlKey && e.shiftKey) { // Slab
 					sn = cn + dx * 100;
 					sf = cf + dy * 100;
