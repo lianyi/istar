@@ -50,7 +50,7 @@ if (cluster.isMaster) {
 				cluster.fork().on('message', msg);
 			}
 			cluster.on('death', function(worker) {
-				console.log('Worker process %d died. Restarting...', worker.pid);
+				console.error('Worker process %d died. Restarting...', worker.pid);
 				cluster.fork().on('message', msg);
 			});
 		});
