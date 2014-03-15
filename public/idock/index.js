@@ -370,8 +370,8 @@ $(function() {
 	render();
 
 	// Load receptor locally
-	var status = $('#status');
-	status.hide();
+	var surfaceStatus = $('#surfaceStatus');
+	surfaceStatus.hide();
 	var bsizmin = new THREE.Vector3();
 	var bsizmax = new THREE.Vector3();
 	['x', 'y', 'z'].forEach(function(d) {
@@ -525,9 +525,9 @@ $(function() {
 					transparent: true,
 				})));
 				render();
-				status.hide();
+				surfaceStatus.hide();
 			};
-			status.show();
+			surfaceStatus.show();
 			surfacejs.postMessage({
 				min: pmin,
 				max: pmax,
