@@ -11,7 +11,7 @@ $(function() {
 			status = 'Execution in progress';
 			var num_completed_ligands = 0;
 			for (var i = 0; i < job.scheduled; ++i) {
-				num_completed_ligands += parseInt(job[i.toString()]);
+				num_completed_ligands += parseInt(job[i]);
 			}
 			progress = num_completed_ligands / Math.min(job.ligands, 1e+5);
 		} else {
@@ -39,7 +39,7 @@ $(function() {
 					jobs[i].scheduled = job.scheduled;
 					jobs[i].done = job.done;
 					for (var s = 0; s < job.scheduled; ++s) {
-						jobs[i][s.toString()] = job[s.toString()];
+						jobs[i][s] = job[s];
 					}
 				}
 				pager.pager('refresh', skip, jobs.length, 3, 6, false);
