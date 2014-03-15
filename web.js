@@ -71,20 +71,19 @@ if (cluster.isMaster) {
 			app.use(express.compress());
 			app.use(express.json());
 			app.use(express.urlencoded());
+			app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 			app.use(app.router);
 			var env = process.env.NODE_ENV || 'development';
 			if (env == 'development') {
 				app.use(express.static(__dirname + '/public'));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public'));
 				app.use(express.favicon(__dirname + '/public'));
-				app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 			} else if (env == 'production') {
 				var oneDay = 1000 * 60 * 60 * 24;
 				var oneYear = oneDay * 365.25;
 				app.use(express.static(__dirname + '/public', { maxAge: oneDay }));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneDay }));
 				app.use(express.favicon(__dirname + '/public', { maxAge: oneYear }));
-				app.use(express.errorHandler());
 			};
 			// Define helper variables and functions
 			var child_process = require('child_process');
