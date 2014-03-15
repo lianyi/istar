@@ -426,6 +426,8 @@ var iview = (function () {
 		this.container = $('#' + id);
 		this.container.widthInv  = 1 / this.container.width();
 		this.container.heightInv = 1 / this.container.height();
+		this.container.whratio = this.container.width() / this.container.height();
+		this.container.hwratio = this.container.height() / this.container.width();
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.container.get(0),
 			antialias: true,
@@ -438,7 +440,7 @@ var iview = (function () {
 		};
 
 		this.camera_z = -150;
-		this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.width() / this.container.height(), 1, 800);
+		this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.whratio, 1, 800);
 		this.perspectiveCamera.position = new THREE.Vector3(0, 0, this.camera_z);
 		this.perspectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
 		this.orthographicCamera = new THREE.OrthographicCamera();
@@ -1402,7 +1404,7 @@ void main()\n\
 		if (this.camera === this.orthographicCamera){
 			this.camera.right = center * Math.tan(Math.PI / 180 * 20);
 			this.camera.left = -this.camera.right;
-			this.camera.top = this.camera.right / (this.container.width() / this.container.height());
+			this.camera.top = this.camera.right * this.container.hwratio;
 			this.camera.bottom = -this.camera.top;
 		}
 		this.camera.updateProjectionMatrix();
