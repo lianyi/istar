@@ -123,8 +123,8 @@ if (cluster.isMaster) {
 			app.get('/idock/jobs', function(req, res) {
 				var v = new validator(req.query);
 				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0)
-					.field('count').message('must be a non-negative integer').int(0).min(0)
+					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
+					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
 					.failed() || v
 					.range('skip', 'count')
 					.failed()) {
@@ -153,32 +153,32 @@ if (cluster.isMaster) {
 				var v = new validator(req.body);
 				if (v
 					.field('email').message('must be valid').email().copy()
+					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
 					.field('receptor').message('must conform to PDB specification').length(1, 10485760).receptor()
-					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss()
 					.field('center_x').message('must be a decimal within [-999, 999]').float().min(-999).max(999)
 					.field('center_y').message('must be a decimal within [-999, 999]').float().min(-999).max(999)
 					.field('center_z').message('must be a decimal within [-999, 999]').float().min(-999).max(999)
 					.field('size_x').message('must be an integer within [10, 30]').float().min(10).max(30)
 					.field('size_y').message('must be an integer within [10, 30]').float().min(10).max(30)
 					.field('size_z').message('must be an integer within [10, 30]').float().min(10).max(30)
-					.field('mwt_lb').message('must be a decimal within [55, 567]').float(400).min(55).max(567)
-					.field('mwt_ub').message('must be a decimal within [55, 567]').float(420).min(55).max(567)
-					.field('lgp_lb').message('must be a decimal within [-6, 12]').float(0).min(-6).max(12)
-					.field('lgp_ub').message('must be a decimal within [-6, 12]').float(2).min(-6).max(12)
-					.field('ads_lb').message('must be a decimal within [-57, 29]').float(0).min(-57).max(29)
-					.field('ads_ub').message('must be a decimal within [-57, 29]').float(5).min(-57).max(29)
-					.field('pds_lb').message('must be a decimal within [-543, 1]').float(-20).min(-543).max(1)
-					.field('pds_ub').message('must be a decimal within [-543, 1]').float(0).min(-543).max(1)
-					.field('hbd_lb').message('must be an integer within [0, 20]').int(2).min(0).max(20)
-					.field('hbd_ub').message('must be an integer within [0, 20]').int(4).min(0).max(20)
-					.field('hba_lb').message('must be an integer within [0, 18]').int(4).min(0).max(18)
-					.field('hba_ub').message('must be an integer within [0, 18]').int(6).min(0).max(18)
-					.field('psa_lb').message('must be an integer within [0, 317]').int(60).min(0).max(317)
-					.field('psa_ub').message('must be an integer within [0, 317]').int(80).min(0).max(317)
-					.field('chg_lb').message('must be an integer within [-5, 5]').int(0).min(-5).max(5)
-					.field('chg_ub').message('must be an integer within [-5, 5]').int(0).min(-5).max(5)
-					.field('nrb_lb').message('must be an integer within [0, 35]').int(4).min(0).max(35)
-					.field('nrb_ub').message('must be an integer within [0, 35]').int(6).min(0).max(35)
+					.field('mwt_lb').message('must be a decimal within [55, 567]').float(400).min(55).max(567).copy()
+					.field('mwt_ub').message('must be a decimal within [55, 567]').float(420).min(55).max(567).copy()
+					.field('lgp_lb').message('must be a decimal within [-6, 12]').float(0).min(-6).max(12).copy()
+					.field('lgp_ub').message('must be a decimal within [-6, 12]').float(2).min(-6).max(12).copy()
+					.field('ads_lb').message('must be a decimal within [-57, 29]').float(0).min(-57).max(29).copy()
+					.field('ads_ub').message('must be a decimal within [-57, 29]').float(5).min(-57).max(29).copy()
+					.field('pds_lb').message('must be a decimal within [-543, 1]').float(-20).min(-543).max(1).copy()
+					.field('pds_ub').message('must be a decimal within [-543, 1]').float(0).min(-543).max(1).copy()
+					.field('hbd_lb').message('must be an integer within [0, 20]').int(2).min(0).max(20).copy()
+					.field('hbd_ub').message('must be an integer within [0, 20]').int(4).min(0).max(20).copy()
+					.field('hba_lb').message('must be an integer within [0, 18]').int(4).min(0).max(18).copy()
+					.field('hba_ub').message('must be an integer within [0, 18]').int(6).min(0).max(18).copy()
+					.field('psa_lb').message('must be an integer within [0, 317]').int(60).min(0).max(317).copy()
+					.field('psa_ub').message('must be an integer within [0, 317]').int(80).min(0).max(317).copy()
+					.field('chg_lb').message('must be an integer within [-5, 5]').int(0).min(-5).max(5).copy()
+					.field('chg_ub').message('must be an integer within [-5, 5]').int(0).min(-5).max(5).copy()
+					.field('nrb_lb').message('must be an integer within [0, 35]').int(4).min(0).max(35).copy()
+					.field('nrb_ub').message('must be an integer within [0, 35]').int(6).min(0).max(35).copy()
 					.failed() || v
 					.range('mwt_lb', 'mwt_ub')
 					.range('lgp_lb', 'lgp_ub')
@@ -260,24 +260,24 @@ if (cluster.isMaster) {
 				// Validate and sanitize user input
 				var v = new validator(req.query);
 				if (v
-					.field('mwt_lb').message('must be a decimal within [55, 567]').float().min(55).max(567)
-					.field('mwt_ub').message('must be a decimal within [55, 567]').float().min(55).max(567)
-					.field('lgp_lb').message('must be a decimal within [-6, 12]').float().min(-6).max(12)
-					.field('lgp_ub').message('must be a decimal within [-6, 12]').float().min(-6).max(12)
-					.field('ads_lb').message('must be a decimal within [-57, 29]').float().min(-57).max(29)
-					.field('ads_ub').message('must be a decimal within [-57, 29]').float().min(-57).max(29)
-					.field('pds_lb').message('must be a decimal within [-543, 1]').float().min(-543).max(1)
-					.field('pds_ub').message('must be a decimal within [-543, 1]').float().min(-543).max(1)
-					.field('hbd_lb').message('must be an integer within [0, 20]').int().min(0).max(20)
-					.field('hbd_ub').message('must be an integer within [0, 20]').int().min(0).max(20)
-					.field('hba_lb').message('must be an integer within [0, 18]').int().min(0).max(18)
-					.field('hba_ub').message('must be an integer within [0, 18]').int().min(0).max(18)
-					.field('psa_lb').message('must be an integer within [0, 317]').int().min(0).max(317)
-					.field('psa_ub').message('must be an integer within [0, 317]').int().min(0).max(317)
-					.field('chg_lb').message('must be an integer within [-5, 5]').int().min(-5).max(5)
-					.field('chg_ub').message('must be an integer within [-5, 5]').int().min(-5).max(5)
-					.field('nrb_lb').message('must be an integer within [0, 35]').int().min(0).max(35)
-					.field('nrb_ub').message('must be an integer within [0, 35]').int().min(0).max(35)
+					.field('mwt_lb').message('must be a decimal within [55, 567]').float().min(55).max(567).copy()
+					.field('mwt_ub').message('must be a decimal within [55, 567]').float().min(55).max(567).copy()
+					.field('lgp_lb').message('must be a decimal within [-6, 12]').float().min(-6).max(12).copy()
+					.field('lgp_ub').message('must be a decimal within [-6, 12]').float().min(-6).max(12).copy()
+					.field('ads_lb').message('must be a decimal within [-57, 29]').float().min(-57).max(29).copy()
+					.field('ads_ub').message('must be a decimal within [-57, 29]').float().min(-57).max(29).copy()
+					.field('pds_lb').message('must be a decimal within [-543, 1]').float().min(-543).max(1).copy()
+					.field('pds_ub').message('must be a decimal within [-543, 1]').float().min(-543).max(1).copy()
+					.field('hbd_lb').message('must be an integer within [0, 20]').int().min(0).max(20).copy()
+					.field('hbd_ub').message('must be an integer within [0, 20]').int().min(0).max(20).copy()
+					.field('hba_lb').message('must be an integer within [0, 18]').int().min(0).max(18).copy()
+					.field('hba_ub').message('must be an integer within [0, 18]').int().min(0).max(18).copy()
+					.field('psa_lb').message('must be an integer within [0, 317]').int().min(0).max(317).copy()
+					.field('psa_ub').message('must be an integer within [0, 317]').int().min(0).max(317).copy()
+					.field('chg_lb').message('must be an integer within [-5, 5]').int().min(-5).max(5).copy()
+					.field('chg_ub').message('must be an integer within [-5, 5]').int().min(-5).max(5).copy()
+					.field('nrb_lb').message('must be an integer within [0, 35]').int().min(0).max(35).copy()
+					.field('nrb_ub').message('must be an integer within [0, 35]').int().min(0).max(35).copy()
 					.failed() || v
 					.range('mwt_lb', 'mwt_ub')
 					.range('lgp_lb', 'lgp_ub')
@@ -303,7 +303,7 @@ if (cluster.isMaster) {
 			app.get('/igrep/jobs', function(req, res) {
 				var v = new validator(req.query);
 				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0)
+					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
 					.failed()) {
 					return res.json(v.err);
 				};
@@ -321,7 +321,7 @@ if (cluster.isMaster) {
 				var v = new validator(req.body);
 				if (v
 					.field('email').message('must be valid').email().copy()
-					.field('taxid').message('must be the taxonomy id of one of the 26 genomes').int().in([13616, 9598, 9606, 9601, 10116, 9544, 9483, 10090, 9913, 9823, 9796, 9615, 9986, 7955, 28377, 9103, 59729, 9031, 3847, 9258, 29760, 15368, 7460, 30195, 7425, 7070])
+					.field('taxid').message('must be the taxonomy id of one of the 26 genomes').int().in([13616, 9598, 9606, 9601, 10116, 9544, 9483, 10090, 9913, 9823, 9796, 9615, 9986, 7955, 28377, 9103, 59729, 9031, 3847, 9258, 29760, 15368, 7460, 30195, 7425, 7070]).copy()
 					.field('queries').message('must conform to the specifications').length(2, 66000).queries().copy()
 					.failed()) {
 					return res.json(v.err);
