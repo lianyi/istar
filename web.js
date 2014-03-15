@@ -108,16 +108,14 @@ if (cluster.isMaster) {
 				'scheduled': 1,
 				'done': 1
 			};
-			for (var i = 0; i < 10; ++i) {
-				idockJobFields[i.toString()] = 1;
-			}
 			var idockProgressFields = {
 				'_id': 0,
 				'scheduled': 1,
 				'done': 1
 			};
 			for (var i = 0; i < 10; ++i) {
-				idockProgressFields[i.toString()] = 1;
+				idockJobFields[i] = 1;
+				idockProgressFields[i] = 1;
 			}
 			// Get idock jobs
 			app.get('/idock/jobs', function(req, res) {
@@ -223,7 +221,7 @@ if (cluster.isMaster) {
 					v.res.scheduled = 0;
 					v.res.completed = 0;
 					for (var i = 0; i < 10; ++i) {
-						v.res[i.toString()] = 0;
+						v.res[i] = 0;
 					}
 					v.res.submitted = new Date();
 					v.res._id = new mongodb.ObjectID();
