@@ -30,18 +30,6 @@
 		if (this.val === undefined || !(min <= this.val.length && this.val.length <= max)) this.error();
 		return this;
 	};
-	validator.prototype.min = function(val) {
-		if (this.val < val) this.error();
-		return this;
-	};
-	validator.prototype.max = function(val) {
-		if (this.val > val) this.error();
-		return this;
-	};
-	validator.prototype.in = function(options) {
-		if (!options.indexOf(this.val) == -1) this.error();
-		return this;
-	};
 	validator.prototype.regex = function(regex) {
 		if (!regex.test(this.val)) this.error();
 		return this;
@@ -55,18 +43,9 @@
 	validator.prototype.queries = function() {
 		return this.regex(/^([ACGTN]{1,64}\d\n){0,9999}[ACGTN]{1,64}\d\n?$/ig);
 	};
-	validator.prototype.range = function(key0, key1) {
-		if (!(this.res[key0] <= this.res[key1])) {
-			this.msg = key0 + ' must be less than or equal to ' + key1;
-			this.key = key0;
-			this.error();
-			this.key = key1;
-			this.error();
-		}
+	validator.prototype.xss = function() {
+		this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		return this;
-	};
-	validator.prototype.failed = function() {
-		return Object.keys(this.err).length;
 	};
 	validator.prototype.int = function(def) {
 		this.val = this.val === undefined ? def : parseInt(this.val);
@@ -78,13 +57,34 @@
 		if (isNaN(this.val)) this.error();
 		return this;
 	};
+	validator.prototype.min = function(val) {
+		if (this.val < val) this.error();
+		return this;
+	};
+	validator.prototype.max = function(val) {
+		if (this.val > val) this.error();
+		return this;
+	};
+	validator.prototype.in = function(options) {
+		if (!options.indexOf(this.val) == -1) this.error();
+		return this;
+	};
+	validator.prototype.range = function(key0, key1) {
+		if (!(this.res[key0] <= this.res[key1])) {
+			this.msg = key0 + ' must be less than or equal to ' + key1;
+			this.key = key0;
+			this.error();
+			this.key = key1;
+			this.error();
+		}
+		return this;
+	};
 	validator.prototype.copy = function() {
 		this.res[this.key] = this.val;
 		return this;
 	};
-	validator.prototype.xss = function() {
-		this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		return this;
+	validator.prototype.failed = function() {
+		return Object.keys(this.err).length;
 	};
 	return validator;
 });
