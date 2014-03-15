@@ -80,10 +80,9 @@ if (cluster.isMaster) {
 				app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 			} else if (env == 'production') {
 				var oneDay = 1000 * 60 * 60 * 24;
-				var oneWeek = oneDay * 7;
 				var oneYear = oneDay * 365.25;
-				app.use(express.static(__dirname + '/public', { maxAge: oneWeek }));
-				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneWeek }));
+				app.use(express.static(__dirname + '/public', { maxAge: oneDay }));
+				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneDay }));
 				app.use(express.favicon(__dirname + '/public', { maxAge: oneYear }));
 				app.use(express.errorHandler());
 			};
