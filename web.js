@@ -217,8 +217,8 @@ if (cluster.isMaster) {
 					nrb_ub: v.res.nrb_ub
 				});
 				sync(function() {
-					if (!(1 <= ligands && ligands <= 100000)) {
-						return res.json({'ligands': 'the number of filtered ligands must be within [1, 100,000]'});
+					if (!(1 <= ligands)) {
+						return res.json({'ligands': 'the number of filtered ligands must be at least 1'});
 					}
 					v.res.ligands = ligands;
 					v.res.scheduled = 0;
