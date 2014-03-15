@@ -647,6 +647,8 @@ $(function () {
 	};
 
 	var canvas = $('canvas');
+	canvas.widthInv  = 1 / canvas.width();
+	canvas.heightInv = 1 / canvas.height();
 	var renderer = new THREE.WebGLRenderer({
 		canvas: canvas.get(0),
 		antialias: true,
@@ -1321,8 +1323,8 @@ void main()\n\
 			x = e.originalEvent.targetTouches[0].pageX;
 			y = e.originalEvent.targetTouches[0].pageY;
 		}
-		var dx = (x - cx) / canvas.width();
-		var dy = (y - cy) / canvas.height();
+		var dx = (x - cx) * canvas.widthInv;
+		var dy = (y - cy) * canvas.heightInv;
 		if (e.ctrlKey && e.shiftKey) { // Slab
 			sn = cn + dx * 100;
 			sf = cf + dy * 100;

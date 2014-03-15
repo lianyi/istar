@@ -424,6 +424,8 @@ var iview = (function () {
 			Z: new THREE.Color(0xC23232),
 		};
 		this.container = $('#' + id);
+		this.container.widthInv  = 1 / this.container.width();
+		this.container.heightInv = 1 / this.container.height();
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.container.get(0),
 			antialias: true,
@@ -615,8 +617,8 @@ void main()\n\
 				x = e.originalEvent.targetTouches[0].pageX;
 				y = e.originalEvent.targetTouches[0].pageY;
 			}
-			var dx = (x - me.mouseStartX) / me.container.width();
-			var dy = (y - me.mouseStartY) / me.container.height();
+			var dx = (x - me.mouseStartX) * me.container.widthInv;
+			var dy = (y - me.mouseStartY) * me.container.heightInv;
 			if (!dx && !dy) return;
 			var mode = $('#mode .active').text().trim();
 			if (mode === 'slab' || e.ctrlKey && e.shiftKey) { // Slab
