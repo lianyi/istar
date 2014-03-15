@@ -13,7 +13,7 @@ $(function() {
 			for (var i = 0; i < job.scheduled; ++i) {
 				num_completed_ligands += parseInt(job[i]);
 			}
-			progress = num_completed_ligands / Math.min(job.ligands, 1e+5);
+			progress = num_completed_ligands * job.max_ligands_inv;
 		} else {
 			status = 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
@@ -44,8 +44,14 @@ $(function() {
 				}
 				pager.pager('refresh', skip, jobs.length, 3, 6, false);
 				if (res.length > jobs.length - skip) {
+					var newJobs = res.slice(jobs.length - skip);
+					newJobs.forEach(function(job) {
+						if (!job.done) {
+							job.max_ligands_inv = 1 / Math.min(job.ligands, 1e+5);
+						}
+					});
 					var len = jobs.length;
-					jobs = jobs.concat(res.slice(jobs.length - skip));
+					jobs = jobs.concat(newJobs);
 					pager.pager('source', jobs);
 					pager.pager('refresh', len, jobs.length, 0, 6, true);
 				}
