@@ -797,6 +797,8 @@ $(function() {
 	$('.form-group a').tooltip();
 
 	// Process submission
+	var submissionStatus = $('#submissionStatus');
+	submissionStatus.hide();
 	var submit = $('#submit');
 	submit.click(function() {
 		// Hide tooltips
@@ -844,6 +846,7 @@ $(function() {
 		}
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
+		submissionStatus.show();
 		// Post a new job with server side validation
 		$.post('jobs', {
 			receptor: receptor,
@@ -874,6 +877,7 @@ $(function() {
 			nrb_lb: $('#nrb_lb').text(),
 			nrb_ub: $('#nrb_ub').text()
 		}, function(res) {
+			submissionStatus.hide();
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
 			if (keys.length) {
