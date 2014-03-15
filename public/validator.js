@@ -66,6 +66,7 @@
 	};
 	validator.prototype.int = function(def) {
 		this.val = this.val === undefined ? def : parseInt(this.val);
+		if (isNaN(this.val)) this.error();
 		return this;
 	};
 	validator.prototype.float = function(def) {
