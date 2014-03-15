@@ -65,11 +65,11 @@
 		return Object.keys(this.err).length;
 	};
 	validator.prototype.int = function(def) {
-		this.val = this.res[this.key] = this.val === undefined ? def : parseInt(this.val);
+		this.val = this.val === undefined ? def : parseInt(this.val);
 		return this;
 	};
 	validator.prototype.float = function(def) {
-		this.val = this.res[this.key] = this.val === undefined ? def : parseFloat(this.val);
+		this.val = this.val === undefined ? def : parseFloat(this.val);
 		if (isNaN(this.val)) this.error();
 		return this;
 	};
@@ -78,7 +78,7 @@
 		return this;
 	};
 	validator.prototype.xss = function() {
-		this.res[this.key] = this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		return this;
 	};
 	return validator;
