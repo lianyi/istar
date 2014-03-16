@@ -685,6 +685,7 @@ $(function() {
 				}
 				var dx = (x - cx) * canvas.widthInv;
 				var dy = (y - cy) * canvas.heightInv;
+				if (!dx && !dy) return;
 				if (e.ctrlKey && e.shiftKey) { // Slab
 					sn = cn + dx * 100;
 					sf = cf + dy * 100;
