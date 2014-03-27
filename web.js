@@ -64,6 +64,7 @@ if (cluster.isMaster) {
 		db.authenticate(process.argv[3], process.argv[4], function(err, authenticated) {
 			if (err) throw err;
 			var idock = db.collection('idock');
+			var igrow = db.collection('igrow');
 			var igrep = db.collection('igrep');
 			// Configure express server
 			var express = require('express');
@@ -312,6 +313,37 @@ if (cluster.isMaster) {
 					'description': 1,
 				}, function(err, doc) {
 					if (err) throw err;
+					res.json(doc);
+				});
+			});
+			// Post a new igrow job
+			app.post('/igrow/jobs', function(req, res) {
+				var v = new validator(req.query);
+				if (v
+					.field('idock_id').message('must be a valid object id').objectid().copy()
+					.field('email').message('must be valid').email().copy()
+					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
+					.field('mms_lb').message('must be a decimal within [0, 1000]').float(300).min(0).max(1000).copy()
+					.field('mms_ub').message('must be a decimal within [0, 1000]').float(500).min(0).max(1000).copy()
+					.field('nrb_lb').message('must be an integer within [0, 35]').int(0).min(0).max(35).copy()
+					.field('nrb_ub').message('must be an integer within [0, 35]').int(10).min(0).max(35).copy()
+					.field('hbd_lb').message('must be an integer within [0, 20]').int(0).min(0).max(20).copy()
+					.field('hbd_ub').message('must be an integer within [0, 20]').int(5).min(0).max(20).copy()
+					.field('hba_lb').message('must be an integer within [0, 18]').int(0).min(0).max(18).copy()
+					.field('hba_ub').message('must be an integer within [0, 18]').int(10).min(0).max(18).copy()
+					.failed()) {
+					return res.json(v.err);
+				};
+				idock.findOne({
+					'_id': new mongodb.ObjectID(v.res.idock_id),
+					'done': { $exists: 1 },
+				}, {}, function(err, doc) {
+					if (err) throw err;
+					if (!doc) {
+						return res.json();
+					}
+					v.res.submitted = new Date();
+					igrow.insert(v.res, {w: 0});
 					res.json(doc);
 				});
 			});
