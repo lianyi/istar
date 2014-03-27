@@ -316,6 +316,42 @@ if (cluster.isMaster) {
 					res.json(doc);
 				});
 			});
+			// Get igrow jobs
+			app.get('/igrow/jobs', function(req, res) {
+				var v = new validator(req.query);
+				if (v
+					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
+					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
+					.failed() || v
+					.range('skip', 'count')
+					.failed()) {
+					return res.json(v.err);
+				};
+				igrow.count(function(err, count) {
+					if (err) throw err;
+					if (v
+						.field('count').message('must be no greater than ' + count).max(count)
+						.failed()) {
+						return res.json(v.err);
+					}
+					igrow.find({}, {
+						fields: v.res.count == count ? {
+							'_id': 0,
+							'done': 1
+						} : {
+							'description': 1,
+							'submitted': 1,
+							'done': 1
+						},
+						sort: {'submitted': 1},
+						skip: v.res.skip,
+						limit: count - v.res.skip
+					}).toArray(function(err, docs) {
+						if (err) throw err;
+						res.json(docs);
+					});
+				});
+			});
 			// Post a new igrow job
 			app.post('/igrow/jobs', function(req, res) {
 				var v = new validator(req.query);
