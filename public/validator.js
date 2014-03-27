@@ -27,7 +27,7 @@
 		this.err[this.key] = this.msg;
 	};
 	validator.prototype.length = function(min, max) {
-		if (this.val === undefined || !(min <= this.val.length && this.val.length <= max)) this.error();
+		if (typeof this.val !== 'string' || !(min <= this.val.length && this.val.length <= max)) this.error();
 		return this;
 	};
 	validator.prototype.regex = function(regex) {
@@ -47,7 +47,7 @@
 		return this.regex(/^[a-z0-9]{24}$/);
 	};
 	validator.prototype.xss = function() {
-		this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		typeof this.val === 'string' && this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		return this;
 	};
 	validator.prototype.int = function(def) {
