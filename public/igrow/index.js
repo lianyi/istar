@@ -84,8 +84,6 @@ $(function() {
 		},
 	});
 
-	var idockJobId = location.search.substr(1);
-
 	// Initialize tooltips
 	$('.form-group a').tooltip();
 
@@ -127,5 +125,31 @@ $(function() {
 	$('.ui-accordion img').lazyload({
 		event: 'expand',
 		effect: 'fadeIn',
+	});
+
+	var idockJobId = location.search.substr(1);
+	var v = new validator({ id: idockJobId });
+	if (v
+		.field('id').message('must be a valid object id').objectid().copy()
+		.failed()) {
+		// Disable the submit button
+		submit.prop('disabled', true);
+		return;
+	};
+	$.get('/idock/job', {
+		id: idockJobId,
+	}, function(res) {
+		var keys = Object.keys(res);
+		// If server side validation fails, show the tooltips
+		if (keys.length) {
+			keys.forEach(function(key) {
+				$('#' + key + '_label').tooltip('show');
+			});
+		} else {
+			$('html, body').animate({ scrollTop: pager.offset().top });
+//			window.scrollTo(pager.offset().left, pager.offset().top);
+		}
+	}, 'json').always(function() {
+		submit.prop('disabled', false);
 	});
 });
