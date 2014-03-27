@@ -97,16 +97,16 @@ $(function() {
 		// Post a new job with server side validation
 		$.post('jobs', {
 			idock_id: idockJobId,
-			description: '',
-			email: '',
-			mms_lb: '',
-			mms_ub: '',
-			nrb_lb: '',
-			nrb_ub: '',
-			hbd_lb: '',
-			hbd_ub: '',
-			hba_lb: '',
-			hba_ub: '',
+			description: $('#description').text(),
+			email: $('#email').text(),
+			mms_lb: $('#mms_lb').text(),
+			mms_ub: $('#mms_ub').text(),
+			nrb_lb: $('#nrb_lb').text(),
+			nrb_ub: $('#nrb_ub').text(),
+			hbd_lb: $('#hbd_lb').text(),
+			hbd_ub: $('#hbd_ub').text(),
+			hba_lb: $('#hba_lb').text(),
+			hba_ub: $('#hba_ub').text(),
 		}, function(res) {
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
