@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Hongjian Li">
-  <meta name="description" content="igrow: a multithreaded computational ligand synthesis tool">
-  <title>igrow: a multithreaded computational ligand synthesis tool</title>
+  <meta name="description" content="igrow: a multithreaded in silico drug design tool">
+  <title>igrow: a multithreaded in silico drug design tool</title>
   <link rel="stylesheet" href="/bootstrap.min.css">
   <link rel="stylesheet" href="/bootstrap-theme.min.css">
   <link rel="stylesheet" href="/jquery-ui-1.10.4.custom.min.css">
@@ -46,7 +46,7 @@
             <a href="/iview"><img src="/iview/logo.png" alt="iview logo">iview: interactive WebGL visualizer</a>
           </li>
           <li class="active">
-            <a href="/igrow"><img src="/igrow/logo.png" alt="igrow logo">igrow: computational ligand synthesis</a>
+            <a href="/igrow"><img src="/igrow/logo.png" alt="igrow logo">igrow: <em>in silico</em> drug design</a>
           </li>
           <li>
             <a href="/igrep"><img src="/igrep/logo.png" alt="igrep logo">igrep: DNA sequence matching</a>
@@ -61,7 +61,7 @@
   <div class="jumbotron" id="content" role="main">
     <div class="container">
       <h1><img src="logo.png" alt="logo" class="logo">igrow</h1>
-      <p>a multithreaded computational ligand synthesis tool</p>
+      <p>a multithreaded <em>in silico</em> drug design tool</p>
     </div>
   </div>
   <div class="container">
@@ -80,7 +80,7 @@
       </div>
       <div class="row">
         <div class="col-md-12">
-          <p>The input to igrow is threefold:</p>
+          <p>The input to igrow is onefold:</p>
           <ul>
             <li>A completed <a href="/idock">idock</a> job.</li>
           </ul>
@@ -96,26 +96,38 @@
         </div>
       </div>
       <div class="row" role="form">
-        <div class="col-md-5">
+        <div class="col-md-3">
           <div class="form-group">
-            <label for="receptor"><a title="must conform to PDB specification" id="receptor_label">Protein in PDB format</a></label> <input type="file" id="receptor">
+            <label for="idock"><a title="valid idock job id" id="idock_label">idock job id</a></label>
+            <input class="form-control" id="idock">
           </div>
         </div>
       </div>
-      <div class="row" role="form">
-        <div class="col-md-1">
+      <div class="row">
+        <div class="col-md-6">
           <div class="form-group">
-            <label for="generations"><a title="within [-999, 999]" id="generations_label">generations</a></label>
-            <input type="number" class="form-control" id="generations" placeholder="150">
+            <label>Molecular mass (Da): [<span id="mms_lb"></span>, <span id="mms_ub"></span>]</label>
+            <div class="form-control slider" id="mms"></div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-6">
           <div class="form-group">
-            <label for="email"><a title="compulsory" id="email_label">Email to receive completion notification</a></label>
-            <div class="input-group">
-              <span class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></span>
-              <input type="email" class="form-control" id="email" placeholder="Jacky@cuhk.edu.hk">
-            </div>
+            <label>Rotatable bonds: [<span id="nrb_lb"></span>, <span id="nrb_ub"></span>]</label>
+            <div class="form-control slider" id="nrb"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>Hydrogen bond donors: [<span id="hbd_lb"></span>, <span id="hbd_ub"></span>]</label>
+            <div class="form-control slider" id="hbd"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>Hydrogen bond acceptors: [<span id="hba_lb"></span>, <span id="hba_ub"></span>]</label>
+            <div class="form-control slider" id="hba"></div>
           </div>
         </div>
       </div>

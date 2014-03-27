@@ -47,6 +47,45 @@ $(function() {
 	};
 	tick();
 
+	// Initialize sliders
+	$('#mms').slider({
+		range: true,
+		min: 0,
+		max: 1000,
+		values: [ 300, 500 ]
+	});
+	$('#nrb').slider({
+		range: true,
+		min: 0,
+		max: 35,
+		values: [ 4, 6 ]
+	});
+	$('#hbd').slider({
+		range: true,
+		min: 0,
+		max: 20,
+		values: [ 2, 4 ]
+	});
+	$('#hba').slider({
+		range: true,
+		min: 0,
+		max: 18,
+		values: [ 4, 6 ]
+	});
+	['mms', 'nrb', 'hbd', 'hba'].forEach(function(key) {
+		var values = $('#' + key).slider('option', 'values');
+		$('#' + key + '_lb').text(values[0]);
+		$('#' + key + '_ub').text(values[1]);
+	});
+	$('.slider').slider({
+		slide: function(event, ui) {
+			$('#' + this.id + '_lb').text(ui.values[0]);
+			$('#' + this.id + '_ub').text(ui.values[1]);
+		},
+	});
+
+	var idockJobId = location.search.substr(1);
+
 	// Initialize tooltips
 	$('.form-group a').tooltip();
 
@@ -55,33 +94,11 @@ $(function() {
 	submit.click(function() {
 		// Hide tooltips
 		$('.form-group a').tooltip('hide');
-		// Do client side validation
-//		var idock_id = $('#description').val();
-		var generations = parseInt($('#generations').val());
-		var email = $('#email').val();
-		var v = new validator({
-			email: email,
-			description: description,
-			generations: generations,
-		});
-		if (v
-			.field('generations').message('must be an integer within [1, 8]').int().min(1).max(8)
-			.field('email').message('must be valid').email()
-			.failed()) {
-			var keys = Object.keys(v.err);
-			keys.forEach(function(key) {
-				$('#' + key + '_label').tooltip('show');
-			});
-			$('#' + keys[0]).focus();
-			return;
-		}
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
 		// Post a new job with server side validation
 		$.post('jobs', {
-			generations: generations,
-			description: description,
-			email: email,
+			idock: idockJobId,
 		}, function(res) {
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
