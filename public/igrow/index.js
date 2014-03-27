@@ -96,7 +96,17 @@ $(function() {
 		submit.prop('disabled', true);
 		// Post a new job with server side validation
 		$.post('jobs', {
-			idock: idockJobId,
+			idock_id: idockJobId,
+			description: '',
+			email: '',
+			mms_lb: '',
+			mms_ub: '',
+			nrb_lb: '',
+			nrb_ub: '',
+			hbd_lb: '',
+			hbd_ub: '',
+			hba_lb: '',
+			hba_ub: '',
 		}, function(res) {
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
