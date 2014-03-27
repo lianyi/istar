@@ -126,14 +126,16 @@ if (cluster.isMaster) {
 					.failed() || v
 					.range('skip', 'count')
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				};
 				idock.count(function(err, count) {
 					if (err) throw err;
 					if (v
 						.field('count').message('must be no greater than ' + count).max(count)
 						.failed()) {
-						return res.json(v.err);
+						res.json(v.err);
+						return;
 					}
 					idock.find({}, {
 						fields: v.res.count == count ? idockProgressFields : idockJobFields,
@@ -188,7 +190,8 @@ if (cluster.isMaster) {
 					.range('chg_lb', 'chg_ub')
 					.range('nrb_lb', 'nrb_ub')
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				}
 				// Send query to master process
 				ligands = -1;
@@ -215,7 +218,8 @@ if (cluster.isMaster) {
 				});
 				sync(function() {
 					if (!(1 <= ligands)) {
-						return res.json({'ligands': 'the number of filtered ligands must be at least 1'});
+						res.json({'ligands': 'the number of filtered ligands must be at least 1'});
+						return;
 					}
 					v.res.ligands = ligands;
 					v.res.scheduled = 0;
@@ -287,7 +291,8 @@ if (cluster.isMaster) {
 					.range('chg_lb', 'chg_ub')
 					.range('nrb_lb', 'nrb_ub')
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				}
 				// Send query to master process
 				ligands = -1;
@@ -303,7 +308,8 @@ if (cluster.isMaster) {
 				if (v
 					.field('id').message('must be a valid object id').objectid().copy()
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				};
 				idock.findOne({
 					'_id': new mongodb.ObjectID(v.res.id),
@@ -325,14 +331,16 @@ if (cluster.isMaster) {
 					.failed() || v
 					.range('skip', 'count')
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				};
 				igrow.count(function(err, count) {
 					if (err) throw err;
 					if (v
 						.field('count').message('must be no greater than ' + count).max(count)
 						.failed()) {
-						return res.json(v.err);
+						res.json(v.err);
+						return;
 					}
 					igrow.find({}, {
 						fields: v.res.count == count ? {
@@ -368,7 +376,8 @@ if (cluster.isMaster) {
 					.field('hba_lb').message('must be an integer within [0, 18]').int(0).min(0).max(18).copy()
 					.field('hba_ub').message('must be an integer within [0, 18]').int(10).min(0).max(18).copy()
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				};
 				idock.findOne({
 					'_id': new mongodb.ObjectID(v.res.idock_id),
@@ -376,7 +385,8 @@ if (cluster.isMaster) {
 				}, {}, function(err, doc) {
 					if (err) throw err;
 					if (!doc) {
-						return res.json();
+						res.json();
+						return;
 					}
 					v.res.submitted = new Date();
 					igrow.insert(v.res, {w: 0});
@@ -389,7 +399,8 @@ if (cluster.isMaster) {
 				if (v
 					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				};
 				igrep.find({}, {
 					fields: {'taxid': 1, 'submitted': 1, 'done': 1},
@@ -408,7 +419,8 @@ if (cluster.isMaster) {
 					.field('taxid').message('must be the taxonomy id of one of the 26 genomes').int().in([13616, 9598, 9606, 9601, 10116, 9544, 9483, 10090, 9913, 9823, 9796, 9615, 9986, 7955, 28377, 9103, 59729, 9031, 3847, 9258, 29760, 15368, 7460, 30195, 7425, 7070]).copy()
 					.field('queries').message('must conform to the specifications').length(2, 66000).queries().copy()
 					.failed()) {
-					return res.json(v.err);
+					res.json(v.err);
+					return;
 				}
 				v.res.submitted = new Date();
 				igrep.insert(v.res, {w: 0});
