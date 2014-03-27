@@ -310,7 +310,6 @@ if (cluster.isMaster) {
 				}, {
 					'_id': 0,
 					'description': 1,
-					'email': 1,
 				}, function(err, doc) {
 					if (err) throw err;
 					res.json(doc);
