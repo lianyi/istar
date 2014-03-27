@@ -304,7 +304,14 @@ if (cluster.isMaster) {
 					.failed()) {
 					return res.json(v.err);
 				};
-				idock.findOne({ _id: new mongodb.ObjectID(v.res.id) }, { '_id': 0, 'done': 1, 'description': 1, 'email': 1 }, function(err, doc) {
+				idock.findOne({
+					'_id': new mongodb.ObjectID(v.res.id),
+					'done': { $exists: 1 },
+				}, {
+					'_id': 0,
+					'description': 1,
+					'email': 1,
+				}, function(err, doc) {
 					if (err) throw err;
 					res.json(doc);
 				});
