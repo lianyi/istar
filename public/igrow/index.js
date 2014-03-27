@@ -149,13 +149,13 @@ $(function() {
 	$.get('/idock/job', {
 		id: idockJobId,
 	}, function(res) {
-		var keys = Object.keys(res);
-		if (keys.length) {
+		if (res) {
+			var keys = Object.keys(res);
 			keys.forEach(function(key) {
 				$('#' + key).val(res[key]);
 			});
 		} else {
-			submit.prop('disabled', false);
+			submit.prop('disabled', true);
 		}
 	}, 'json');
 });
