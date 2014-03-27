@@ -9,7 +9,7 @@ $(function() {
 			progress = 0;
 		} else if (!job.done) {
 			status = 'Execution in progress';
-			progress = job.generation / job.num_generations;
+			progress = 0//job.generation / job.num_generations;
 		} else {
 			status = 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
@@ -140,16 +140,12 @@ $(function() {
 		id: idockJobId,
 	}, function(res) {
 		var keys = Object.keys(res);
-		// If server side validation fails, show the tooltips
 		if (keys.length) {
 			keys.forEach(function(key) {
-				$('#' + key + '_label').tooltip('show');
+				$('#' + key).val(res[key]);
 			});
 		} else {
-			$('html, body').animate({ scrollTop: pager.offset().top });
-//			window.scrollTo(pager.offset().left, pager.offset().top);
+			submit.prop('disabled', false);
 		}
-	}, 'json').always(function() {
-		submit.prop('disabled', false);
-	});
+	}, 'json');
 });
