@@ -296,6 +296,19 @@ if (cluster.isMaster) {
 					res.json(ligands);
 				});
 			});
+			// Get a specific idock job
+			app.get('/idock/job', function(req, res) {
+				var v = new validator(req.query);
+				if (v
+					.field('id').message('must be a valid object id').objectid().copy()
+					.failed()) {
+					return res.json(v.err);
+				};
+				idock.findOne({ _id: new mongodb.ObjectID(v.res.id) }, { '_id': 0, 'done': 1, 'description': 1, 'email': 1 }, function(err, doc) {
+					if (err) throw err;
+					res.json(doc);
+				});
+			});
 			// Get igrep jobs
 			app.get('/igrep/jobs', function(req, res) {
 				var v = new validator(req.query);
