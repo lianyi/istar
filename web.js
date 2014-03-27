@@ -385,7 +385,7 @@ if (cluster.isMaster) {
 				}, {}, function(err, doc) {
 					if (err) throw err;
 					if (!doc) {
-						res.json();
+						res.json({});
 						return;
 					}
 					v.res.submitted = new Date();
