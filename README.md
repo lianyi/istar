@@ -80,6 +80,18 @@ REST API for idock
     http://istar.cse.cuhk.edu.hk/idock/ligands
 
 
+REST API for igrow
+------------------
+
+### Submit a new job via HTTP POST
+
+    curl -d 'idock_id=525a0abab0717fe31a000001&description=4MBS&email=Jacky@cuhk.edu.hk&mwt_lb=300&mwt_ub=500&nrb_lb=4&nrb_ub=6&hbd_lb=2&hbd_ub=4&hba_lb=4&hba_ub=6' http://istar.cse.cuhk.edu.hk/igrow/jobs
+
+### Obtain existing jobs via HTTP GET
+
+    curl http://istar.cse.cuhk.edu.hk/igrow/jobs
+
+
 REST API for igrep
 ------------------
 
