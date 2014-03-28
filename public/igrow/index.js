@@ -59,19 +59,19 @@ $(function() {
 		range: true,
 		min: 0,
 		max: 35,
-		values: [ 4, 6 ]
+		values: [ 0, 10 ]
 	});
 	$('#hbd').slider({
 		range: true,
 		min: 0,
 		max: 20,
-		values: [ 2, 4 ]
+		values: [ 0, 5 ]
 	});
 	$('#hba').slider({
 		range: true,
 		min: 0,
 		max: 18,
-		values: [ 4, 6 ]
+		values: [ 0, 10 ]
 	});
 	['mms', 'nrb', 'hbd', 'hba'].forEach(function(key) {
 		var values = $('#' + key).slider('option', 'values');
