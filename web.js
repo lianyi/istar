@@ -345,10 +345,13 @@ if (cluster.isMaster) {
 					igrow.find({}, {
 						fields: v.res.count == count ? {
 							'_id': 0,
+//							'scheduled': 1,
 							'done': 1
 						} : {
 							'description': 1,
+							'idock_id': 1,
 							'submitted': 1,
+//							'scheduled': 1,
 							'done': 1
 						},
 						sort: {'submitted': 1},
