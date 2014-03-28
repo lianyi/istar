@@ -44,7 +44,7 @@
 		return this.regex(/^([ACGTN]{1,64}\d\n){0,9999}[ACGTN]{1,64}\d\n?$/ig);
 	};
 	validator.prototype.objectid = function() {
-		return this.regex(/^[a-z0-9]{24}$/);
+		return this.regex(/^[0-9a-fA-F]{24}$/);
 	};
 	validator.prototype.xss = function() {
 		typeof this.val === 'string' && this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
