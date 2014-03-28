@@ -97,8 +97,8 @@ $(function() {
 		// Post a new job with server side validation
 		$.post('jobs', {
 			idock_id: idockJobId,
-			description: $('#description').text(),
-			email: $('#email').text(),
+			description: $('#description').val(),
+			email: $('#email').val(),
 			mms_lb: $('#mms_lb').text(),
 			mms_ub: $('#mms_ub').text(),
 			nrb_lb: $('#nrb_lb').text(),
@@ -142,7 +142,6 @@ $(function() {
 	if (v
 		.field('id').message('must be a valid object id').objectid().copy()
 		.failed()) {
-		// Disable the submit button
 		submit.prop('disabled', true);
 		return;
 	};
@@ -150,8 +149,7 @@ $(function() {
 		id: idockJobId,
 	}, function(res) {
 		if (res) {
-			var keys = Object.keys(res);
-			keys.forEach(function(key) {
+			Object.keys(res).forEach(function(key) {
 				$('#' + key).val(res[key]);
 			});
 		} else {
