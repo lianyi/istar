@@ -362,18 +362,18 @@ if (cluster.isMaster) {
 			});
 			// Post a new igrow job
 			app.post('/igrow/jobs', function(req, res) {
-				var v = new validator(req.query);
+				var v = new validator(req.body);
 				if (v
 					.field('idock_id').message('must be a valid object id').objectid().copy()
 					.field('email').message('must be valid').email().copy()
 					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
 					.field('mms_lb').message('must be a decimal within [0, 1000]').float(300).min(0).max(1000).copy()
 					.field('mms_ub').message('must be a decimal within [0, 1000]').float(500).min(0).max(1000).copy()
-					.field('nrb_lb').message('must be an integer within [0, 35]').int(0).min(0).max(35).copy()
+					.field('nrb_lb').message('must be an integer within [0, 35]').int( 0).min(0).max(35).copy()
 					.field('nrb_ub').message('must be an integer within [0, 35]').int(10).min(0).max(35).copy()
-					.field('hbd_lb').message('must be an integer within [0, 20]').int(0).min(0).max(20).copy()
-					.field('hbd_ub').message('must be an integer within [0, 20]').int(5).min(0).max(20).copy()
-					.field('hba_lb').message('must be an integer within [0, 18]').int(0).min(0).max(18).copy()
+					.field('hbd_lb').message('must be an integer within [0, 20]').int( 0).min(0).max(20).copy()
+					.field('hbd_ub').message('must be an integer within [0, 20]').int( 5).min(0).max(20).copy()
+					.field('hba_lb').message('must be an integer within [0, 18]').int( 0).min(0).max(18).copy()
 					.field('hba_ub').message('must be an integer within [0, 18]').int(10).min(0).max(18).copy()
 					.failed()) {
 					res.json(v.err);
