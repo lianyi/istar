@@ -101,6 +101,36 @@ if (cluster.isMaster) {
 					ligands = m.ligands;
 				}
 			});
+			var getJobs = function(req, res, collection, progressFields, jobFields) {
+				var v = new validator(req.query);
+				if (v
+					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
+					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
+					.failed() || v
+					.range('skip', 'count')
+					.failed()) {
+					res.json(v.err);
+					return;
+				};
+				collection.count(function(err, count) {
+					if (err) throw err;
+					if (v
+						.field('count').message('must be no greater than ' + count).max(count)
+						.failed()) {
+						res.json(v.err);
+						return;
+					}
+					collection.find({}, {
+						fields: v.res.count == count ? progressFields : jobFields,
+						sort: {'submitted': 1},
+						skip: v.res.skip,
+						limit: count - v.res.skip
+					}).toArray(function(err, docs) {
+						if (err) throw err;
+						res.json(docs);
+					});
+				});
+			};
 			var idockJobFields = {
 				'description': 1,
 				'ligands': 1,
@@ -119,34 +149,7 @@ if (cluster.isMaster) {
 			}
 			// Get idock jobs
 			app.get('/idock/jobs', function(req, res) {
-				var v = new validator(req.query);
-				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
-					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
-					.failed() || v
-					.range('skip', 'count')
-					.failed()) {
-					res.json(v.err);
-					return;
-				};
-				idock.count(function(err, count) {
-					if (err) throw err;
-					if (v
-						.field('count').message('must be no greater than ' + count).max(count)
-						.failed()) {
-						res.json(v.err);
-						return;
-					}
-					idock.find({}, {
-						fields: v.res.count == count ? idockProgressFields : idockJobFields,
-						sort: {'submitted': 1},
-						skip: v.res.skip,
-						limit: count - v.res.skip
-					}).toArray(function(err, docs) {
-						if (err) throw err;
-						res.json(docs);
-					});
-				});
+				getJobs(req, res, idock, idockProgressFields, idockJobFields);
 			});
 			// Post a new idock job
 			app.post('/idock/jobs', function(req, res) {
@@ -324,43 +327,16 @@ if (cluster.isMaster) {
 			});
 			// Get igrow jobs
 			app.get('/igrow/jobs', function(req, res) {
-				var v = new validator(req.query);
-				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
-					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
-					.failed() || v
-					.range('skip', 'count')
-					.failed()) {
-					res.json(v.err);
-					return;
-				};
-				igrow.count(function(err, count) {
-					if (err) throw err;
-					if (v
-						.field('count').message('must be no greater than ' + count).max(count)
-						.failed()) {
-						res.json(v.err);
-						return;
-					}
-					igrow.find({}, {
-						fields: v.res.count == count ? {
-							'_id': 0,
-//							'scheduled': 1,
-							'done': 1
-						} : {
-							'description': 1,
-							'idock_id': 1,
-							'submitted': 1,
-//							'scheduled': 1,
-							'done': 1
-						},
-						sort: {'submitted': 1},
-						skip: v.res.skip,
-						limit: count - v.res.skip
-					}).toArray(function(err, docs) {
-						if (err) throw err;
-						res.json(docs);
-					});
+				getJobs(req, res, igrow, {
+					'_id': 0,
+//					'scheduled': 1,
+					'done': 1
+				}, {
+					'description': 1,
+					'idock_id': 1,
+					'submitted': 1,
+//					'scheduled': 1,
+					'done': 1
 				});
 			});
 			// Post a new igrow job
