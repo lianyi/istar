@@ -385,12 +385,12 @@ if (cluster.isMaster) {
 				}, {}, function(err, doc) {
 					if (err) throw err;
 					if (!doc) {
-						res.json({});
+						res.json({'idock_id': 'must be a completed idock job id'});
 						return;
 					}
 					v.res.submitted = new Date();
 					igrow.insert(v.res, {w: 0});
-					res.json(doc);
+					res.json({});
 				});
 			});
 			// Get igrep jobs
