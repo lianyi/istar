@@ -2,7 +2,7 @@ $(function() {
 
 	// Initialize pager
 	var pager = $('#pager');
-	pager.pager('init', [ 'Description', 'Submitted on', 'Status', 'Progress', 'Result' ], function(job) {
+	pager.pager('init', [ 'Description', 'idock Job', 'Submitted on', 'Status', 'Progress', 'Result' ], function(job) {
 		var status, progress, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
 		if (!job.scheduled) {
 			status = 'Queued for execution';
@@ -17,6 +17,7 @@ $(function() {
 		}
 		return [
 			job.description,
+			'<a href="/idock/iview/?' + job.idock_id + '"><img src="/iview/logo.png" alt="iview"></a>',
 			$.format.date(new Date(job.submitted), 'yyyy/MM/dd HH:mm:ss'),
 			status,
 			(100 * progress).toFixed(5) + '%',
@@ -33,12 +34,12 @@ $(function() {
 					var job = res[i - skip];
 					jobs[i].done = job.done;
 				}
-				pager.pager('refresh', skip, jobs.length, 2, 5, false);
+				pager.pager('refresh', skip, jobs.length, 3, 6, false);
 				if (res.length > jobs.length - skip) {
 					var len = jobs.length;
 					jobs = jobs.concat(res.slice(jobs.length - skip));
 					pager.pager('source', jobs);
-					pager.pager('refresh', len, jobs.length, 0, 5, true);
+					pager.pager('refresh', len, jobs.length, 0, 6, true);
 				}
 				for (; skip < jobs.length && jobs[skip].done; ++skip);
 			}
