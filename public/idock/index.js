@@ -886,7 +886,7 @@ $(function() {
 			chg_lb: $('#chg_lb').text(),
 			chg_ub: $('#chg_ub').text(),
 			nrb_lb: $('#nrb_lb').text(),
-			nrb_ub: $('#nrb_ub').text()
+			nrb_ub: $('#nrb_ub').text(),
 		}, function(res) {
 			submissionStatus.hide();
 			var keys = Object.keys(res);
