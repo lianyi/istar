@@ -34,12 +34,6 @@ Components
 
 * [MongoDB]
 
-### Workstations and daemons
-
-* Intel Xeon E5620 @ 2.40 GHz, 8GB DDR3 SDRAM, Fedora 20 x86_64, [idock] daemon
-* Intel Xeon E5620 @ 2.40 GHz, 8GB DDR3 SDRAM, Fedora 20 x86_64, [idock] daemon
-* Intel Xeon W3520 @ 2.66 GHz, 8GB DDR3 SDRAM, NVIDIA GeForce GTX 285 (1024 MB), Fedora 20 x86_64, [igrep] daemon
-
 
 Supported browsers
 ------------------
