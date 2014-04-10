@@ -68,23 +68,25 @@ if (cluster.isMaster) {
 			var igrep = db.collection('igrep');
 			// Configure express server
 			var express = require('express');
+			var compress = require('compression');
+			var bodyParser = require('body-parser');
+			var favicon = require('static-favicon');
+			var errorHandler = require('errorhandler');
 			var app = express();
-			app.use(express.compress());
-			app.use(express.json());
-			app.use(express.urlencoded());
-			app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-			app.use(app.router);
+			app.use(compress());
+			app.use(bodyParser());
+			app.use(errorHandler({ dumpExceptions: true, showStack: true }));
 			var env = process.env.NODE_ENV || 'development';
 			if (env == 'development') {
 				app.use(express.static(__dirname + '/public'));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public'));
-				app.use(express.favicon(__dirname + '/public'));
+				app.use(favicon(__dirname + '/public'));
 			} else if (env == 'production') {
 				var oneDay = 1000 * 60 * 60 * 24;
 				var oneYear = oneDay * 365.25;
 				app.use(express.static(__dirname + '/public', { maxAge: oneDay }));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneDay }));
-				app.use(express.favicon(__dirname + '/public', { maxAge: oneYear }));
+				app.use(favicon(__dirname + '/public', { maxAge: oneYear }));
 			};
 			// Define helper variables and functions
 			var child_process = require('child_process');
@@ -147,12 +149,9 @@ if (cluster.isMaster) {
 				idockJobFields[i] = 1;
 				idockProgressFields[i] = 1;
 			}
-			// Get idock jobs
-			app.get('/idock/jobs', function(req, res) {
+			app.route('/idock/jobs').get(function(req, res) {
 				getJobs(req, res, idock, idockProgressFields, idockJobFields);
-			});
-			// Post a new idock job
-			app.post('/idock/jobs', function(req, res) {
+			}).post(function(req, res) {
 				var v = new validator(req.body);
 				if (v
 					.field('email').message('must be valid').email().copy()
@@ -261,7 +260,7 @@ if (cluster.isMaster) {
 				});
 			});
 			// Get the number of ligands satisfying filtering conditions
-			app.get('/idock/ligands', function(req, res) {
+			app.route('/idock/ligands').get(function(req, res) {
 				// Validate and sanitize user input
 				var v = new validator(req.query);
 				if (v
@@ -306,7 +305,7 @@ if (cluster.isMaster) {
 				});
 			});
 			// Get a specific idock job
-			app.get('/idock/job', function(req, res) {
+			app.route('/idock/job').get(function(req, res) {
 				var v = new validator(req.query);
 				if (v
 					.field('id').message('must be a valid object id').objectid().copy()
@@ -325,8 +324,7 @@ if (cluster.isMaster) {
 					res.json(doc);
 				});
 			});
-			// Get igrow jobs
-			app.get('/igrow/jobs', function(req, res) {
+			app.route('/igrow/jobs').get(function(req, res) {
 				getJobs(req, res, igrow, {
 					'_id': 0,
 //					'scheduled': 1,
@@ -338,9 +336,7 @@ if (cluster.isMaster) {
 //					'scheduled': 1,
 					'done': 1
 				});
-			});
-			// Post a new igrow job
-			app.post('/igrow/jobs', function(req, res) {
+			}).post(function(req, res) {
 				var v = new validator(req.body);
 				if (v
 					.field('idock_id').message('must be a valid object id').objectid().copy()
@@ -372,8 +368,7 @@ if (cluster.isMaster) {
 					res.json({});
 				});
 			});
-			// Get igrep jobs
-			app.get('/igrep/jobs', function(req, res) {
+			app.route('/igrep/jobs').get(function(req, res) {
 				var v = new validator(req.query);
 				if (v
 					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
@@ -389,9 +384,7 @@ if (cluster.isMaster) {
 					if (err) throw err;
 					res.json(docs);
 				});
-			});
-			// Post a new igrep job
-			app.post('/igrep/jobs', function(req, res) {
+			}).post(function(req, res) {
 				var v = new validator(req.body);
 				if (v
 					.field('email').message('must be valid').email().copy()
