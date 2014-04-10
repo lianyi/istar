@@ -74,7 +74,7 @@ if (cluster.isMaster) {
 			var errorHandler = require('errorhandler');
 			var app = express();
 			app.use(compress());
-			app.use(bodyParser());
+			app.use(bodyParser({ limit: '12mb' }));
 			app.use(errorHandler({ dumpExceptions: true, showStack: true }));
 			var env = process.env.NODE_ENV || 'development';
 			if (env == 'development') {
