@@ -6,7 +6,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
 #include <mongo/client/dbclient.h>
