@@ -73,7 +73,31 @@ $(function() {
 		max: 18,
 		values: [ 0, 10 ]
 	});
-	['mms', 'nrb', 'hbd', 'hba'].forEach(function(key) {
+	$('#nha').slider({
+		range: true,
+		min: 1,
+		max: 100,
+		values: [ 20, 70 ]
+	});
+	$('#lgp').slider({
+		range: true,
+		min: -6,
+		max: 12,
+		values: [ -0.4, 5.6 ]
+	});
+	$('#psa').slider({
+		range: true,
+		min: 0,
+		max: 300,
+		values: [ 0, 140 ]
+	});
+	$('#mrf').slider({
+		range: true,
+		min: 0,
+		max: 300,
+		values: [ 40, 130 ]
+	});
+	['mms', 'nrb', 'hbd', 'hba', 'nha', 'lgp', 'psa', 'mrf'].forEach(function(key) {
 		var values = $('#' + key).slider('option', 'values');
 		$('#' + key + '_lb').text(values[0]);
 		$('#' + key + '_ub').text(values[1]);
@@ -108,6 +132,14 @@ $(function() {
 			hbd_ub: $('#hbd_ub').text(),
 			hba_lb: $('#hba_lb').text(),
 			hba_ub: $('#hba_ub').text(),
+			nha_lb: $('#nha_lb').text(),
+			nha_ub: $('#nha_ub').text(),
+			lgp_lb: $('#lgp_lb').text(),
+			lgp_ub: $('#lgp_ub').text(),
+			psa_lb: $('#psa_lb').text(),
+			psa_ub: $('#psa_ub').text(),
+			mrf_lb: $('#mrf_lb').text(),
+			mrf_ub: $('#mrf_ub').text(),
 		}, function(res) {
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
