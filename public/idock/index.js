@@ -668,7 +668,7 @@ $(function() {
 				wh = e.which;
 				cx = x;
 				cy = y;
-				cq = rot.quaternion;
+				cq = rot.quaternion.clone();
 				cz = rot.position.z;
 				cp = mdl.position.clone();
 				cn = sn;
@@ -698,7 +698,7 @@ $(function() {
 				} else { // Rotate
 					var r = Math.sqrt(dx * dx + dy * dy);
 					var rs = Math.sin(r * Math.PI) / r;
-					rot.quaternion = new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq);
+					rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq));
 				}
 				render();
 			});
