@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 	const size_t num_slices = 10;
 	const size_t num_ligands_per_slice = total_ligands / num_slices;
 	const size_t spare_ligands = total_ligands - num_ligands_per_slice * num_slices;
-	array<size_t, num_slices + 1> slices;
+	std::array<size_t, num_slices + 1> slices;
 	for (size_t i = 0, sum = 0; i <= num_slices; ++i)
 	{
 		slices[i] = sum;
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	vector<array3d<fl>> grid_maps(XS_TYPE_SIZE);
 
 	// Initialize program options.
-	array<double, 3> center, size;
+	std::array<double, 3> center, size;
 	using namespace boost::program_options;
 	options_description input_options("input (required)");
 	input_options.add_options()
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
 	boost::random::uniform_real_distribution<fl> u01(0, 1);
 
 	// Precalculate alpha values for determining step size in BFGS.
-	array<fl, num_alphas> alphas;
+	std::array<fl, num_alphas> alphas;
 	alphas[0] = 1;
 	for (size_t i = 1; i < num_alphas; ++i)
 	{
