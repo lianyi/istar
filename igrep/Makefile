@@ -1,4 +1,4 @@
-CC=clang++ -std=c++11 -O3
+CC=g++ -std=c++11 -O3
 NVCC=nvcc -gencode arch=compute_13,code=sm_13 -Xptxas=-v -use_fast_math# -maxrregcount=N
 
 bin/igrep: obj/kernel.o obj/main.o
