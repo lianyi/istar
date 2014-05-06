@@ -18,4 +18,4 @@ obj/%.o: src/%.cpp
 	${CC} -o $@ $< -c -I${BOOST_ROOT}
 
 clean:
-	rm -f bin/idock obj/*.o
+	rm -f bin/idock bin/idock2 obj/*.o
