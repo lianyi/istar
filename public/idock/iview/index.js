@@ -1109,6 +1109,7 @@ void main()\n\
 				url: path + 'ligands.pdbqt.gz',
 				mimeType: 'application/octet-stream; charset=x-user-defined',
 			}).done(function (lsrcz) {
+				if (lsrcz.length == 2) return;
 				var lsrczr = new Uint8Array(lsrcz.length);
 				for (var i = 0, l = lsrcz.length; i < l; ++i) {
 					lsrczr[i] = lsrcz.charCodeAt(i);
