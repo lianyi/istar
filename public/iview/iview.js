@@ -53,491 +53,492 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var iview = (function () {
-	function iview(id) {
-		this.vdwRadii = { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
-			 H: 1.08,
-			HE: 1.34,
-			LI: 1.75,
-			BE: 2.05,
-			 B: 1.47,
-			 C: 1.49,
-			 N: 1.41,
-			 O: 1.40,
-			 F: 1.39,
-			NE: 1.68,
-			NA: 1.84,
-			MG: 2.05,
-			AL: 2.11,
-			SI: 2.07,
-			 P: 1.92,
-			 S: 1.82,
-			CL: 1.83,
-			AR: 1.93,
-			 K: 2.05,
-			CA: 2.21,
-			SC: 2.16,
-			TI: 1.87,
-			 V: 1.79,
-			CR: 1.89,
-			MN: 1.97,
-			FE: 1.94,
-			CO: 1.92,
-			NI: 1.84,
-			CU: 1.86,
-			ZN: 2.10,
-			GA: 2.08,
-			GE: 2.15,
-			AS: 2.06,
-			SE: 1.93,
-			BR: 1.98,
-			KR: 2.12,
-			RB: 2.16,
-			SR: 2.24,
-			 Y: 2.19,
-			ZR: 1.86,
-			NB: 2.07,
-			MO: 2.09,
-			TC: 2.09,
-			RU: 2.07,
-			RH: 1.95,
-			PD: 2.02,
-			AG: 2.03,
-			CD: 2.30,
-			IN: 2.36,
-			SN: 2.33,
-			SB: 2.25,
-			TE: 2.23,
-			 I: 2.23,
-			XE: 2.21,
-			CS: 2.22,
-			BA: 2.51,
-			LA: 2.40,
-			CE: 2.35,
-			PR: 2.39,
-			ND: 2.29,
-			PM: 2.36,
-			SM: 2.29,
-			EU: 2.33,
-			GD: 2.37,
-			TB: 2.21,
-			DY: 2.29,
-			HO: 2.16,
-			ER: 2.35,
-			TM: 2.27,
-			YB: 2.42,
-			LU: 2.21,
-			HF: 2.12,
-			TA: 2.17,
-			 W: 2.10,
-			RE: 2.17,
-			OS: 2.16,
-			IR: 2.02,
-			PT: 2.09,
-			AU: 2.17,
-			HG: 2.09,
-			TL: 2.35,
-			PB: 2.32,
-			BI: 2.43,
-			PO: 2.29,
-			AT: 2.36,
-			RN: 2.43,
-			FR: 2.56,
-			RA: 2.43,
-			AC: 2.60,
-			TH: 2.37,
-			PA: 2.43,
-			 U: 2.40,
-			NP: 2.21,
-			PU: 2.56,
-			AM: 2.56,
-			CM: 2.56,
-			BK: 2.56,
-			CF: 2.56,
-			ES: 2.56,
-			FM: 2.56,
-		};
-		this.covalentRadii = { // http://en.wikipedia.org/wiki/Covalent_radius
-			 H: 0.31,
-			HE: 0.28,
-			LI: 1.28,
-			BE: 0.96,
-			 B: 0.84,
-			 C: 0.76,
-			 N: 0.71,
-			 O: 0.66,
-			 F: 0.57,
-			NE: 0.58,
-			NA: 1.66,
-			MG: 1.41,
-			AL: 1.21,
-			SI: 1.11,
-			 P: 1.07,
-			 S: 1.05,
-			CL: 1.02,
-			AR: 1.06,
-			 K: 2.03,
-			CA: 1.76,
-			SC: 1.70,
-			TI: 1.60,
-			 V: 1.53,
-			CR: 1.39,
-			MN: 1.39,
-			FE: 1.32,
-			CO: 1.26,
-			NI: 1.24,
-			CU: 1.32,
-			ZN: 1.22,
-			GA: 1.22,
-			GE: 1.20,
-			AS: 1.19,
-			SE: 1.20,
-			BR: 1.20,
-			KR: 1.16,
-			RB: 2.20,
-			SR: 1.95,
-			 Y: 1.90,
-			ZR: 1.75,
-			NB: 1.64,
-			MO: 1.54,
-			TC: 1.47,
-			RU: 1.46,
-			RH: 1.42,
-			PD: 1.39,
-			AG: 1.45,
-			CD: 1.44,
-			IN: 1.42,
-			SN: 1.39,
-			SB: 1.39,
-			TE: 1.38,
-			 I: 1.39,
-			XE: 1.40,
-			CS: 2.44,
-			BA: 2.15,
-			LA: 2.07,
-			CE: 2.04,
-			PR: 2.03,
-			ND: 2.01,
-			PM: 1.99,
-			SM: 1.98,
-			EU: 1.98,
-			GD: 1.96,
-			TB: 1.94,
-			DY: 1.92,
-			HO: 1.92,
-			ER: 1.89,
-			TM: 1.90,
-			YB: 1.87,
-			LU: 1.87,
-			HF: 1.75,
-			TA: 1.70,
-			 W: 1.62,
-			RE: 1.51,
-			OS: 1.44,
-			IR: 1.41,
-			PT: 1.36,
-			AU: 1.36,
-			HG: 1.32,
-			TL: 1.45,
-			PB: 1.46,
-			BI: 1.48,
-			PO: 1.40,
-			AT: 1.50,
-			RN: 1.50,
-			FR: 2.60,
-			RA: 2.21,
-			AC: 2.15,
-			TH: 2.06,
-			PA: 2.00,
-			 U: 1.96,
-			NP: 1.90,
-			PU: 1.87,
-			AM: 1.80,
-			CM: 1.69,
-		};
-		this.atomColors = {
-			 H: new THREE.Color(0xFFFFFF),
-			HE: new THREE.Color(0xD9FFFF),
-			LI: new THREE.Color(0xCC80FF),
-			BE: new THREE.Color(0xC2FF00),
-			 B: new THREE.Color(0xFFB5B5),
-		 	 C: new THREE.Color(0x909090),
-		  	 N: new THREE.Color(0x3050F8),
-		   	 O: new THREE.Color(0xFF0D0D),
-			 F: new THREE.Color(0x90E050),
-		 	NE: new THREE.Color(0xB3E3F5),
-		 	NA: new THREE.Color(0xAB5CF2),
-		 	MG: new THREE.Color(0x8AFF00),
-		 	AL: new THREE.Color(0xBFA6A6),
-		 	SI: new THREE.Color(0xF0C8A0),
-		 	 P: new THREE.Color(0xFF8000),
-		  	 S: new THREE.Color(0xFFFF30),
-		   	CL: new THREE.Color(0x1FF01F),
-		   	AR: new THREE.Color(0x80D1E3),
-		   	 K: new THREE.Color(0x8F40D4),
-			CA: new THREE.Color(0x3DFF00),
-			SC: new THREE.Color(0xE6E6E6),
-			TI: new THREE.Color(0xBFC2C7),
-			 V: new THREE.Color(0xA6A6AB),
-		 	CR: new THREE.Color(0x8A99C7),
-		 	MN: new THREE.Color(0x9C7AC7),
-		 	FE: new THREE.Color(0xE06633),
-		 	CO: new THREE.Color(0xF090A0),
-		 	NI: new THREE.Color(0x50D050),
-		 	CU: new THREE.Color(0xC88033),
-		 	ZN: new THREE.Color(0x7D80B0),
-		 	GA: new THREE.Color(0xC28F8F),
-		 	GE: new THREE.Color(0x668F8F),
-		 	AS: new THREE.Color(0xBD80E3),
-		 	SE: new THREE.Color(0xFFA100),
-		 	BR: new THREE.Color(0xA62929),
-		 	KR: new THREE.Color(0x5CB8D1),
-		 	RB: new THREE.Color(0x702EB0),
-		 	SR: new THREE.Color(0x00FF00),
-		 	 Y: new THREE.Color(0x94FFFF),
-		  	ZR: new THREE.Color(0x94E0E0),
-		  	NB: new THREE.Color(0x73C2C9),
-		  	MO: new THREE.Color(0x54B5B5),
-		  	TC: new THREE.Color(0x3B9E9E),
-		  	RU: new THREE.Color(0x248F8F),
-		  	RH: new THREE.Color(0x0A7D8C),
-		  	PD: new THREE.Color(0x006985),
-		  	AG: new THREE.Color(0xC0C0C0),
-		  	CD: new THREE.Color(0xFFD98F),
-		  	IN: new THREE.Color(0xA67573),
-		  	SN: new THREE.Color(0x668080),
-		  	SB: new THREE.Color(0x9E63B5),
-		  	TE: new THREE.Color(0xD47A00),
-		  	 I: new THREE.Color(0x940094),
-		   	XE: new THREE.Color(0x429EB0),
-		   	CS: new THREE.Color(0x57178F),
-		   	BA: new THREE.Color(0x00C900),
-		   	LA: new THREE.Color(0x70D4FF),
-		   	CE: new THREE.Color(0xFFFFC7),
-		   	PR: new THREE.Color(0xD9FFC7),
-		   	ND: new THREE.Color(0xC7FFC7),
-		   	PM: new THREE.Color(0xA3FFC7),
-		   	SM: new THREE.Color(0x8FFFC7),
-		   	EU: new THREE.Color(0x61FFC7),
-		   	GD: new THREE.Color(0x45FFC7),
-		   	TB: new THREE.Color(0x30FFC7),
-		   	DY: new THREE.Color(0x1FFFC7),
-		   	HO: new THREE.Color(0x00FF9C),
-		   	ER: new THREE.Color(0x00E675),
-		   	TM: new THREE.Color(0x00D452),
-		   	YB: new THREE.Color(0x00BF38),
-		   	LU: new THREE.Color(0x00AB24),
-		   	HF: new THREE.Color(0x4DC2FF),
-		   	TA: new THREE.Color(0x4DA6FF),
-		   	 W: new THREE.Color(0x2194D6),
-			RE: new THREE.Color(0x267DAB),
-			OS: new THREE.Color(0x266696),
-			IR: new THREE.Color(0x175487),
-			PT: new THREE.Color(0xD0D0E0),
-			AU: new THREE.Color(0xFFD123),
-			HG: new THREE.Color(0xB8B8D0),
-			TL: new THREE.Color(0xA6544D),
-			PB: new THREE.Color(0x575961),
-			BI: new THREE.Color(0x9E4FB5),
-			PO: new THREE.Color(0xAB5C00),
-			AT: new THREE.Color(0x754F45),
-			RN: new THREE.Color(0x428296),
-			FR: new THREE.Color(0x420066),
-			RA: new THREE.Color(0x007D00),
-			AC: new THREE.Color(0x70ABFA),
-			TH: new THREE.Color(0x00BAFF),
-			PA: new THREE.Color(0x00A1FF),
-			 U: new THREE.Color(0x008FFF),
-		 	NP: new THREE.Color(0x0080FF),
-		 	PU: new THREE.Color(0x006BFF),
-		 	AM: new THREE.Color(0x545CF2),
-		 	CM: new THREE.Color(0x785CE3),
-		 	BK: new THREE.Color(0x8A4FE3),
-		 	CF: new THREE.Color(0xA136D4),
-		 	ES: new THREE.Color(0xB31FD4),
-		 	FM: new THREE.Color(0xB31FBA),
-		};
-		this.defaultAtomColor = new THREE.Color(0xCCCCCC);
-		this.stdChainColors = {
-			A: new THREE.Color(0xC0D0FF),
-			B: new THREE.Color(0xB0FFB0),
-			C: new THREE.Color(0xFFC0C8),
-			D: new THREE.Color(0xFFFF80),
-			E: new THREE.Color(0xFFC0FF),
-			F: new THREE.Color(0xB0F0F0),
-			G: new THREE.Color(0xFFD070),
-			H: new THREE.Color(0xF08080),
-			I: new THREE.Color(0xF5DEB3),
-			J: new THREE.Color(0x00BFFF),
-			K: new THREE.Color(0xCD5C5C),
-			L: new THREE.Color(0x66CDAA),
-			M: new THREE.Color(0x9ACD32),
-			N: new THREE.Color(0xEE82EE),
-			O: new THREE.Color(0x00CED1),
-			P: new THREE.Color(0x00FF7F),
-			Q: new THREE.Color(0x3CB371),
-			R: new THREE.Color(0x00008B),
-			S: new THREE.Color(0xBDB76B),
-			T: new THREE.Color(0x006400),
-			U: new THREE.Color(0x800000),
-			V: new THREE.Color(0x808000),
-			W: new THREE.Color(0x800080),
-			X: new THREE.Color(0x008080),
-			Y: new THREE.Color(0xB8860B),
-			Z: new THREE.Color(0xB22222),
-		};
-		this.hetChainColors = {
-			A: new THREE.Color(0x90A0CF),
-			B: new THREE.Color(0x80CF98),
-			C: new THREE.Color(0xCF90B0),
-			D: new THREE.Color(0xCFCF70),
-			E: new THREE.Color(0xCF90CF),
-			F: new THREE.Color(0x80C0C0),
-			G: new THREE.Color(0xCFA060),
-			H: new THREE.Color(0xC05070),
-			I: new THREE.Color(0xC5AE83),
-			J: new THREE.Color(0x00A7CF),
-			K: new THREE.Color(0xB54C4C),
-			L: new THREE.Color(0x56B592),
-			M: new THREE.Color(0x8AB52A),
-			N: new THREE.Color(0xBE72BE),
-			O: new THREE.Color(0x00B6A1),
-			P: new THREE.Color(0x00CF6F),
-			Q: new THREE.Color(0x349B61),
-			R: new THREE.Color(0x0000BB),
-			S: new THREE.Color(0xA59F5B),
-			T: new THREE.Color(0x009400),
-			U: new THREE.Color(0xB00000),
-			V: new THREE.Color(0xB0B000),
-			W: new THREE.Color(0xB000B0),
-			X: new THREE.Color(0x00B0B0),
-			Y: new THREE.Color(0xE8B613),
-			Z: new THREE.Color(0xC23232),
-		};
-		this.container = $('#' + id);
-		this.container.widthInv  = 1 / this.container.width();
-		this.container.heightInv = 1 / this.container.height();
-		this.container.whratio = this.container.width() / this.container.height();
-		this.container.hwratio = this.container.height() / this.container.width();
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: this.container.get(0),
-			antialias: true,
-		});
-		this.effects = {
-			'anaglyph': new THREE.AnaglyphEffect(this.renderer),
-			'parallax barrier': new THREE.ParallaxBarrierEffect(this.renderer),
-			'oculus rift': new THREE.OculusRiftEffect(this.renderer),
-			'none': this.renderer,
-		};
+if (typeof jQuery === 'undefined') { throw new Error('iview requires jQuery') }
 
-		this.camera_z = -150;
-		this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.whratio, 1, 800);
-		this.perspectiveCamera.position = new THREE.Vector3(0, 0, this.camera_z);
-		this.perspectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
-		this.orthographicCamera = new THREE.OrthographicCamera();
-		this.orthographicCamera.position = new THREE.Vector3(0, 0, this.camera_z);
-		this.orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
-		this.cameras = {
-			 perspective: this.perspectiveCamera,
-			orthographic: this.orthographicCamera,
-		};
-		this.camera = this.perspectiveCamera;
+var iview = function (id) {
+	this.vdwRadii = { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
+		 H: 1.08,
+		HE: 1.34,
+		LI: 1.75,
+		BE: 2.05,
+		 B: 1.47,
+		 C: 1.49,
+		 N: 1.41,
+		 O: 1.40,
+		 F: 1.39,
+		NE: 1.68,
+		NA: 1.84,
+		MG: 2.05,
+		AL: 2.11,
+		SI: 2.07,
+		 P: 1.92,
+		 S: 1.82,
+		CL: 1.83,
+		AR: 1.93,
+		 K: 2.05,
+		CA: 2.21,
+		SC: 2.16,
+		TI: 1.87,
+		 V: 1.79,
+		CR: 1.89,
+		MN: 1.97,
+		FE: 1.94,
+		CO: 1.92,
+		NI: 1.84,
+		CU: 1.86,
+		ZN: 2.10,
+		GA: 2.08,
+		GE: 2.15,
+		AS: 2.06,
+		SE: 1.93,
+		BR: 1.98,
+		KR: 2.12,
+		RB: 2.16,
+		SR: 2.24,
+		 Y: 2.19,
+		ZR: 1.86,
+		NB: 2.07,
+		MO: 2.09,
+		TC: 2.09,
+		RU: 2.07,
+		RH: 1.95,
+		PD: 2.02,
+		AG: 2.03,
+		CD: 2.30,
+		IN: 2.36,
+		SN: 2.33,
+		SB: 2.25,
+		TE: 2.23,
+		 I: 2.23,
+		XE: 2.21,
+		CS: 2.22,
+		BA: 2.51,
+		LA: 2.40,
+		CE: 2.35,
+		PR: 2.39,
+		ND: 2.29,
+		PM: 2.36,
+		SM: 2.29,
+		EU: 2.33,
+		GD: 2.37,
+		TB: 2.21,
+		DY: 2.29,
+		HO: 2.16,
+		ER: 2.35,
+		TM: 2.27,
+		YB: 2.42,
+		LU: 2.21,
+		HF: 2.12,
+		TA: 2.17,
+		 W: 2.10,
+		RE: 2.17,
+		OS: 2.16,
+		IR: 2.02,
+		PT: 2.09,
+		AU: 2.17,
+		HG: 2.09,
+		TL: 2.35,
+		PB: 2.32,
+		BI: 2.43,
+		PO: 2.29,
+		AT: 2.36,
+		RN: 2.43,
+		FR: 2.56,
+		RA: 2.43,
+		AC: 2.60,
+		TH: 2.37,
+		PA: 2.43,
+		 U: 2.40,
+		NP: 2.21,
+		PU: 2.56,
+		AM: 2.56,
+		CM: 2.56,
+		BK: 2.56,
+		CF: 2.56,
+		ES: 2.56,
+		FM: 2.56,
+	};
+	this.covalentRadii = { // http://en.wikipedia.org/wiki/Covalent_radius
+		 H: 0.31,
+		HE: 0.28,
+		LI: 1.28,
+		BE: 0.96,
+		 B: 0.84,
+		 C: 0.76,
+		 N: 0.71,
+		 O: 0.66,
+		 F: 0.57,
+		NE: 0.58,
+		NA: 1.66,
+		MG: 1.41,
+		AL: 1.21,
+		SI: 1.11,
+		 P: 1.07,
+		 S: 1.05,
+		CL: 1.02,
+		AR: 1.06,
+		 K: 2.03,
+		CA: 1.76,
+		SC: 1.70,
+		TI: 1.60,
+		 V: 1.53,
+		CR: 1.39,
+		MN: 1.39,
+		FE: 1.32,
+		CO: 1.26,
+		NI: 1.24,
+		CU: 1.32,
+		ZN: 1.22,
+		GA: 1.22,
+		GE: 1.20,
+		AS: 1.19,
+		SE: 1.20,
+		BR: 1.20,
+		KR: 1.16,
+		RB: 2.20,
+		SR: 1.95,
+		 Y: 1.90,
+		ZR: 1.75,
+		NB: 1.64,
+		MO: 1.54,
+		TC: 1.47,
+		RU: 1.46,
+		RH: 1.42,
+		PD: 1.39,
+		AG: 1.45,
+		CD: 1.44,
+		IN: 1.42,
+		SN: 1.39,
+		SB: 1.39,
+		TE: 1.38,
+		 I: 1.39,
+		XE: 1.40,
+		CS: 2.44,
+		BA: 2.15,
+		LA: 2.07,
+		CE: 2.04,
+		PR: 2.03,
+		ND: 2.01,
+		PM: 1.99,
+		SM: 1.98,
+		EU: 1.98,
+		GD: 1.96,
+		TB: 1.94,
+		DY: 1.92,
+		HO: 1.92,
+		ER: 1.89,
+		TM: 1.90,
+		YB: 1.87,
+		LU: 1.87,
+		HF: 1.75,
+		TA: 1.70,
+		 W: 1.62,
+		RE: 1.51,
+		OS: 1.44,
+		IR: 1.41,
+		PT: 1.36,
+		AU: 1.36,
+		HG: 1.32,
+		TL: 1.45,
+		PB: 1.46,
+		BI: 1.48,
+		PO: 1.40,
+		AT: 1.50,
+		RN: 1.50,
+		FR: 2.60,
+		RA: 2.21,
+		AC: 2.15,
+		TH: 2.06,
+		PA: 2.00,
+		 U: 1.96,
+		NP: 1.90,
+		PU: 1.87,
+		AM: 1.80,
+		CM: 1.69,
+	};
+	this.atomColors = {
+		 H: new THREE.Color(0xFFFFFF),
+		HE: new THREE.Color(0xD9FFFF),
+		LI: new THREE.Color(0xCC80FF),
+		BE: new THREE.Color(0xC2FF00),
+		 B: new THREE.Color(0xFFB5B5),
+		 C: new THREE.Color(0x909090),
+		 N: new THREE.Color(0x3050F8),
+		 O: new THREE.Color(0xFF0D0D),
+		 F: new THREE.Color(0x90E050),
+		NE: new THREE.Color(0xB3E3F5),
+		NA: new THREE.Color(0xAB5CF2),
+		MG: new THREE.Color(0x8AFF00),
+		AL: new THREE.Color(0xBFA6A6),
+		SI: new THREE.Color(0xF0C8A0),
+		 P: new THREE.Color(0xFF8000),
+		 S: new THREE.Color(0xFFFF30),
+		CL: new THREE.Color(0x1FF01F),
+		AR: new THREE.Color(0x80D1E3),
+		 K: new THREE.Color(0x8F40D4),
+		CA: new THREE.Color(0x3DFF00),
+		SC: new THREE.Color(0xE6E6E6),
+		TI: new THREE.Color(0xBFC2C7),
+		 V: new THREE.Color(0xA6A6AB),
+		CR: new THREE.Color(0x8A99C7),
+		MN: new THREE.Color(0x9C7AC7),
+		FE: new THREE.Color(0xE06633),
+		CO: new THREE.Color(0xF090A0),
+		NI: new THREE.Color(0x50D050),
+		CU: new THREE.Color(0xC88033),
+		ZN: new THREE.Color(0x7D80B0),
+		GA: new THREE.Color(0xC28F8F),
+		GE: new THREE.Color(0x668F8F),
+		AS: new THREE.Color(0xBD80E3),
+		SE: new THREE.Color(0xFFA100),
+		BR: new THREE.Color(0xA62929),
+		KR: new THREE.Color(0x5CB8D1),
+		RB: new THREE.Color(0x702EB0),
+		SR: new THREE.Color(0x00FF00),
+		 Y: new THREE.Color(0x94FFFF),
+		ZR: new THREE.Color(0x94E0E0),
+		NB: new THREE.Color(0x73C2C9),
+		MO: new THREE.Color(0x54B5B5),
+		TC: new THREE.Color(0x3B9E9E),
+		RU: new THREE.Color(0x248F8F),
+		RH: new THREE.Color(0x0A7D8C),
+		PD: new THREE.Color(0x006985),
+		AG: new THREE.Color(0xC0C0C0),
+		CD: new THREE.Color(0xFFD98F),
+		IN: new THREE.Color(0xA67573),
+		SN: new THREE.Color(0x668080),
+		SB: new THREE.Color(0x9E63B5),
+		TE: new THREE.Color(0xD47A00),
+		 I: new THREE.Color(0x940094),
+		XE: new THREE.Color(0x429EB0),
+		CS: new THREE.Color(0x57178F),
+		BA: new THREE.Color(0x00C900),
+		LA: new THREE.Color(0x70D4FF),
+		CE: new THREE.Color(0xFFFFC7),
+		PR: new THREE.Color(0xD9FFC7),
+		ND: new THREE.Color(0xC7FFC7),
+		PM: new THREE.Color(0xA3FFC7),
+		SM: new THREE.Color(0x8FFFC7),
+		EU: new THREE.Color(0x61FFC7),
+		GD: new THREE.Color(0x45FFC7),
+		TB: new THREE.Color(0x30FFC7),
+		DY: new THREE.Color(0x1FFFC7),
+		HO: new THREE.Color(0x00FF9C),
+		ER: new THREE.Color(0x00E675),
+		TM: new THREE.Color(0x00D452),
+		YB: new THREE.Color(0x00BF38),
+		LU: new THREE.Color(0x00AB24),
+		HF: new THREE.Color(0x4DC2FF),
+		TA: new THREE.Color(0x4DA6FF),
+		 W: new THREE.Color(0x2194D6),
+		RE: new THREE.Color(0x267DAB),
+		OS: new THREE.Color(0x266696),
+		IR: new THREE.Color(0x175487),
+		PT: new THREE.Color(0xD0D0E0),
+		AU: new THREE.Color(0xFFD123),
+		HG: new THREE.Color(0xB8B8D0),
+		TL: new THREE.Color(0xA6544D),
+		PB: new THREE.Color(0x575961),
+		BI: new THREE.Color(0x9E4FB5),
+		PO: new THREE.Color(0xAB5C00),
+		AT: new THREE.Color(0x754F45),
+		RN: new THREE.Color(0x428296),
+		FR: new THREE.Color(0x420066),
+		RA: new THREE.Color(0x007D00),
+		AC: new THREE.Color(0x70ABFA),
+		TH: new THREE.Color(0x00BAFF),
+		PA: new THREE.Color(0x00A1FF),
+		 U: new THREE.Color(0x008FFF),
+		NP: new THREE.Color(0x0080FF),
+		PU: new THREE.Color(0x006BFF),
+		AM: new THREE.Color(0x545CF2),
+		CM: new THREE.Color(0x785CE3),
+		BK: new THREE.Color(0x8A4FE3),
+		CF: new THREE.Color(0xA136D4),
+		ES: new THREE.Color(0xB31FD4),
+		FM: new THREE.Color(0xB31FBA),
+	};
+	this.defaultAtomColor = new THREE.Color(0xCCCCCC);
+	this.stdChainColors = {
+		A: new THREE.Color(0xC0D0FF),
+		B: new THREE.Color(0xB0FFB0),
+		C: new THREE.Color(0xFFC0C8),
+		D: new THREE.Color(0xFFFF80),
+		E: new THREE.Color(0xFFC0FF),
+		F: new THREE.Color(0xB0F0F0),
+		G: new THREE.Color(0xFFD070),
+		H: new THREE.Color(0xF08080),
+		I: new THREE.Color(0xF5DEB3),
+		J: new THREE.Color(0x00BFFF),
+		K: new THREE.Color(0xCD5C5C),
+		L: new THREE.Color(0x66CDAA),
+		M: new THREE.Color(0x9ACD32),
+		N: new THREE.Color(0xEE82EE),
+		O: new THREE.Color(0x00CED1),
+		P: new THREE.Color(0x00FF7F),
+		Q: new THREE.Color(0x3CB371),
+		R: new THREE.Color(0x00008B),
+		S: new THREE.Color(0xBDB76B),
+		T: new THREE.Color(0x006400),
+		U: new THREE.Color(0x800000),
+		V: new THREE.Color(0x808000),
+		W: new THREE.Color(0x800080),
+		X: new THREE.Color(0x008080),
+		Y: new THREE.Color(0xB8860B),
+		Z: new THREE.Color(0xB22222),
+	};
+	this.hetChainColors = {
+		A: new THREE.Color(0x90A0CF),
+		B: new THREE.Color(0x80CF98),
+		C: new THREE.Color(0xCF90B0),
+		D: new THREE.Color(0xCFCF70),
+		E: new THREE.Color(0xCF90CF),
+		F: new THREE.Color(0x80C0C0),
+		G: new THREE.Color(0xCFA060),
+		H: new THREE.Color(0xC05070),
+		I: new THREE.Color(0xC5AE83),
+		J: new THREE.Color(0x00A7CF),
+		K: new THREE.Color(0xB54C4C),
+		L: new THREE.Color(0x56B592),
+		M: new THREE.Color(0x8AB52A),
+		N: new THREE.Color(0xBE72BE),
+		O: new THREE.Color(0x00B6A1),
+		P: new THREE.Color(0x00CF6F),
+		Q: new THREE.Color(0x349B61),
+		R: new THREE.Color(0x0000BB),
+		S: new THREE.Color(0xA59F5B),
+		T: new THREE.Color(0x009400),
+		U: new THREE.Color(0xB00000),
+		V: new THREE.Color(0xB0B000),
+		W: new THREE.Color(0xB000B0),
+		X: new THREE.Color(0x00B0B0),
+		Y: new THREE.Color(0xE8B613),
+		Z: new THREE.Color(0xC23232),
+	};
+	this.container = $('#' + id);
+	this.container.widthInv  = 1 / this.container.width();
+	this.container.heightInv = 1 / this.container.height();
+	this.container.whratio = this.container.width() / this.container.height();
+	this.container.hwratio = this.container.height() / this.container.width();
+	this.renderer = new THREE.WebGLRenderer({
+		canvas: this.container.get(0),
+		antialias: true,
+	});
+	this.effects = {
+		'anaglyph': new THREE.AnaglyphEffect(this.renderer),
+		'parallax barrier': new THREE.ParallaxBarrierEffect(this.renderer),
+		'oculus rift': new THREE.OculusRiftEffect(this.renderer),
+		'none': this.renderer,
+	};
 
-		this.slabNear = -50; // relative to the center of rot
-		this.slabFar  = +50;
+	this.camera_z = -150;
+	this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.whratio, 1, 800);
+	this.perspectiveCamera.position = new THREE.Vector3(0, 0, this.camera_z);
+	this.perspectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
+	this.orthographicCamera = new THREE.OrthographicCamera();
+	this.orthographicCamera.position = new THREE.Vector3(0, 0, this.camera_z);
+	this.orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
+	this.cameras = {
+		 perspective: this.perspectiveCamera,
+		orthographic: this.orthographicCamera,
+	};
+	this.camera = this.perspectiveCamera;
 
-		// Default values
-		this.sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-		this.cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
-		this.sphereRadius = 1.5;
-		this.cylinderRadius = 0.4;
-		this.linewidth = 2;
-		this.curveWidth = 3;
-		this.helixSheetWidth = 1.3;
-		this.coilWidth = 0.3;
-		this.thickness = 0.4;
-		this.axisDIV = 5; // 3
-		this.strandDIV = 6;
-		this.tubeDIV = 8;
-		this.backgroundColors = {
-			black: new THREE.Color(0x000000),
-			 grey: new THREE.Color(0xCCCCCC),
-			white: new THREE.Color(0xFFFFFF),
-		};
-		this.residueColors = {
-			ALA: new THREE.Color(0xC8C8C8),
-			ARG: new THREE.Color(0x145AFF),
-			ASN: new THREE.Color(0x00DCDC),
-			ASP: new THREE.Color(0xE60A0A),
-			CYS: new THREE.Color(0xE6E600),
-			GLN: new THREE.Color(0x00DCDC),
-			GLU: new THREE.Color(0xE60A0A),
-			GLY: new THREE.Color(0xEBEBEB),
-			HIS: new THREE.Color(0x8282D2),
-			ILE: new THREE.Color(0x0F820F),
-			LEU: new THREE.Color(0x0F820F),
-			LYS: new THREE.Color(0x145AFF),
-			MET: new THREE.Color(0xE6E600),
-			PHE: new THREE.Color(0x3232AA),
-			PRO: new THREE.Color(0xDC9682),
-			SER: new THREE.Color(0xFA9600),
-			THR: new THREE.Color(0xFA9600),
-			TRP: new THREE.Color(0xB45AB4),
-			TYR: new THREE.Color(0x3232AA),
-			VAL: new THREE.Color(0x0F820F),
-			ASX: new THREE.Color(0xFF69B4),
-			GLX: new THREE.Color(0xFF69B4),
-		};
-		this.defaultResidueColor = new THREE.Color(0xBEA06E);
-		this.polarColor = new THREE.Color(0xCC0000);
-		this.nonpolarColor = new THREE.Color(0x00CCCC);
-		this.polarityColors = {
-			ARG: this.polarColor,
-			HIS: this.polarColor,
-			LYS: this.polarColor,
-			ASP: this.polarColor,
-			GLU: this.polarColor,
-			SER: this.polarColor,
-			THR: this.polarColor,
-			ASN: this.polarColor,
-			GLN: this.polarColor,
-			TYR: this.polarColor,
-			GLY: this.nonpolarColor,
-			PRO: this.nonpolarColor,
-			ALA: this.nonpolarColor,
-			VAL: this.nonpolarColor,
-			LEU: this.nonpolarColor,
-			ILE: this.nonpolarColor,
-			MET: this.nonpolarColor,
-			PHE: this.nonpolarColor,
-			CYS: this.nonpolarColor,
-			TRP: this.nonpolarColor,
-		};
-		this.helixColor = new THREE.Color(0xFF0080);
-		this.sheetColor = new THREE.Color(0xFFC800);
-		this.coilColor  = new THREE.Color(0x6080FF);
-		this.ssColors = {
-			helix: this.helixColor,
-			sheet: this.sheetColor,
-			 coil: this.coilColor,
-		};
-		this.defaultBondColor = new THREE.Color(0x2194D6);
-		this.options = {
-			camera: 'perspective',
-			background: 'black',
-			colorBy: 'spectrum',
-			primaryStructure: 'nothing',
-			secondaryStructure: 'cylinder & plate',
-			surface: 'nothing',
-			wireframe: 'no',
-			opacity: '0.8',
-			ligands: 'stick',
-			waters: 'dot',
-			ions: 'dot',
-			labels: 'no',
-			effect: 'none',
-		};
-		this.labelVertexShader = '\
+	this.slabNear = -50; // relative to the center of rot
+	this.slabFar  = +50;
+
+	// Default values
+	this.sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+	this.cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
+	this.sphereRadius = 1.5;
+	this.cylinderRadius = 0.4;
+	this.linewidth = 2;
+	this.curveWidth = 3;
+	this.helixSheetWidth = 1.3;
+	this.coilWidth = 0.3;
+	this.thickness = 0.4;
+	this.axisDIV = 5; // 3
+	this.strandDIV = 6;
+	this.tubeDIV = 8;
+	this.backgroundColors = {
+		black: new THREE.Color(0x000000),
+		 grey: new THREE.Color(0xCCCCCC),
+		white: new THREE.Color(0xFFFFFF),
+	};
+	this.residueColors = {
+		ALA: new THREE.Color(0xC8C8C8),
+		ARG: new THREE.Color(0x145AFF),
+		ASN: new THREE.Color(0x00DCDC),
+		ASP: new THREE.Color(0xE60A0A),
+		CYS: new THREE.Color(0xE6E600),
+		GLN: new THREE.Color(0x00DCDC),
+		GLU: new THREE.Color(0xE60A0A),
+		GLY: new THREE.Color(0xEBEBEB),
+		HIS: new THREE.Color(0x8282D2),
+		ILE: new THREE.Color(0x0F820F),
+		LEU: new THREE.Color(0x0F820F),
+		LYS: new THREE.Color(0x145AFF),
+		MET: new THREE.Color(0xE6E600),
+		PHE: new THREE.Color(0x3232AA),
+		PRO: new THREE.Color(0xDC9682),
+		SER: new THREE.Color(0xFA9600),
+		THR: new THREE.Color(0xFA9600),
+		TRP: new THREE.Color(0xB45AB4),
+		TYR: new THREE.Color(0x3232AA),
+		VAL: new THREE.Color(0x0F820F),
+		ASX: new THREE.Color(0xFF69B4),
+		GLX: new THREE.Color(0xFF69B4),
+	};
+	this.defaultResidueColor = new THREE.Color(0xBEA06E);
+	this.polarColor = new THREE.Color(0xCC0000);
+	this.nonpolarColor = new THREE.Color(0x00CCCC);
+	this.polarityColors = {
+		ARG: this.polarColor,
+		HIS: this.polarColor,
+		LYS: this.polarColor,
+		ASP: this.polarColor,
+		GLU: this.polarColor,
+		SER: this.polarColor,
+		THR: this.polarColor,
+		ASN: this.polarColor,
+		GLN: this.polarColor,
+		TYR: this.polarColor,
+		GLY: this.nonpolarColor,
+		PRO: this.nonpolarColor,
+		ALA: this.nonpolarColor,
+		VAL: this.nonpolarColor,
+		LEU: this.nonpolarColor,
+		ILE: this.nonpolarColor,
+		MET: this.nonpolarColor,
+		PHE: this.nonpolarColor,
+		CYS: this.nonpolarColor,
+		TRP: this.nonpolarColor,
+	};
+	this.helixColor = new THREE.Color(0xFF0080);
+	this.sheetColor = new THREE.Color(0xFFC800);
+	this.coilColor  = new THREE.Color(0x6080FF);
+	this.ssColors = {
+		helix: this.helixColor,
+		sheet: this.sheetColor,
+		 coil: this.coilColor,
+	};
+	this.defaultBondColor = new THREE.Color(0x2194D6);
+	this.options = {
+		camera: 'perspective',
+		background: 'black',
+		colorBy: 'spectrum',
+		primaryStructure: 'nothing',
+		secondaryStructure: 'cylinder & plate',
+		surface: 'nothing',
+		wireframe: 'no',
+		opacity: '0.8',
+		ligands: 'stick',
+		waters: 'dot',
+		ions: 'dot',
+		labels: 'no',
+		effect: 'none',
+	};
+	this.labelVertexShader = '\
 uniform float width, height;\n\
 varying vec2 vUv;\n\
 void main()\n\
@@ -561,99 +562,106 @@ void main()\n\
 	gl_FragColor = texture2D(map, vec2(vUv.x, 1.0 - vUv.y));\n\
 	if (gl_FragColor.a < 0.5) discard;\n\
 }';
-		this.labelGeo = new THREE.Geometry();
-		for (var i = 0; i < 6; ++i) {
-			this.labelGeo.vertices.push(new THREE.Vector3(0, 0, 0));
-		}
-		this.labelGeo.faces.push(new THREE.Face3(0, 1, 2));
-		this.labelGeo.faces.push(new THREE.Face3(0, 2, 3));
-		this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
-		this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
-		this.labelByResn = function (atom) {
-			return atom.chain + ':' + atom.resn + ':' + atom.resi;
-		};
-		this.labelByName = function (atom) {
-			return atom.name;
-		};
-
-		var me = this;
-		this.container.bind('contextmenu', function (e) {
-			e.preventDefault();
-		});
-		this.container.bind('mouseup touchend', function (e) {
-			me.isDragging = false;
-		});
-		this.container.bind('mousedown touchstart', function (e) {
-			e.preventDefault();
-			if (!me.scene) return;
-			var x = e.pageX, y = e.pageY;
-			if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
-				x = e.originalEvent.targetTouches[0].pageX;
-				y = e.originalEvent.targetTouches[0].pageY;
-			}
-			me.isDragging = true;
-			me.mouseButton = e.which;
-			me.mouseStartX = x;
-			me.mouseStartY = y;
-			me.cq = me.rot.quaternion.clone();
-			me.cz = me.rot.position.z;
-			me.cp = me.mdl.position.clone();
-			me.cslabNear = me.slabNear;
-			me.cslabFar = me.slabFar;
-		});
-		this.container.bind('mousemove touchmove', function (e) {
-			e.preventDefault();
-			if (!me.scene) return;
-			if (!me.isDragging) return;
-			var x = e.pageX, y = e.pageY;
-			if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
-				x = e.originalEvent.targetTouches[0].pageX;
-				y = e.originalEvent.targetTouches[0].pageY;
-			}
-			var dx = (x - me.mouseStartX) * me.container.widthInv;
-			var dy = (y - me.mouseStartY) * me.container.heightInv;
-			if (!dx && !dy) return;
-			var mode = $('#mode .active').text().trim();
-			if (mode === 'slab' || e.ctrlKey && e.shiftKey) { // Slab
-				me.slabNear = me.cslabNear + dx * 100;
-				me.slabFar  = me.cslabFar  + dy * 100;
-			} else if (mode === 'translate' || e.ctrlKey || me.mouseButton == 3) { // Translate
-				var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-				if (scaleFactor < 20) scaleFactor = 20;
-				me.mdl.position = me.cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
-			} else if (mode === 'zoom' || e.shiftKey || me.mouseButton == 2) { // Zoom
-				var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-				if (scaleFactor < 80) scaleFactor = 80;
-				me.rot.position.z = me.cz - dy * scaleFactor;
-			} else { // Rotate
-				var r = Math.sqrt(dx * dx + dy * dy);
-				var rs = Math.sin(r * Math.PI) / r;
-				me.rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq));
-			}
-			me.render();
-		});
-		this.container.bind('mousewheel', function (e) {
-			e.preventDefault();
-			if (!me.scene) return;
-			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-			me.rot.position.z -= scaleFactor * e.originalEvent.wheelDelta * 0.0025;
-			me.render();
-		});
-		this.container.bind('DOMMouseScroll', function (e) {
-			e.preventDefault();
-			if (!me.scene) return;
-			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-			me.rot.position.z += scaleFactor * e.originalEvent.detail * 0.1;
-			me.render();
-		});
+	this.labelGeo = new THREE.Geometry();
+	for (var i = 0; i < 6; ++i) {
+		this.labelGeo.vertices.push(new THREE.Vector3(0, 0, 0));
 	}
+	this.labelGeo.faces.push(new THREE.Face3(0, 1, 2));
+	this.labelGeo.faces.push(new THREE.Face3(0, 2, 3));
+	this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
+	this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
+	this.labelByResn = function (atom) {
+		return atom.chain + ':' + atom.resn + ':' + atom.resi;
+	};
+	this.labelByName = function (atom) {
+		return atom.name;
+	};
 
-	iview.prototype.hasCovalentBond = function (atom0, atom1) {
+	var me = this;
+	this.container.bind('contextmenu', function (e) {
+		e.preventDefault();
+	});
+	this.container.bind('mouseup touchend', function (e) {
+		me.isDragging = false;
+	});
+	this.container.bind('mousedown touchstart', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		var x = e.pageX, y = e.pageY;
+		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
+			x = e.originalEvent.targetTouches[0].pageX;
+			y = e.originalEvent.targetTouches[0].pageY;
+		}
+		me.isDragging = true;
+		me.mouseButton = e.which;
+		me.mouseStartX = x;
+		me.mouseStartY = y;
+		me.cq = me.rot.quaternion.clone();
+		me.cz = me.rot.position.z;
+		me.cp = me.mdl.position.clone();
+		me.cslabNear = me.slabNear;
+		me.cslabFar = me.slabFar;
+	});
+	this.container.bind('mousemove touchmove', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		if (!me.isDragging) return;
+		var x = e.pageX, y = e.pageY;
+		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
+			x = e.originalEvent.targetTouches[0].pageX;
+			y = e.originalEvent.targetTouches[0].pageY;
+		}
+		var dx = (x - me.mouseStartX) * me.container.widthInv;
+		var dy = (y - me.mouseStartY) * me.container.heightInv;
+		if (!dx && !dy) return;
+		var mode = $('#mode .active').text().trim();
+		if (mode === 'slab' || e.ctrlKey && e.shiftKey) { // Slab
+			me.slabNear = me.cslabNear + dx * 100;
+			me.slabFar  = me.cslabFar  + dy * 100;
+		} else if (mode === 'translate' || e.ctrlKey || me.mouseButton == 3) { // Translate
+			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+			if (scaleFactor < 20) scaleFactor = 20;
+			me.mdl.position = me.cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
+		} else if (mode === 'zoom' || e.shiftKey || me.mouseButton == 2) { // Zoom
+			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+			if (scaleFactor < 80) scaleFactor = 80;
+			me.rot.position.z = me.cz - dy * scaleFactor;
+		} else { // Rotate
+			var r = Math.sqrt(dx * dx + dy * dy);
+			var rs = Math.sin(r * Math.PI) / r;
+			me.rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq));
+		}
+		me.render();
+	});
+	this.container.bind('mousewheel', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+		me.rot.position.z -= scaleFactor * e.originalEvent.wheelDelta * 0.0025;
+		me.render();
+	});
+	this.container.bind('DOMMouseScroll', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+		me.rot.position.z += scaleFactor * e.originalEvent.detail * 0.1;
+		me.render();
+	});
+	return this;
+};
+
+iview.prototype = {
+
+	constructor: iview,
+
+//	r: 1, g: 1, b: 1,
+
+	hasCovalentBond: function (atom0, atom1) {
 		var r = this.covalentRadii[atom0.elem] + this.covalentRadii[atom1.elem];
 		return atom0.coord.distanceToSquared(atom1.coord) < 1.3 * r * r;
-	}
+	},
 
-	iview.prototype.loadPDB = function (src) {
+	loadPDB: function (src) {
 		var helices = [], sheets = [];
 		this.atoms = {};
 		var lines = src.split('\n');
@@ -796,16 +804,16 @@ void main()\n\
 		this.rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
 		this.rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
 		this.render();
-	};
+	},
 
-	iview.prototype.createSphere = function (atom, defaultRadius, forceDefault, scale) {
+	createSphere: function (atom, defaultRadius, forceDefault, scale) {
 		var mesh = new THREE.Mesh(this.sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
 		mesh.scale.x = mesh.scale.y = mesh.scale.z = forceDefault ? defaultRadius : (this.vdwRadii[atom.elem] || defaultRadius) * (scale ? scale : 1);
 		mesh.position = atom.coord;
 		this.mdl.add(mesh);
-	};
+	},
 
-	iview.prototype.createCylinder = function (p0, p1, radius, color) {
+	createCylinder: function (p0, p1, radius, color) {
 		var mesh = new THREE.Mesh(this.cylinderGeometry, new THREE.MeshLambertMaterial({ color: color }));
 		mesh.position = p0.clone().add(p1).multiplyScalar(0.5);
 		mesh.matrixAutoUpdate = false;
@@ -813,9 +821,9 @@ void main()\n\
 		mesh.updateMatrix();
 		mesh.matrix.multiply(new THREE.Matrix4().makeScale(radius, radius, p0.distanceTo(p1))).multiply(new THREE.Matrix4().makeRotationX(Math.PI * 0.5));
 		this.mdl.add(mesh);
-	};
+	},
 
-	iview.prototype.createRepresentationSub = function (atoms, f0, f01) {
+	createRepresentationSub: function (atoms, f0, f01) {
 		var ged = new THREE.Geometry();
 		for (var i in atoms) {
 			var atom0 = atoms[i];
@@ -835,16 +843,16 @@ void main()\n\
 			ged.computeLineDistances();
 			this.mdl.add(new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: this.linewidth, color: this.defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
 		}
-	};
+	},
 
-	iview.prototype.createSphereRepresentation = function (atoms, defaultRadius, forceDefault, scale) {
+	createSphereRepresentation: function (atoms, defaultRadius, forceDefault, scale) {
 		var me = this;
 		this.createRepresentationSub(atoms, function (atom0) {
 			me.createSphere(atom0, defaultRadius, forceDefault, scale);
 		});
-	};
+	},
 
-	iview.prototype.createStickRepresentation = function (atoms, atomR, bondR, scale) {
+	createStickRepresentation: function (atoms, atomR, bondR, scale) {
 		var me = this;
 		this.createRepresentationSub(atoms, function (atom0) {
 			me.createSphere(atom0, atomR, !scale, scale);
@@ -857,9 +865,9 @@ void main()\n\
 				me.createCylinder(atom1.coord, mp, bondR, atom1.color);
 			}
 		});
-	};
+	},
 
-	iview.prototype.createLineRepresentation = function (atoms) {
+	createLineRepresentation: function (atoms) {
 		var me = this;
 		var geo = new THREE.Geometry();
 		this.createRepresentationSub(atoms, undefined, function (atom0, atom1) {
@@ -881,9 +889,9 @@ void main()\n\
 			}
 		});
 		this.mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: this.linewidth, vertexColors: true }), THREE.LinePieces));
-	};
+	},
 
-	iview.prototype.subdivide = function (_points, DIV) { // Catmull-Rom subdivision
+	subdivide: function (_points, DIV) { // Catmull-Rom subdivision
 		var ret = [];
 		var points = new Array(); // Smoothing test
 		points.push(_points[0]);
@@ -914,9 +922,9 @@ void main()\n\
 		}
 		ret.push(points[points.length - 1]);
 		return ret;
-	};
+	},
 
-	iview.prototype.createCurveSub = function (_points, width, colors, div) {
+	createCurveSub: function (_points, width, colors, div) {
 		if (_points.length == 0) return;
 		div = div || 5;
 		var points = this.subdivide(_points, div);
@@ -926,9 +934,9 @@ void main()\n\
 			geo.colors.push(new THREE.Color(colors[i == 0 ? 0 : Math.round((i - 1) * divInv)]));
 		}
 		this.mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: width, vertexColors: true }), THREE.LineStrip));
-	};
+	},
 
-	iview.prototype.createCurve = function (atoms, curveWidth, atomName, div) {
+	createCurve: function (atoms, curveWidth, atomName, div) {
 		var points = [], colors = [];
 		var currentChain, currentResi;
 		div = div || 5;
@@ -947,9 +955,9 @@ void main()\n\
 			}
 		}
 		this.createCurveSub(points, curveWidth, colors, div);
-	};
+	},
 
-	iview.prototype.createStrip = function (p0, p1, colors, div, thickness) {
+	createStrip: function (p0, p1, colors, div, thickness) {
 		if (p0.length < 2) return;
 		div = div || this.axisDIV;
 		p0 = this.subdivide(p0, div);
@@ -991,9 +999,9 @@ void main()\n\
 		geo.computeFaceNormals();
 		geo.computeVertexNormals(false);
 		this.mdl.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: THREE.FaceColors, side: THREE.DoubleSide })));
-	};
+	},
 
-	iview.prototype.createStrand = function (atoms, num, div, fill, coilWidth, helixSheetWidth, doNotSmoothen, thickness) {
+	createStrand: function (atoms, num, div, fill, coilWidth, helixSheetWidth, doNotSmoothen, thickness) {
 		num = num || this.strandDIV;
 		div = div || this.axisDIV;
 		coilWidth = coilWidth || this.coilWidth;
@@ -1039,9 +1047,9 @@ void main()\n\
 		for (var j = 0; !thickness && j < num; ++j)
 			this.createCurveSub(points[j], 1, colors, div);
 		if (fill) this.createStrip(points[0], points[num - 1], colors, div, thickness);
-	};
+	},
 
-	iview.prototype.createTubeSub = function (_points, colors, radii) {
+	createTubeSub: function (_points, colors, radii) {
 		if (_points.length < 2) return;
 		var circleDiv = this.tubeDIV, axisDiv = this.axisDIV;
 		var circleDivInv = 1 / circleDiv, axisDivInv = 1 / axisDiv;
@@ -1093,9 +1101,9 @@ void main()\n\
 		geo.computeFaceNormals();
 		geo.computeVertexNormals(false);
 		this.mdl.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: THREE.FaceColors, side: THREE.DoubleSide })));
-	};
+	},
 
-	iview.prototype.createTube = function (atoms, atomName, radius) {
+	createTube: function (atoms, atomName, radius) {
 		var points = [], colors = [], radii = [];
 		var currentChain, currentResi;
 		for (var i in atoms) {
@@ -1113,9 +1121,9 @@ void main()\n\
 			}
 		}
 		this.createTubeSub(points, colors, radii);
-	};
+	},
 
-	iview.prototype.createCylinderHelix = function (atoms, radius) {
+	createCylinderHelix: function (atoms, radius) {
 		var start = null;
 		var currentChain, currentResi;
 		var others = {}, beta = {};
@@ -1136,9 +1144,9 @@ void main()\n\
 		if (start != null) this.createCylinder(start.coord, atom.coord, radius, atom.color);
 		this.createTube(others, 'CA', 0.3);
 		this.createStrand(beta, undefined, undefined, true, 0, this.helixSheetWidth, false, this.thickness * 2);
-	};
+	},
 
-	iview.prototype.createSurfaceRepresentation = function (atoms, type, wireframe, opacity) {
+	createSurfaceRepresentation: function (atoms, type, wireframe, opacity) {
 		if (this.surfaces[type] === undefined) {
 			var ps = new ProteinSurface();
 			ps.initparm(this.pmin, this.pmax, type > 1);
@@ -1157,9 +1165,9 @@ void main()\n\
 			opacity: opacity,
 			transparent: true,
 		})));
-	};
+	},
 
-	iview.prototype.createLabel = function (text, size, color) {
+	createLabel: function (text, size, color) {
 		var canvas = document.createElement('canvas');
 		canvas.style.backgroundColor = 'rgba(0, 0, 0, 0.0)';
 		var ctx = canvas.getContext('2d');
@@ -1190,18 +1198,18 @@ void main()\n\
 				},
 			},
 		}));
-	};
+	},
 
-	iview.prototype.createLabelRepresentation = function (atoms, label) {
+	createLabelRepresentation: function (atoms, label) {
 		for (var i in atoms) {
 			var atom = atoms[i];
 			var bb = this.createLabel(label(atom), 20, '#dddddd');
 			bb.position = atom.coord;
 			this.mdl.add(bb);
 		}
-	};
+	},
 
-	iview.prototype.rebuildScene = function (options) {
+	rebuildScene: function (options) {
 		$.extend(this.options, options);
 		this.scene = new THREE.Scene();
 		var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
@@ -1384,9 +1392,9 @@ void main()\n\
 		this.renderer.autoClear = this.options.effect !== 'oculus rift';
 		this.effect = this.effects[this.options.effect];
 		this.effect.setSize(this.container.width(), this.container.height());
-	};
+	},
 
-	iview.prototype.render = function () {
+	render: function () {
 		var center = this.rot.position.z - this.camera.position.z;
 		if (center < 1) center = 1;
 		this.camera.near = center + this.slabNear;
@@ -1408,12 +1416,11 @@ void main()\n\
 			this.effect.render(this.scene, this.camera);
 			this.effect.init = true;
 		}
-	};
+	},
 
-	iview.prototype.exportCanvas = function () {
+	exportCanvas: function () {
 		this.render();
 		window.open(this.renderer.domElement.toDataURL('image/png'));
-	};
+	},
 
-	return iview;
-}());
+};
