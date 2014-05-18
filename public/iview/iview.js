@@ -647,7 +647,6 @@ void main()\n\
 		me.rot.position.z += scaleFactor * e.originalEvent.detail * 0.1;
 		me.render();
 	});
-	return this;
 };
 
 iview.prototype = {
@@ -1224,7 +1223,7 @@ iview.prototype = {
 		this.mdl.position = mp;
 		this.rot = new THREE.Object3D();
 		this.rot.position.z = rz;
-		this.rot.quaternion = rq;
+		this.rot.quaternion.copy(rq);
 		this.rot.add(this.mdl);
 		this.scene.add(this.rot);
 		this.camera = this.cameras[this.options.camera];
