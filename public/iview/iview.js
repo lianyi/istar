@@ -56,7 +56,158 @@
 if (typeof jQuery === 'undefined') { throw new Error('iview requires jQuery') }
 
 var iview = function (id) {
-	this.vdwRadii = { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
+	this.container = $('#' + id);
+	this.container.widthInv  = 1 / this.container.width();
+	this.container.heightInv = 1 / this.container.height();
+	this.container.whratio = this.container.width() / this.container.height();
+	this.container.hwratio = this.container.height() / this.container.width();
+	this.renderer = new THREE.WebGLRenderer({
+		canvas: this.container.get(0),
+		antialias: true,
+	});
+	this.effects = {
+		'anaglyph': new THREE.AnaglyphEffect(this.renderer),
+		'parallax barrier': new THREE.ParallaxBarrierEffect(this.renderer),
+		'oculus rift': new THREE.OculusRiftEffect(this.renderer),
+		'none': this.renderer,
+	};
+
+	this.camera_z = -150;
+	this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.whratio, 1, 800);
+	this.perspectiveCamera.position = new THREE.Vector3(0, 0, this.camera_z);
+	this.perspectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
+	this.orthographicCamera = new THREE.OrthographicCamera();
+	this.orthographicCamera.position = new THREE.Vector3(0, 0, this.camera_z);
+	this.orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
+	this.cameras = {
+		 perspective: this.perspectiveCamera,
+		orthographic: this.orthographicCamera,
+	};
+	this.camera = this.perspectiveCamera;
+
+	this.slabNear = -50; // relative to the center of rot
+	this.slabFar  = +50;
+
+	// Default values
+	this.sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+	this.cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
+	this.sphereRadius = 1.5;
+	this.cylinderRadius = 0.4;
+	this.linewidth = 2;
+	this.curveWidth = 3;
+	this.helixSheetWidth = 1.3;
+	this.coilWidth = 0.3;
+	this.thickness = 0.4;
+	this.axisDIV = 5; // 3
+	this.strandDIV = 6;
+	this.tubeDIV = 8;
+	this.options = {
+		camera: 'perspective',
+		background: 'black',
+		colorBy: 'spectrum',
+		primaryStructure: 'nothing',
+		secondaryStructure: 'cylinder & plate',
+		surface: 'nothing',
+		wireframe: 'no',
+		opacity: '0.8',
+		ligands: 'stick',
+		waters: 'dot',
+		ions: 'dot',
+		labels: 'no',
+		effect: 'none',
+	};
+	this.labelGeo = new THREE.Geometry();
+	for (var i = 0; i < 6; ++i) {
+		this.labelGeo.vertices.push(new THREE.Vector3(0, 0, 0));
+	}
+	this.labelGeo.faces.push(new THREE.Face3(0, 1, 2));
+	this.labelGeo.faces.push(new THREE.Face3(0, 2, 3));
+	this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
+	this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
+	this.labelByResn = function (atom) {
+		return atom.chain + ':' + atom.resn + ':' + atom.resi;
+	};
+	this.labelByName = function (atom) {
+		return atom.name;
+	};
+
+	var me = this;
+	this.container.bind('contextmenu', function (e) {
+		e.preventDefault();
+	});
+	this.container.bind('mouseup touchend', function (e) {
+		me.isDragging = false;
+	});
+	this.container.bind('mousedown touchstart', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		var x = e.pageX, y = e.pageY;
+		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
+			x = e.originalEvent.targetTouches[0].pageX;
+			y = e.originalEvent.targetTouches[0].pageY;
+		}
+		me.isDragging = true;
+		me.mouseButton = e.which;
+		me.mouseStartX = x;
+		me.mouseStartY = y;
+		me.cq = me.rot.quaternion.clone();
+		me.cz = me.rot.position.z;
+		me.cp = me.mdl.position.clone();
+		me.cslabNear = me.slabNear;
+		me.cslabFar = me.slabFar;
+	});
+	this.container.bind('mousemove touchmove', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		if (!me.isDragging) return;
+		var x = e.pageX, y = e.pageY;
+		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
+			x = e.originalEvent.targetTouches[0].pageX;
+			y = e.originalEvent.targetTouches[0].pageY;
+		}
+		var dx = (x - me.mouseStartX) * me.container.widthInv;
+		var dy = (y - me.mouseStartY) * me.container.heightInv;
+		if (!dx && !dy) return;
+		var mode = $('#mode .active').text().trim();
+		if (mode === 'slab' || e.ctrlKey && e.shiftKey) { // Slab
+			me.slabNear = me.cslabNear + dx * 100;
+			me.slabFar  = me.cslabFar  + dy * 100;
+		} else if (mode === 'translate' || e.ctrlKey || me.mouseButton == 3) { // Translate
+			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+			if (scaleFactor < 20) scaleFactor = 20;
+			me.mdl.position = me.cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
+		} else if (mode === 'zoom' || e.shiftKey || me.mouseButton == 2) { // Zoom
+			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+			if (scaleFactor < 80) scaleFactor = 80;
+			me.rot.position.z = me.cz - dy * scaleFactor;
+		} else { // Rotate
+			var r = Math.sqrt(dx * dx + dy * dy);
+			var rs = Math.sin(r * Math.PI) / r;
+			me.rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq));
+		}
+		me.render();
+	});
+	this.container.bind('mousewheel', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+		me.rot.position.z -= scaleFactor * e.originalEvent.wheelDelta * 0.0025;
+		me.render();
+	});
+	this.container.bind('DOMMouseScroll', function (e) {
+		e.preventDefault();
+		if (!me.scene) return;
+		var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
+		me.rot.position.z += scaleFactor * e.originalEvent.detail * 0.1;
+		me.render();
+	});
+};
+
+iview.prototype = {
+
+	constructor: iview,
+
+	vdwRadii: { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
 		 H: 1.08,
 		HE: 1.34,
 		LI: 1.75,
@@ -157,8 +308,9 @@ var iview = function (id) {
 		CF: 2.56,
 		ES: 2.56,
 		FM: 2.56,
-	};
-	this.covalentRadii = { // http://en.wikipedia.org/wiki/Covalent_radius
+	},
+
+	covalentRadii: { // http://en.wikipedia.org/wiki/Covalent_radius
 		 H: 0.31,
 		HE: 0.28,
 		LI: 1.28,
@@ -255,8 +407,9 @@ var iview = function (id) {
 		PU: 1.87,
 		AM: 1.80,
 		CM: 1.69,
-	};
-	this.atomColors = {
+	},
+
+	atomColors: {
 		 H: new THREE.Color(0xFFFFFF),
 		HE: new THREE.Color(0xD9FFFF),
 		LI: new THREE.Color(0xCC80FF),
@@ -357,9 +510,11 @@ var iview = function (id) {
 		CF: new THREE.Color(0xA136D4),
 		ES: new THREE.Color(0xB31FD4),
 		FM: new THREE.Color(0xB31FBA),
-	};
-	this.defaultAtomColor = new THREE.Color(0xCCCCCC);
-	this.stdChainColors = {
+	},
+
+	defaultAtomColor: new THREE.Color(0xCCCCCC),
+
+	stdChainColors: {
 		A: new THREE.Color(0xC0D0FF),
 		B: new THREE.Color(0xB0FFB0),
 		C: new THREE.Color(0xFFC0C8),
@@ -386,8 +541,9 @@ var iview = function (id) {
 		X: new THREE.Color(0x008080),
 		Y: new THREE.Color(0xB8860B),
 		Z: new THREE.Color(0xB22222),
-	};
-	this.hetChainColors = {
+	},
+
+	hetChainColors: {
 		A: new THREE.Color(0x90A0CF),
 		B: new THREE.Color(0x80CF98),
 		C: new THREE.Color(0xCF90B0),
@@ -414,58 +570,15 @@ var iview = function (id) {
 		X: new THREE.Color(0x00B0B0),
 		Y: new THREE.Color(0xE8B613),
 		Z: new THREE.Color(0xC23232),
-	};
-	this.container = $('#' + id);
-	this.container.widthInv  = 1 / this.container.width();
-	this.container.heightInv = 1 / this.container.height();
-	this.container.whratio = this.container.width() / this.container.height();
-	this.container.hwratio = this.container.height() / this.container.width();
-	this.renderer = new THREE.WebGLRenderer({
-		canvas: this.container.get(0),
-		antialias: true,
-	});
-	this.effects = {
-		'anaglyph': new THREE.AnaglyphEffect(this.renderer),
-		'parallax barrier': new THREE.ParallaxBarrierEffect(this.renderer),
-		'oculus rift': new THREE.OculusRiftEffect(this.renderer),
-		'none': this.renderer,
-	};
+	},
 
-	this.camera_z = -150;
-	this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.whratio, 1, 800);
-	this.perspectiveCamera.position = new THREE.Vector3(0, 0, this.camera_z);
-	this.perspectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
-	this.orthographicCamera = new THREE.OrthographicCamera();
-	this.orthographicCamera.position = new THREE.Vector3(0, 0, this.camera_z);
-	this.orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
-	this.cameras = {
-		 perspective: this.perspectiveCamera,
-		orthographic: this.orthographicCamera,
-	};
-	this.camera = this.perspectiveCamera;
-
-	this.slabNear = -50; // relative to the center of rot
-	this.slabFar  = +50;
-
-	// Default values
-	this.sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-	this.cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1);
-	this.sphereRadius = 1.5;
-	this.cylinderRadius = 0.4;
-	this.linewidth = 2;
-	this.curveWidth = 3;
-	this.helixSheetWidth = 1.3;
-	this.coilWidth = 0.3;
-	this.thickness = 0.4;
-	this.axisDIV = 5; // 3
-	this.strandDIV = 6;
-	this.tubeDIV = 8;
-	this.backgroundColors = {
+	backgroundColors: {
 		black: new THREE.Color(0x000000),
 		 grey: new THREE.Color(0xCCCCCC),
 		white: new THREE.Color(0xFFFFFF),
-	};
-	this.residueColors = {
+	},
+
+	residueColors: {
 		ALA: new THREE.Color(0xC8C8C8),
 		ARG: new THREE.Color(0x145AFF),
 		ASN: new THREE.Color(0x00DCDC),
@@ -488,11 +601,15 @@ var iview = function (id) {
 		VAL: new THREE.Color(0x0F820F),
 		ASX: new THREE.Color(0xFF69B4),
 		GLX: new THREE.Color(0xFF69B4),
-	};
-	this.defaultResidueColor = new THREE.Color(0xBEA06E);
-	this.polarColor = new THREE.Color(0xCC0000);
-	this.nonpolarColor = new THREE.Color(0x00CCCC);
-	this.polarityColors = {
+	},
+
+	defaultResidueColor: new THREE.Color(0xBEA06E),
+
+	polarColor: new THREE.Color(0xCC0000),
+
+	nonpolarColor: new THREE.Color(0x00CCCC),
+
+	polarityColors: {
 		ARG: this.polarColor,
 		HIS: this.polarColor,
 		LYS: this.polarColor,
@@ -513,32 +630,17 @@ var iview = function (id) {
 		PHE: this.nonpolarColor,
 		CYS: this.nonpolarColor,
 		TRP: this.nonpolarColor,
-	};
-	this.helixColor = new THREE.Color(0xFF0080);
-	this.sheetColor = new THREE.Color(0xFFC800);
-	this.coilColor  = new THREE.Color(0x6080FF);
-	this.ssColors = {
-		helix: this.helixColor,
-		sheet: this.sheetColor,
-		 coil: this.coilColor,
-	};
-	this.defaultBondColor = new THREE.Color(0x2194D6);
-	this.options = {
-		camera: 'perspective',
-		background: 'black',
-		colorBy: 'spectrum',
-		primaryStructure: 'nothing',
-		secondaryStructure: 'cylinder & plate',
-		surface: 'nothing',
-		wireframe: 'no',
-		opacity: '0.8',
-		ligands: 'stick',
-		waters: 'dot',
-		ions: 'dot',
-		labels: 'no',
-		effect: 'none',
-	};
-	this.labelVertexShader = '\
+	},
+
+	ssColors: {
+		helix: new THREE.Color(0xFF0080),
+		sheet: new THREE.Color(0xFFC800),
+		 coil: new THREE.Color(0x6080FF),
+	},
+
+	defaultBondColor: new THREE.Color(0x2194D6),
+
+	labelVertexShader: '\
 uniform float width, height;\n\
 varying vec2 vUv;\n\
 void main()\n\
@@ -553,107 +655,16 @@ void main()\n\
 	gl_Position /= gl_Position.w;\n\
 	gl_Position += vec4(uv.x * width * 1e-3, uv.y * height * aspect * 1e-3, 0.0, 0.0);\n\
 	gl_Position.z = -0.9;\n\
-}';
-		this.labelFragmentShader = '\
+}',
+
+	labelFragmentShader: '\
 uniform sampler2D map;\n\
 varying vec2 vUv;\n\
 void main()\n\
 {\n\
 	gl_FragColor = texture2D(map, vec2(vUv.x, 1.0 - vUv.y));\n\
 	if (gl_FragColor.a < 0.5) discard;\n\
-}';
-	this.labelGeo = new THREE.Geometry();
-	for (var i = 0; i < 6; ++i) {
-		this.labelGeo.vertices.push(new THREE.Vector3(0, 0, 0));
-	}
-	this.labelGeo.faces.push(new THREE.Face3(0, 1, 2));
-	this.labelGeo.faces.push(new THREE.Face3(0, 2, 3));
-	this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
-	this.labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
-	this.labelByResn = function (atom) {
-		return atom.chain + ':' + atom.resn + ':' + atom.resi;
-	};
-	this.labelByName = function (atom) {
-		return atom.name;
-	};
-
-	var me = this;
-	this.container.bind('contextmenu', function (e) {
-		e.preventDefault();
-	});
-	this.container.bind('mouseup touchend', function (e) {
-		me.isDragging = false;
-	});
-	this.container.bind('mousedown touchstart', function (e) {
-		e.preventDefault();
-		if (!me.scene) return;
-		var x = e.pageX, y = e.pageY;
-		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
-			x = e.originalEvent.targetTouches[0].pageX;
-			y = e.originalEvent.targetTouches[0].pageY;
-		}
-		me.isDragging = true;
-		me.mouseButton = e.which;
-		me.mouseStartX = x;
-		me.mouseStartY = y;
-		me.cq = me.rot.quaternion.clone();
-		me.cz = me.rot.position.z;
-		me.cp = me.mdl.position.clone();
-		me.cslabNear = me.slabNear;
-		me.cslabFar = me.slabFar;
-	});
-	this.container.bind('mousemove touchmove', function (e) {
-		e.preventDefault();
-		if (!me.scene) return;
-		if (!me.isDragging) return;
-		var x = e.pageX, y = e.pageY;
-		if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
-			x = e.originalEvent.targetTouches[0].pageX;
-			y = e.originalEvent.targetTouches[0].pageY;
-		}
-		var dx = (x - me.mouseStartX) * me.container.widthInv;
-		var dy = (y - me.mouseStartY) * me.container.heightInv;
-		if (!dx && !dy) return;
-		var mode = $('#mode .active').text().trim();
-		if (mode === 'slab' || e.ctrlKey && e.shiftKey) { // Slab
-			me.slabNear = me.cslabNear + dx * 100;
-			me.slabFar  = me.cslabFar  + dy * 100;
-		} else if (mode === 'translate' || e.ctrlKey || me.mouseButton == 3) { // Translate
-			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-			if (scaleFactor < 20) scaleFactor = 20;
-			me.mdl.position = me.cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
-		} else if (mode === 'zoom' || e.shiftKey || me.mouseButton == 2) { // Zoom
-			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-			if (scaleFactor < 80) scaleFactor = 80;
-			me.rot.position.z = me.cz - dy * scaleFactor;
-		} else { // Rotate
-			var r = Math.sqrt(dx * dx + dy * dy);
-			var rs = Math.sin(r * Math.PI) / r;
-			me.rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq));
-		}
-		me.render();
-	});
-	this.container.bind('mousewheel', function (e) {
-		e.preventDefault();
-		if (!me.scene) return;
-		var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-		me.rot.position.z -= scaleFactor * e.originalEvent.wheelDelta * 0.0025;
-		me.render();
-	});
-	this.container.bind('DOMMouseScroll', function (e) {
-		e.preventDefault();
-		if (!me.scene) return;
-		var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
-		me.rot.position.z += scaleFactor * e.originalEvent.detail * 0.1;
-		me.render();
-	});
-};
-
-iview.prototype = {
-
-	constructor: iview,
-
-//	r: 1, g: 1, b: 1,
+}',
 
 	hasCovalentBond: function (atom0, atom1) {
 		var r = this.covalentRadii[atom0.elem] + this.covalentRadii[atom1.elem];
