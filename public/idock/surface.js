@@ -2539,13 +2539,7 @@ var ProteinSurface = function () {
 	this.getModel = function () {
 		return {
 			verts: this.verts,
-			faces: this.faces.map(function (f) {
-				return {
-					a: f.a,
-					b: f.b,
-					c: f.c,
-				}
-			}),
+			faces: this.faces,
 		};
 	};
 };
