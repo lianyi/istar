@@ -296,7 +296,7 @@ $(function() {
 	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800), sn, sf;
 	camera.position = new THREE.Vector3(0, 0, -150);
 	camera.lookAt(new THREE.Vector3(0, 0, 0));
-	var surfacejs = new Worker('surface.min.js');
+	var surfaceWorker = new Worker('surface.min.js');
 
 	var hasCovalentBond = function (atom0, atom1) {
 		var r = covalentRadii[atom0.elem] + covalentRadii[atom1.elem];
@@ -512,7 +512,7 @@ $(function() {
 				}
 			}
 			refreshBonds();
-			surfacejs.onmessage = function (e) {
+			surfaceWorker.onmessage = function (e) {
 				var verts = e.data.verts;
 				var faces = e.data.faces;
 				var geo = new THREE.Geometry();
@@ -535,7 +535,7 @@ $(function() {
 				surfaceStatus.hide();
 			};
 			surfaceStatus.show();
-			surfacejs.postMessage({
+			surfaceWorker.postMessage({
 				min: pmin,
 				max: pmax,
 				atoms: patoms,
