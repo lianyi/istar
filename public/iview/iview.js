@@ -3,6 +3,9 @@
  * http://github.com/HongjianLi/istar
  * Copyright (c) 2012-2014 Chinese University of Hong Kong
  * License: Apache License 2.0
+ * Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong.
+ * iview: an interactive WebGL visualizer for protein-ligand complex.
+ * BMC Bioinformatics, 15(1):56, 2014.
  *
  * GLmol
  * https://github.com/biochem-fan/GLmol
