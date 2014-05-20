@@ -1119,7 +1119,6 @@ void main()\n\
 						rotors = [];
 						var ligand = {
 							atoms: {},
-							representations: {},
 							refresh: function() {
 								refreshMolecule(entities.ligand);
 							},
@@ -1232,8 +1231,10 @@ void main()\n\
 							}
 						}
 						ligand.nhbonds = hbonds.length;
-						ligand.representations.hbond = createHBondRepresentation(hbonds);
-						ligand.representations.label = createLabelRepresentation(labels);
+						ligand.representations = {
+							hbond: createHBondRepresentation(hbonds),
+							label: createLabelRepresentation(labels),
+						};
 						ligands.push(ligand);
 						if (entities.ligand === undefined) entities.ligand = ligand;
 						start_frame = undefined;
