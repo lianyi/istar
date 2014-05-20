@@ -690,6 +690,7 @@ void main()\n\
 	labelGeo.faces.push(new THREE.Face3(0, 2, 3));
 	labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
 	labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
+	var entities = {};
 
 	var createSphere = function (atom, defaultRadius, forceDefault, scale) {
 		var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
@@ -888,6 +889,68 @@ void main()\n\
 		mdl.add(r);
 	};
 	var refreshLigand = function(ligand) {
+		if (ligand.representations === undefined) {
+			var protein = entities.protein;
+			var patoms = protein.atoms;
+			var atoms = ligand.atoms;
+			var hbonds = ligand.hbonds = [], ds;
+			var labels = ligand.labels = {};
+			for (var pi in protein.hbd) {
+				var pa = protein.hbd[pi];
+				for (var li in atoms) {
+					var la = atoms[li];
+					if (isHBondAcceptor(la.elqt) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
+						hbonds.push({
+							p: pa,
+							l: la,
+							d: Math.sqrt(ds),
+						});
+						labels['p' + pa.serial] = pa;
+						labels['l' + la.serial] = la;
+						for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
+							if (ps.name === 'CA') {
+								labels['p' + ps.serial] = ps;
+							}
+						}
+						for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
+							if (ps.name === 'CA') {
+								labels['p' + ps.serial] = ps;
+							}
+						}
+					}
+				}
+			}
+			for (var pi in protein.hba) {
+				var pa = protein.hba[pi];
+				for (var li in atoms) {
+					var la = atoms[li];
+					if (isHBondDonor(la.elqt) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
+						hbonds.push({
+							p: pa,
+							l: la,
+							d: Math.sqrt(ds),
+						});
+						labels['p' + pa.serial] = pa;
+						labels['l' + la.serial] = la;
+						for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
+							if (ps.name === 'CA') {
+								labels['p' + ps.serial] = ps;
+							}
+						}
+						for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
+							if (ps.name === 'CA') {
+								labels['p' + ps.serial] = ps;
+							}
+						}
+					}
+				}
+			}
+			ligand.nhbonds = hbonds.length;
+			ligand.representations = {
+				hbond: createHBondRepresentation(hbonds),
+				label: createLabelRepresentation(labels),
+			};
+		}
 		mdl.add(ligand.representations.hbond);
 		mdl.add(ligand.representations.label);
 		var data = $('#data');
@@ -974,14 +1037,15 @@ void main()\n\
 		bgeo.computeLineDistances();
 		mdl.add(new THREE.Line(bgeo, new THREE.LineDashedMaterial({ linewidth: 4, color: defaultBoxColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
 		mdl.position = bctr.clone().multiplyScalar(-1);
-		var entities = {};
 		$.get(path + 'receptor.pdbqt', function (psrc) {
 			var protein = entities.protein = {
 				atoms: {},
 				representations: {},
 				refresh: function () {
 					refreshMolecule(protein);
-				}
+				},
+				hbd: {},
+				hba: {},
 			}, atoms = protein.atoms, patoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
@@ -1015,7 +1079,6 @@ void main()\n\
 					refreshSurface(surface);
 				}
 			}, satoms = surface.atoms;
-			var phbd = {}, phba = {};
 			var curChain, curResi, curInsc, curResAtoms = [];
 			var refreshBonds = function (f) {
 				var n = curResAtoms.length;
@@ -1081,9 +1144,9 @@ void main()\n\
 				}
 				if (r2 >= hbondCutoffSquared) continue;
 				if (isHBondAcceptor(atom.elqt)) {
-					phba[i] = atom;
+					protein.hba[i] = atom;
 				} else {
-					phbd[i] = atom;
+					protein.hbd[i] = atom;
 				}
 			}
 			refreshBonds();
@@ -1178,63 +1241,6 @@ void main()\n\
 							atoms[r.x].bonds.push(atoms[r.y]);
 							atoms[r.y].bonds.push(atoms[r.x]);
 						}
-						var hbonds = ligand.hbonds = [], ds;
-						var labels = ligand.labels = {};
-						for (var pi in phbd) {
-							var pa = phbd[pi];
-							for (var li in atoms) {
-								var la = atoms[li];
-								if (isHBondAcceptor(la.elqt) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
-									hbonds.push({
-										p: pa,
-										l: la,
-										d: Math.sqrt(ds),
-									});
-									labels['p' + pa.serial] = pa;
-									labels['l' + la.serial] = la;
-									for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
-										if (ps.name === 'CA') {
-											labels['p' + ps.serial] = ps;
-										}
-									}
-									for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
-										if (ps.name === 'CA') {
-											labels['p' + ps.serial] = ps;
-										}
-									}
-								}
-							}
-						}
-						for (var pi in phba) {
-							var pa = phba[pi];
-							for (var li in atoms) {
-								var la = atoms[li];
-								if (isHBondDonor(la.elqt) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
-									hbonds.push({
-										p: pa,
-										l: la,
-										d: Math.sqrt(ds),
-									});
-									labels['p' + pa.serial] = pa;
-									labels['l' + la.serial] = la;
-									for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
-										if (ps.name === 'CA') {
-											labels['p' + ps.serial] = ps;
-										}
-									}
-									for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
-										if (ps.name === 'CA') {
-											labels['p' + ps.serial] = ps;
-										}
-									}
-								}
-							}
-						}
-						ligand.nhbonds = hbonds.length;
-						ligand.representations = {
-							hbond: createHBondRepresentation(hbonds),
-							label: createLabelRepresentation(labels),
-						};
 						ligands.push(ligand);
 						start_frame = undefined;
 					}
