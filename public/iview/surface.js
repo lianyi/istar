@@ -1,22 +1,23 @@
-/*  ProteinSurface.js by biochem_fan
+/*!
+ * This is a JavaScript implementation of the EDTSurf algorithm.
+ * It was developed by Takanori Nakane and revised by Hongjian Li.
+ * http://github.com/HongjianLi/istar
+ * Copyright (c) 2012-2014 Chinese University of Hong Kong
+ * License: Apache License 2.0
+ * Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong.
+ * iview: an interactive WebGL visualizer for protein-ligand complex.
+ * BMC Bioinformatics, 15(1):56, 2014.
+ *
+ * EDTSurf
+ * http://zhanglab.ccmb.med.umich.edu/EDTSurf
+ * D. Xu, Y. Zhang (2009) Generating Triangulated Macromolecular Surfaces
+ * by Euclidean Distance Transform. PLoS ONE 4(12): e8140.
+ * D. Xu, H. Li, Y. Zhang (2013) Protein Depth Calculation and the Use
+ * for Improving Accuracy of Protein Fold Recognition.
+ * Journal of Computational Biology 20(10):805-816.
+ */
 
-Ported and modified for Javascript based on EDTSurf,
-  whose license is as follows.
-
-Permission to use, copy, modify, and distribute this program for any
-purpose, with or without fee, is hereby granted, provided that this
-copyright notice and the reference information appear in all copies or
-substantial portions of the Software. It is provided "as is" without
-express or implied warranty. 
-
-Reference:
-http://zhanglab.ccmb.med.umich.edu/EDTSurf/
-D. Xu, Y. Zhang (2009) Generating Triangulated Macromolecular Surfaces
-by Euclidean Distance Transform. PLoS ONE 4(12): e8140.
-
-*/
-
-var ProteinSurface = (function () {
+var ProteinSurface = function () {
 	var ptranx, ptrany, ptranz;
 	var boxLength = 128;
 	var probeRadius = 1.4, scaleFactor = 1;
@@ -27,180 +28,10 @@ var ProteinSurface = (function () {
 	var pminx, pminy, pminz, pmaxx, pmaxy, pmaxz;
 	var rasrad = [1.90, 1.88, 1.63, 1.48, 1.78, 1.2, 1.87, 1.96, 1.63, 0.74, 1.8, 1.48, 1.2];//liang
 	//             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
-
 	var depty = new Array(13), widxz = new Array(13);
 	var fixsf = 2;
 	var faces, verts
-	var nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
- [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
- [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
-
-	this.transformVertices = function () {
-		var vertices = this.verts;
-		for (var i = 0; i < vertnumber; ++i) {
-			vertices[i].x = vertices[i].x / scaleFactor - ptranx;
-			vertices[i].y = vertices[i].y / scaleFactor - ptrany;
-			vertices[i].z = vertices[i].z / scaleFactor - ptranz;
-		}
-	};
-
-	this.getModel = function (atoms) {
-		var v = [], vertices = this.verts;
-		for (i = 0; i < vertnumber; ++i) {
-			v.push(new THREE.Vector3(vertices[i].x, vertices[i].y, vertices[i].z));
-		}
-		var geo = new THREE.Geometry();
-		var faces = [];
-		geo.faces = faces;
-		geo.vertices = v;
-		for (var i = 0; i < facenumber; ++i) {
-			var f = this.faces[i];
-			var a = vertices[f.a].atomid, b = vertices[f.b].atomid, c = vertices[f.c].atomid;
-			if (!atoms[a] && !atoms[b] && !atoms[c]) continue;
-			f.vertexColors = [atoms[a].color, atoms[b].color, atoms[c].color];
-			faces.push(f);
-		}
-		geo.computeFaceNormals();
-		geo.computeVertexNormals(false);
-		return geo;
-	};
-
-	this.laplaciansmooth = function (numiter) {
-		var tps = new Array(vertnumber);
-		for (var i = 0; i < vertnumber; ++i) tps[i] = { x: 0, y: 0, z: 0 };
-		var vertdeg = new Array(20);
-		var flagvert;
-		for (var i = 0; i < 20; ++i) vertdeg[i] = new Array(vertnumber);
-		for (var i = 0; i < vertnumber; ++i) vertdeg[0][i] = 0;
-		for (var i = 0; i < facenumber; ++i) {
-			flagvert = true;
-			for (var j = 0; j < vertdeg[0][faces[i].a]; ++j) {
-				if (faces[i].b == vertdeg[j + 1][faces[i].a]) {
-					flagvert = false;
-					break;
-				}
-			}
-			if (flagvert) {
-				vertdeg[0][faces[i].a]++;
-				vertdeg[vertdeg[0][faces[i].a]][faces[i].a] = faces[i].b;
-			}
-			flagvert = true;
-			for (var j = 0; j < vertdeg[0][faces[i].a]; ++j) {
-				if (faces[i].c == vertdeg[j + 1][faces[i].a]) {
-					flagvert = false;
-					break;
-				}
-			}
-			if (flagvert) {
-				vertdeg[0][faces[i].a]++;
-				vertdeg[vertdeg[0][faces[i].a]][faces[i].a] = faces[i].c;
-			}
-			//b
-			flagvert = true;
-			for (j = 0; j < vertdeg[0][faces[i].b]; ++j) {
-				if (faces[i].a == vertdeg[j + 1][faces[i].b]) {
-					flagvert = false;
-					break;
-				}
-			}
-			if (flagvert) {
-				vertdeg[0][faces[i].b]++;
-				vertdeg[vertdeg[0][faces[i].b]][faces[i].b] = faces[i].a;
-			}
-			flagvert = true;
-			for (j = 0 ; j < vertdeg[0][faces[i].b]; ++j) {
-				if (faces[i].c == vertdeg[j + 1][faces[i].b]) {
-					flagvert = false;
-					break;
-				}
-			}
-			if (flagvert) {
-				vertdeg[0][faces[i].b]++;
-				vertdeg[vertdeg[0][faces[i].b]][faces[i].b] = faces[i].c;
-			}
-			//c
-			flagvert = true;
-			for (j = 0; j < vertdeg[0][faces[i].c]; ++j) {
-				if (faces[i].a == vertdeg[j + 1][faces[i].c]) {
-					flagvert = false;
-					break;
-				}
-			}
-			if (flagvert) {
-				vertdeg[0][faces[i].c]++;
-				vertdeg[vertdeg[0][faces[i].c]][faces[i].c] = faces[i].a;
-			}
-			flagvert = true;
-			for (j = 0; j < vertdeg[0][faces[i].c]; ++j) {
-				if (faces[i].b == vertdeg[j + 1][faces[i].c]) {
-					flagvert = false;
-					break;
-				}
-			}
-			if (flagvert) {
-				vertdeg[0][faces[i].c]++;
-				vertdeg[vertdeg[0][faces[i].c]][faces[i].c] = faces[i].b;
-			}
-		}
-
-		var wt = 1.00;
-		var wt2 = 0.50;
-		var ssign;
-		var outwt = 0.75 / (scaleFactor + 3.5); //area-preserving
-		for (var k = 0; k < numiter; ++k) {
-			for (var i = 0; i < vertnumber; ++i) {
-				if (vertdeg[0][i] < 3) {
-					tps[i].x = verts[i].x;
-					tps[i].y = verts[i].y;
-					tps[i].z = verts[i].z;
-				} else if (vertdeg[0][i] == 3 || vertdeg[0][i] == 4) {
-					tps[i].x = 0;
-					tps[i].y = 0;
-					tps[i].z = 0;
-					for (j = 0; j < vertdeg[0][i]; ++j) {
-						tps[i].x += verts[vertdeg[j + 1][i]].x;
-						tps[i].y += verts[vertdeg[j + 1][i]].y;
-						tps[i].z += verts[vertdeg[j + 1][i]].z;
-					}
-					tps[i].x += wt2 * verts[i].x;
-					tps[i].y += wt2 * verts[i].y;
-					tps[i].z += wt2 * verts[i].z;
-					tps[i].x /= wt2 + vertdeg[0][i];
-					tps[i].y /= wt2 + vertdeg[0][i];
-					tps[i].z /= wt2 + vertdeg[0][i];
-				} else {
-					tps[i].x = 0;
-					tps[i].y = 0;
-					tps[i].z = 0;
-					for (var j = 0; j < vertdeg[0][i]; ++j) {
-						tps[i].x += verts[vertdeg[j + 1][i]].x;
-						tps[i].y += verts[vertdeg[j + 1][i]].y;
-						tps[i].z += verts[vertdeg[j + 1][i]].z;
-					}
-					tps[i].x += wt * verts[i].x;
-					tps[i].y += wt * verts[i].y;
-					tps[i].z += wt * verts[i].z;
-					tps[i].x /= wt + vertdeg[0][i];
-					tps[i].y /= wt + vertdeg[0][i];
-					tps[i].z /= wt + vertdeg[0][i];
-				}
-			}
-			for (var i = 0; i < vertnumber; ++i) {
-				verts[i].x = tps[i].x;
-				verts[i].y = tps[i].y;
-				verts[i].z = tps[i].z;
-			}
-			/*	computenorm();
-				for (var i = 0; i < vertnumber; ++i) {
-					   if (verts[i].inout) ssign = 1;
-					   else ssign = -1;
-					   verts[i].x += ssign * outwt * verts[i].pn.x;
-					   verts[i].y += ssign * outwt * verts[i].pn.y;
-					   verts[i].z += ssign * outwt * verts[i].pn.z;
-					   }*/
-		}
-	};
-
+	var nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1], [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1], [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
 
 	this.initparm = function (pmin, pmax, btype) {
 		var margin = 2.5;
@@ -252,7 +83,6 @@ var ProteinSurface = (function () {
 	this.boundingatom = function (btype) {
 		var tradius = new Array(13);
 		var txz, tdept, sradius, idx;
-		flagradius = btype;
 
 		for (var i = 0; i < 13; ++i) {
 			if (!btype) tradius[i] = rasrad[i] * scaleFactor + 0.5;
@@ -292,23 +122,6 @@ var ProteinSurface = (function () {
 		for (var i = 0, lim = vp.length; i < lim; ++i) {
 			if (vp[i].inout) vp[i].isdone = true;
 		}
-	};
-
-	this.getAtomType = function (atom) {
-		var at = 10;
-		if (atom.name == 'CA') at = 0;
-		else if (atom.name == 'C') at = 1;
-		else if (atom.elem == 'C') at = 7;
-		else if (atom.name == '0') at = 3;
-		else if (atom.elem == 'O') at = 11;
-		else if (atom.name == 'N') at = 2;
-		else if (atom.elem == 'N') at = 8;
-		else if (atom.elem == 'S') at = 4;
-		else if (atom.elem == 'P') at = 6;
-		else if (atom.name == 'FE') at = 9;
-		else if (atom.name == 'H') at = 5;
-		else if (atom.elem == 'H') at = 12;
-		return at;
 	};
 
 	this.fillAtom = function (atom, atoms) {
@@ -423,6 +236,22 @@ var ProteinSurface = (function () {
 		}//i
 	};
 
+	this.getAtomType = function (atom) {
+		var at = 10;
+		if (atom.name == 'CA') at = 0;
+		else if (atom.name == 'C') at = 1;
+		else if (atom.elem == 'C') at = 7;
+		else if (atom.name == '0') at = 3;
+		else if (atom.elem == 'O') at = 11;
+		else if (atom.name == 'N') at = 2;
+		else if (atom.elem == 'N') at = 8;
+		else if (atom.elem == 'S') at = 4;
+		else if (atom.elem == 'P') at = 6;
+		else if (atom.name == 'FE') at = 9;
+		else if (atom.name == 'H') at = 5;
+		else if (atom.elem == 'H') at = 12;
+		return at;
+	};
 
 	this.buildboundary = function () {
 		vp = this.vp;
@@ -703,7 +532,7 @@ var ProteinSurface = (function () {
 		return positout;
 	};
 
-	this.marchingcubeinit = function (stype) {
+	this.marchingcube = function (stype) {
 		for (var i = 0, lim = vp.length; i < lim; ++i) {
 			if (stype == 3) {// vdw
 				vp[i].isbound = false;
@@ -718,10 +547,6 @@ var ProteinSurface = (function () {
 				vp[i].isbound = false;
 			}
 		}
-	};
-
-	this.marchingcube = function (stype) {
-		this.marchingcubeinit(stype);
 		var vertseq = new Array(pLength);
 		for (var i = 0; i < pLength; ++i) {
 			var a = new Array(pWidth);
@@ -2613,4 +2438,169 @@ var ProteinSurface = (function () {
 		}
 	};
 
-});
+	this.laplaciansmooth = function (numiter) {
+		var tps = new Array(vertnumber);
+		for (var i = 0; i < vertnumber; ++i) tps[i] = { x: 0, y: 0, z: 0 };
+		var vertdeg = new Array(20);
+		var flagvert;
+		for (var i = 0; i < 20; ++i) vertdeg[i] = new Array(vertnumber);
+		for (var i = 0; i < vertnumber; ++i) vertdeg[0][i] = 0;
+		for (var i = 0; i < facenumber; ++i) {
+			flagvert = true;
+			for (var j = 0; j < vertdeg[0][faces[i].a]; ++j) {
+				if (faces[i].b == vertdeg[j + 1][faces[i].a]) {
+					flagvert = false;
+					break;
+				}
+			}
+			if (flagvert) {
+				vertdeg[0][faces[i].a]++;
+				vertdeg[vertdeg[0][faces[i].a]][faces[i].a] = faces[i].b;
+			}
+			flagvert = true;
+			for (var j = 0; j < vertdeg[0][faces[i].a]; ++j) {
+				if (faces[i].c == vertdeg[j + 1][faces[i].a]) {
+					flagvert = false;
+					break;
+				}
+			}
+			if (flagvert) {
+				vertdeg[0][faces[i].a]++;
+				vertdeg[vertdeg[0][faces[i].a]][faces[i].a] = faces[i].c;
+			}
+			//b
+			flagvert = true;
+			for (j = 0; j < vertdeg[0][faces[i].b]; ++j) {
+				if (faces[i].a == vertdeg[j + 1][faces[i].b]) {
+					flagvert = false;
+					break;
+				}
+			}
+			if (flagvert) {
+				vertdeg[0][faces[i].b]++;
+				vertdeg[vertdeg[0][faces[i].b]][faces[i].b] = faces[i].a;
+			}
+			flagvert = true;
+			for (j = 0 ; j < vertdeg[0][faces[i].b]; ++j) {
+				if (faces[i].c == vertdeg[j + 1][faces[i].b]) {
+					flagvert = false;
+					break;
+				}
+			}
+			if (flagvert) {
+				vertdeg[0][faces[i].b]++;
+				vertdeg[vertdeg[0][faces[i].b]][faces[i].b] = faces[i].c;
+			}
+			//c
+			flagvert = true;
+			for (j = 0; j < vertdeg[0][faces[i].c]; ++j) {
+				if (faces[i].a == vertdeg[j + 1][faces[i].c]) {
+					flagvert = false;
+					break;
+				}
+			}
+			if (flagvert) {
+				vertdeg[0][faces[i].c]++;
+				vertdeg[vertdeg[0][faces[i].c]][faces[i].c] = faces[i].a;
+			}
+			flagvert = true;
+			for (j = 0; j < vertdeg[0][faces[i].c]; ++j) {
+				if (faces[i].b == vertdeg[j + 1][faces[i].c]) {
+					flagvert = false;
+					break;
+				}
+			}
+			if (flagvert) {
+				vertdeg[0][faces[i].c]++;
+				vertdeg[vertdeg[0][faces[i].c]][faces[i].c] = faces[i].b;
+			}
+		}
+
+		var wt = 1.00;
+		var wt2 = 0.50;
+		var ssign;
+		var outwt = 0.75 / (scaleFactor + 3.5); //area-preserving
+		for (var k = 0; k < numiter; ++k) {
+			for (var i = 0; i < vertnumber; ++i) {
+				if (vertdeg[0][i] < 3) {
+					tps[i].x = verts[i].x;
+					tps[i].y = verts[i].y;
+					tps[i].z = verts[i].z;
+				} else if (vertdeg[0][i] == 3 || vertdeg[0][i] == 4) {
+					tps[i].x = 0;
+					tps[i].y = 0;
+					tps[i].z = 0;
+					for (j = 0; j < vertdeg[0][i]; ++j) {
+						tps[i].x += verts[vertdeg[j + 1][i]].x;
+						tps[i].y += verts[vertdeg[j + 1][i]].y;
+						tps[i].z += verts[vertdeg[j + 1][i]].z;
+					}
+					tps[i].x += wt2 * verts[i].x;
+					tps[i].y += wt2 * verts[i].y;
+					tps[i].z += wt2 * verts[i].z;
+					tps[i].x /= wt2 + vertdeg[0][i];
+					tps[i].y /= wt2 + vertdeg[0][i];
+					tps[i].z /= wt2 + vertdeg[0][i];
+				} else {
+					tps[i].x = 0;
+					tps[i].y = 0;
+					tps[i].z = 0;
+					for (var j = 0; j < vertdeg[0][i]; ++j) {
+						tps[i].x += verts[vertdeg[j + 1][i]].x;
+						tps[i].y += verts[vertdeg[j + 1][i]].y;
+						tps[i].z += verts[vertdeg[j + 1][i]].z;
+					}
+					tps[i].x += wt * verts[i].x;
+					tps[i].y += wt * verts[i].y;
+					tps[i].z += wt * verts[i].z;
+					tps[i].x /= wt + vertdeg[0][i];
+					tps[i].y /= wt + vertdeg[0][i];
+					tps[i].z /= wt + vertdeg[0][i];
+				}
+			}
+			for (var i = 0; i < vertnumber; ++i) {
+				verts[i].x = tps[i].x;
+				verts[i].y = tps[i].y;
+				verts[i].z = tps[i].z;
+			}
+			/*	computenorm();
+			for (var i = 0; i < vertnumber; ++i) {
+				if (verts[i].inout) ssign = 1; else ssign = -1;
+				verts[i].x += ssign * outwt * verts[i].pn.x;
+				verts[i].y += ssign * outwt * verts[i].pn.y;
+				verts[i].z += ssign * outwt * verts[i].pn.z;
+			}*/
+		}
+	};
+
+	this.transformVertices = function () {
+		var vertices = this.verts;
+		var scaleFactorInverse = 1 / scaleFactor;
+		for (var i = 0; i < vertnumber; ++i) {
+			vertices[i].x = vertices[i].x * scaleFactorInverse - ptranx;
+			vertices[i].y = vertices[i].y * scaleFactorInverse - ptrany;
+			vertices[i].z = vertices[i].z * scaleFactorInverse - ptranz;
+		}
+	};
+
+	this.getModel = function (atoms) {
+		var v = [], vertices = this.verts;
+		for (i = 0; i < vertnumber; ++i) {
+			v.push(new THREE.Vector3(vertices[i].x, vertices[i].y, vertices[i].z));
+		}
+		var geo = new THREE.Geometry();
+		var faces = [];
+		geo.faces = faces;
+		geo.vertices = v;
+		for (var i = 0; i < facenumber; ++i) {
+			var f = this.faces[i];
+			var a = vertices[f.a].atomid, b = vertices[f.b].atomid, c = vertices[f.c].atomid;
+			if (!atoms[a] && !atoms[b] && !atoms[c]) continue;
+			f.vertexColors = [atoms[a].color, atoms[b].color, atoms[c].color];
+			faces.push(f);
+		}
+		geo.computeFaceNormals();
+		geo.computeVertexNormals(false);
+		return geo;
+	};
+};
