@@ -379,7 +379,6 @@ $(function() {
 
 	// Load receptor locally
 	var surfaceStatus = $('#surfaceStatus');
-	surfaceStatus.hide();
 	var bsizmin = new THREE.Vector3();
 	var bsizmax = new THREE.Vector3();
 	['x', 'y', 'z'].forEach(function(d) {
@@ -809,7 +808,6 @@ $(function() {
 
 	// Process submission
 	var submissionStatus = $('#submissionStatus');
-	submissionStatus.hide();
 	var submit = $('#submit');
 	submit.click(function() {
 		// Hide tooltips
