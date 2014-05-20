@@ -1239,7 +1239,6 @@ void main()\n\
 						start_frame = undefined;
 					}
 				}
-				entities.ligand = ligands[0];
 				$('#nligands').text(ligands.length);
 				var ids = $('#ids');
 				ids.html(ligands.map(function(ligand) {
@@ -1261,7 +1260,7 @@ void main()\n\
 					ligand.refresh();
 					render();
 				});
-				refreshLigand(entities.ligand);
+				refreshLigand(entities.ligand = ligands[0]);
 			}).always(function() {
 				for (var key in entities) {
 					var entity = entities[key];
