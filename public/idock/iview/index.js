@@ -1236,10 +1236,10 @@ void main()\n\
 							label: createLabelRepresentation(labels),
 						};
 						ligands.push(ligand);
-						if (entities.ligand === undefined) entities.ligand = ligand;
 						start_frame = undefined;
 					}
 				}
+				entities.ligand = ligands[0];
 				$('#nligands').text(ligands.length);
 				var ids = $('#ids');
 				ids.html(ligands.map(function(ligand) {
