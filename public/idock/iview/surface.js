@@ -2605,12 +2605,12 @@ var ProteinSurface = function () {
 
 onmessage = function (e) {
 	var data = e.data;
-	var pmin = data.pmin;
-	var pmax = data.pmax;
+	var min = data.min;
+	var max = data.max;
 	var atoms = data.atoms;
 	var type = data.type;
 	var ps = new ProteinSurface();
-	ps.initparm(pmin, pmax, type > 1);
+	ps.initparm(min, max, type > 1);
 	ps.fillvoxels(atoms);
 	ps.buildboundary();
 	if (type == 4 || type == 2) ps.fastdistancemap();

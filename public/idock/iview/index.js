@@ -1080,8 +1080,8 @@ void main()\n\
 						surfaceLabels.addClass('disabled');
 						surfaceStatus.show();
 						surfaceWorker.postMessage({
-							pmin: surface.pmin,
-							pmax: surface.pmax,
+							min: surface.min,
+							max: surface.max,
 							atoms: surface.atoms,
 							type: surfaceTypes[surface.active],
 						});
@@ -1161,8 +1161,8 @@ void main()\n\
 				}
 			}
 			refreshBonds();
-			surface.pmin = pmin;
-			surface.pmax = pmax;
+			surface.min = pmin;
+			surface.max = pmax;
 			var maxD = pmax.distanceTo(pmin);
 			sn = -maxD * 0.50;
 			sf =  maxD * 0.25;
