@@ -1040,7 +1040,7 @@ void main()\n\
 			}
 			var surfaceLabels = $('#surface label');
 			var surfaceStatus = $('#surfaceStatus');
-			var surfaceWorker = new Worker('surface.min.js');
+			var surfaceWorker = new Worker('../../iview/surface.min.js');
 			surfaceWorker.onmessage = function (e) {
 				var verts = e.data.verts;
 				var faces = e.data.faces;
