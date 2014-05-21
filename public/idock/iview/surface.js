@@ -17,7 +17,7 @@
  * Journal of Computational Biology 20(10):805-816.
  */
 
-var ProteinSurface = function () {
+var ProteinSurface = function (data) {
 	var ptranx, ptrany, ptranz;
 	var boxLength = 128;
 	var probeRadius = 1.4, scaleFactor = 1;
@@ -2595,28 +2595,20 @@ var ProteinSurface = function () {
 		}
 	};
 
-	this.getModel = function () {
-		return {
-			verts: this.verts,
-			faces: this.faces,
-		};
+	initparm(data.min, data.max, data.type > 1);
+	fillvoxels(data.atoms);
+	buildboundary();
+	if (data.type == 4 || data.type == 2) fastdistancemap();
+	if (data.type == 2) { boundingatom(false); fillvoxelswaals(data.atoms); }
+	marchingcube(data.type);
+	laplaciansmooth(1);
+	transformVertices();
+	return {
+		verts: verts,
+		faces: faces,
 	};
 };
 
 onmessage = function (e) {
-	var data = e.data;
-	var min = data.min;
-	var max = data.max;
-	var atoms = data.atoms;
-	var type = data.type;
-	var ps = new ProteinSurface();
-	ps.initparm(min, max, type > 1);
-	ps.fillvoxels(atoms);
-	ps.buildboundary();
-	if (type == 4 || type == 2) ps.fastdistancemap();
-	if (type == 2) { ps.boundingatom(false); ps.fillvoxelswaals(atoms); }
-	ps.marchingcube(type);
-	ps.laplaciansmooth(1);
-	ps.transformVertices();
-	postMessage(ps.getModel());
+	postMessage(ProteinSurface(e.data));
 };
