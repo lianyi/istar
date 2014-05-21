@@ -1062,7 +1062,7 @@ void main()\n\
 				})));
 				render();
 				surfaceStatus.hide();
-				surfaceLabels.attr('disabled', false);
+				surfaceLabels.removeClass('disabled');
 			};
 			var surfaceTypes = {
 				'Van der Waals surface': 1,
@@ -1077,7 +1077,7 @@ void main()\n\
 					if (surface.active === 'nothing') return;
 					var r = surface.representations[surface.active];
 					if (r === undefined) {
-						surfaceLabels.attr('disabled', true);
+						surfaceLabels.addClass('disabled');
 						surfaceStatus.show();
 						surfaceWorker.postMessage({
 							pmin: surface.pmin,
@@ -1173,7 +1173,8 @@ void main()\n\
 				entity.active = $('#' + key + ' .active').text().trim();
 				entity.refresh();
 				$('#' + key).click(function (e) {
-					var key = e.target.parentElement.id;
+					if (e.currentTarget.innerHTML.indexOf('disabled') > 0) return;
+					var key = e.currentTarget.id;
 					var entity = entities[key];
 					mdl.remove(entity.representations[entity.active]);
 					entity.active = $(e.target).text().trim();
