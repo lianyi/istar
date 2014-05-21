@@ -1,6 +1,6 @@
-importScripts("gunzip.min.js");
+importScripts('gunzip.min.js');
 
-self.addEventListener("message", function (e) {
+self.addEventListener('message', function (e) {
 	var srcz = e.data;
 	var srczr = new Uint8Array(srcz.length);
 	for (var i = 0, l = srcz.length; i < l; ++i) {
