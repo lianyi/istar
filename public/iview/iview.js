@@ -1161,18 +1161,28 @@ void main()\n\
 
 	createSurfaceRepresentation: function (atoms, type, wireframe, opacity) {
 		if (this.surfaces[type] === undefined) {
-			var ps = new ProteinSurface();
-			ps.initparm(this.pmin, this.pmax, type > 1);
-			ps.fillvoxels(atoms);
-			ps.buildboundary();
-			if (type == 4 || type == 2) ps.fastdistancemap();
-			if (type == 2) { ps.boundingatom(false); ps.fillvoxelswaals(atoms); }
-			ps.marchingcube(type);
-			ps.laplaciansmooth(1);
-			ps.transformVertices();
-			this.surfaces[type] = ps;
+			var ps = ProteinSurface({
+				min: this.pmin,
+				max: this.pmax,
+				atoms: atoms,
+				type: type,
+			});
+			var verts = ps.verts;
+			var faces = ps.faces;
+			var geo = new THREE.Geometry();
+			geo.vertices = verts.map(function (v) {
+				return new THREE.Vector3(v.x, v.y, v.z);
+			});
+			geo.faces = faces.map(function (f) {
+				return new THREE.Face3(f.a, f.b, f.c, undefined, Object.keys(f).map(function (d) {
+					return atoms[verts[f[d]].atomid].color;
+				}));
+			});
+			geo.computeFaceNormals();
+			geo.computeVertexNormals(false);
+			this.surfaces[type] = geo;
 		}
-		this.mdl.add(new THREE.Mesh(this.surfaces[type].getModel(atoms), new THREE.MeshLambertMaterial({
+		this.mdl.add(new THREE.Mesh(this.surfaces[type], new THREE.MeshLambertMaterial({
 			vertexColors: THREE.VertexColors,
 			wireframe: wireframe,
 			opacity: opacity,
