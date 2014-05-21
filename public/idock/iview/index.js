@@ -813,22 +813,6 @@ void main()\n\
 		}));
 		return obj;
 	};
-	var createSurfaceRepresentation = function (entity, type) {
-		var ps = new ProteinSurface();
-		ps.initparm(entity.pmin, entity.pmax, type > 1);
-		ps.fillvoxels(entity.atoms);
-		ps.buildboundary();
-		if (type == 4 || type == 2) ps.fastdistancemap();
-		if (type == 2) { ps.boundingatom(false); ps.fillvoxelswaals(entity.atoms); }
-		ps.marchingcube(type);
-		ps.laplaciansmooth(1);
-		ps.transformVertices();
-		return new THREE.Mesh(ps.getModel(entity.atoms), new THREE.MeshLambertMaterial({
-			vertexColors: THREE.VertexColors,
-			opacity: 0.9,
-			transparent: true,
-		}));
-	};
 	var createHBondRepresentation = function (hbonds) {
 		var geo = new THREE.Geometry();
 		for (var i in hbonds) {
@@ -864,27 +848,6 @@ void main()\n\
 					break;
 				case 'sphere':
 					r = createSphereRepresentation(entity.atoms);
-					break;
-			}
-			entity.representations[entity.active] = r;
-		}
-		mdl.add(r);
-	};
-	var refreshSurface = function (entity) {
-		var r = entity.representations[entity.active];
-		if (r === undefined) {
-			switch (entity.active) {
-				case 'Van der Waals surface':
-					r = createSurfaceRepresentation(entity, 1);
-					break;
-				case 'solvent excluded surface':
-					r = createSurfaceRepresentation(entity, 2);
-					break;
-				case 'solvent accessible surface':
-					r = createSurfaceRepresentation(entity, 3);
-					break;
-				case 'molecular surface':
-					r = createSurfaceRepresentation(entity, 4);
 					break;
 			}
 			entity.representations[entity.active] = r;
@@ -1075,11 +1038,56 @@ void main()\n\
 					atoms[atom.serial] = atom;
 				}
 			}
+			var surfaceLabels = $('#surface label');
+			var surfaceStatus = $('#surfaceStatus');
+			var surfaceWorker = new Worker('surface.min.js');
+			surfaceWorker.onmessage = function (e) {
+				var verts = e.data.verts;
+				var faces = e.data.faces;
+				var geo = new THREE.Geometry();
+				geo.vertices = verts.map(function (v) {
+					return new THREE.Vector3(v.x, v.y, v.z);
+				});
+				geo.faces = faces.map(function (f) {
+					return new THREE.Face3(f.a, f.b, f.c, undefined, Object.keys(f).map(function (d) {
+						return entities.surface.atoms[verts[f[d]].atomid].color;
+					}));
+				});
+				geo.computeFaceNormals();
+				geo.computeVertexNormals(false);
+				mdl.add(entities.surface.representations[entities.surface.active] = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+					vertexColors: THREE.VertexColors,
+					opacity: 0.9,
+					transparent: true,
+				})));
+				render();
+				surfaceStatus.hide();
+				surfaceLabels.attr('disabled', false);
+			};
+			var surfaceTypes = {
+				'Van der Waals surface': 1,
+				'solvent excluded surface': 2,
+				'solvent accessible surface': 3,
+				'molecular surface': 4,
+			};
 			var surface = entities.surface = {
 				atoms: {},
 				representations: {},
 				refresh: function () {
-					refreshSurface(surface);
+					if (surface.active === 'nothing') return;
+					var r = surface.representations[surface.active];
+					if (r === undefined) {
+						surfaceLabels.attr('disabled', true);
+						surfaceStatus.show();
+						surfaceWorker.postMessage({
+							pmin: surface.pmin,
+							pmax: surface.pmax,
+							atoms: surface.atoms,
+							type: surfaceTypes[surface.active],
+						});
+					} else {
+						mdl.add(r);
+					}
 				}
 			}, satoms = surface.atoms;
 			var curChain, curResi, curInsc, curResAtoms = [];
@@ -1178,8 +1186,8 @@ void main()\n\
 				mimeType: 'application/octet-stream; charset=x-user-defined',
 			}).done(function (lsrcz) {
 				if (lsrcz.length == 2) return;
-				var gunzipWorker = new Worker("gunzip.js");
-				gunzipWorker.addEventListener("message", function (e) {
+				var gunzipWorker = new Worker('gunzip.js');
+				gunzipWorker.addEventListener('message', function (e) {
 					var ligands = [], ligand, atoms, start_frame, rotors;
 					var lines = e.data.split('\n')
 					for (var i = 0, l = lines.length; i < l; ++i) {
