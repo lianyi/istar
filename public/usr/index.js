@@ -313,6 +313,25 @@ $(function() {
 		scene.fog.far = camera.far;
 		renderer.render(scene, camera);
 	};
+	var moments = function (dists, n, v) {
+		var m = new Float32Array(3);
+		for (var i = 0; i < n; ++i) {
+			var d = dists[i];
+			m[0] += d;
+		}
+		m[0] *= v;
+		for (var i = 0; i < n; ++i) {
+			var d = dists[i] - m[0];
+			m[1] += d * d;
+		}
+		m[1] = Math.sqrt(m[1] * v);
+		for (var i = 0; i < n; ++i) {
+			var d = dists[i] - m[0];
+			m[2] += d * d * d;
+		}
+		m[2] = Math.pow(m[2] * v, 1 / 3);
+		return m;
+	};
 
 	// Load ligand locally
 	$('input[type="file"]').change(function() {
@@ -374,7 +393,8 @@ $(function() {
 				lmax.max(coord);
 				++lcnt;
 			}
-			var lavg = lsum.clone().multiplyScalar(1 / lcnt);
+			var lcnv = 1 / lcnt;
+			var lavg = lsum.clone().multiplyScalar(lcnv);
 			var maxD = lmax.distanceTo(lmin);
 			sn = -maxD;
 			sf =  maxD;
@@ -383,6 +403,36 @@ $(function() {
 			mdl.position = lavg.clone().multiplyScalar(-1);
 			mdl.add(createStickRepresentation(atoms, cylinderRadius, cylinderRadius));
 			render();
+			var ctd = lavg, cst, fct, ftf, cst_dist = 9999, fct_dist = -9999, ftf_dist = -9999;
+			for (var i in atoms) {
+				var atom = atoms[i];
+				var this_dist = atom.coord.distanceToSquared(ctd);
+				if (this_dist < cst_dist) {
+					cst = atom.coord;
+					cst_dist = this_dist;
+				}
+				if (this_dist > fct_dist) {
+					fct = atom.coord;
+					fct_dist = this_dist;
+				}
+			}
+			for (var i in atoms) {
+				var atom = atoms[i];
+				var this_dist = atom.coord.distanceToSquared(fct);
+				if (this_dist > ftf_dist) {
+					ftf = atom.coord;
+					ftf_dist = this_dist;
+				}
+			}
+			[ ctd, cst, fct, ftf ].forEach(function (rpt) {
+				var dists = new Float32Array(lcnt);
+				for (var i in atoms) {
+					var atom = atoms[i];
+					dists[i] = atom.coord.distanceTo(rpt);
+				}
+				var m = moments(dists, lcnt, lcnv);
+				console.log(m);
+			});
 		};
 		reader.readAsText(file);
 	});
