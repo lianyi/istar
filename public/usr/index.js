@@ -425,10 +425,10 @@ $(function() {
 				}
 			}
 			[ ctd, cst, fct, ftf ].forEach(function (rpt) {
-				var dists = new Float32Array(lcnt);
+				var dists = new Float32Array(lcnt), o = 0;
 				for (var i in atoms) {
 					var atom = atoms[i];
-					dists[i] = atom.coord.distanceTo(rpt);
+					dists[o++] = atom.coord.distanceTo(rpt);
 				}
 				var m = moments(dists, lcnt, lcnv);
 				console.log(m);
