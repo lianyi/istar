@@ -314,7 +314,7 @@ $(function() {
 		renderer.render(scene, camera);
 	};
 	var moments = function (dists, n, v) {
-		var m = new Float32Array(3);
+		var m = [ 0, 0, 0 ];
 		for (var i = 0; i < n; ++i) {
 			var d = dists[i];
 			m[0] += d;
@@ -335,6 +335,7 @@ $(function() {
 	};
 
 	// Load ligand locally
+	var x;
 	$('input[type="file"]').change(function() {
 		var file = this.files[0];
 		if (file === undefined) return;
@@ -425,14 +426,11 @@ $(function() {
 					ftf_dist = this_dist;
 				}
 			}
+			x = [];
 			[ ctd, cst, fct, ftf ].forEach(function (rpt) {
-				var dists = new Float32Array(lcnt), o = 0;
-				for (var i in atoms) {
-					var atom = atoms[i];
-					dists[o++] = atom.coord.distanceTo(rpt);
-				}
-				var m = moments(dists, lcnt, lcnv);
-				console.log(m);
+				x = x.concat(moments(Object.keys(atoms).map(function (key) {
+					return atoms[key].coord.distanceTo(rpt);
+				}), lcnt, lcnv));
 			});
 		};
 		reader.readAsText(file);
@@ -517,6 +515,8 @@ $(function() {
 		submissionStatus.show();
 		// Post a new job with server side validation
 		$.post('jobs', {
+			x: x,
+			email: email,
 		}, function(res) {
 			submissionStatus.hide();
 			var keys = Object.keys(res);
