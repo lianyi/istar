@@ -329,7 +329,8 @@ $(function() {
 			var d = dists[i] - m[0];
 			m[2] += d * d * d;
 		}
-		m[2] = Math.pow(m[2] * v, 1 / 3);
+		var sign = (m[2] > 0) - (m[2] < 0);
+		m[2] = sign * Math.pow(sign * m[2] * v, 1 / 3);
 		return m;
 	};
 
