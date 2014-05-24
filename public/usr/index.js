@@ -275,32 +275,6 @@ $(function() {
 		mesh.matrix.multiply(new THREE.Matrix4().makeScale(radius, radius, p0.distanceTo(p1))).multiply(new THREE.Matrix4().makeRotationX(Math.PI * 0.5));
 		return mesh;
 	};
-	var createRepresentationSub = function (atoms, f0, f01) {
-		for (var i in atoms) {
-			var atom0 = atoms[i];
-			f0(atom0);
-			for (var j in atom0.bonds) {
-				var atom1 = atom0.bonds[j];
-				if (atom1.serial < atom0.serial) continue;
-				f01(atom0, atom1);
-			}
-		}
-	};
-	var createStickRepresentation = function (atoms, atomR, bondR) {
-		var obj = new THREE.Object3D();
-		obj.add(createRepresentationSub(atoms, function (atom0) {
-			obj.add(createSphere(atom0, atomR, true));
-		}, function (atom0, atom1) {
-			if (atom0.color === atom1.color) {
-				obj.add(createCylinder(atom0.coord, atom1.coord, bondR, atom0.color));
-			} else {
-				var mp = atom0.coord.clone().add(atom1.coord).multiplyScalar(0.5);
-				obj.add(createCylinder(atom0.coord, mp, bondR, atom0.color));
-				obj.add(createCylinder(atom1.coord, mp, bondR, atom1.color));
-			}
-		}));
-		return obj;
-	};
 	var render = function () {
 		var center = rot.position.z - camera.position.z;
 		if (center < 1) center = 1;
@@ -403,7 +377,21 @@ $(function() {
 			rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
 			rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
 			mdl.position = lavg.clone().multiplyScalar(-1);
-			mdl.add(createStickRepresentation(atoms, cylinderRadius, cylinderRadius));
+			for (var i in atoms) {
+				var atom0 = atoms[i];
+				mdl.add(createSphere(atom0, cylinderRadius));
+				for (var j in atom0.bonds) {
+					var atom1 = atom0.bonds[j];
+					if (atom1.serial < atom0.serial) continue;
+					if (atom0.color === atom1.color) {
+						mdl.add(createCylinder(atom0.coord, atom1.coord, cylinderRadius, atom0.color));
+					} else {
+						var mp = atom0.coord.clone().add(atom1.coord).multiplyScalar(0.5);
+						mdl.add(createCylinder(atom0.coord, mp, cylinderRadius, atom0.color));
+						mdl.add(createCylinder(atom1.coord, mp, cylinderRadius, atom1.color));
+					}
+				}
+			}
 			render();
 			var ctd = lavg, cst, fct, ftf, cst_dist = 9999, fct_dist = -9999, ftf_dist = -9999;
 			for (var i in atoms) {
