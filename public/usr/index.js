@@ -354,9 +354,9 @@ $(function() {
 						elem: line.substr(77, 2).replace(/ /g, '').toUpperCase(),
 						bonds: [],
 					};
-					if (atom.elem === 'H') continue;
 					var elem = pdbqt2pdb[atom.elem];
 					if (elem) atom.elem = elem;
+					if (atom.elem === 'H') continue;
 					atom.color = atomColors[atom.elem] || defaultAtomColor;
 					atoms[atom.serial] = atom;
 					if (start_frame === undefined) start_frame = atom.serial;
