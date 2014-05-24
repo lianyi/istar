@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Hongjian Li">
+  <meta name="description" content="usr: ultrafast shape recognition for ligand-based virtual screening">
+  <title>usr: ultrafast shape recognition for ligand-based virtual screening</title>
+  <link rel="stylesheet" href="/bootstrap.min.css">
+  <link rel="stylesheet" href="/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/jquery-ui-1.10.4.custom.min.css">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+  <script>
+    var _gaq=[['_setAccount','UA-20604862-1'],['_trackPageview']];
+    (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+    s.parentNode.insertBefore(g,s)}(document,'script'));
+  </script>
+</head>
+<body>
+  <a class="sr-only" href="#content">Skip navigation</a>
+  <a href="//github.com/HongjianLi/istar" class="ribbon"></a>
+  <header class="navbar navbar-inverse navbar-static-top" role="banner">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      </div>
+      <nav class="collapse navbar-collapse" role="navigation">
+        <ul class="nav navbar-nav">
+          <li>
+            <a href="/"><img src="/logo.png" alt="istar logo">istar: software as a service</a>
+          </li>
+          <li>
+            <a href="/idock"><img src="/idock/logo.png" alt="idock logo">idock: protein-ligand docking</a>
+          </li>
+          <li class="active">
+            <a href="/usr"><img src="/usr/logo.png" alt="idock logo">usr: ultrafast shape recognition</a>
+          </li>
+          <li>
+            <a href="/iview"><img src="/iview/logo.png" alt="iview logo">iview: interactive WebGL visualizer</a>
+          </li>
+          <li>
+            <a href="/igrep"><img src="/igrep/logo.png" alt="igrep logo">igrep: DNA sequence matching</a>
+          </li>
+          <li>
+            <a href="/icuda"><img src="/icuda/logo.png" alt="icuda logo">icuda: introduction to CUDA</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="jumbotron" id="content" role="main">
+    <div class="container">
+      <h1><img src="logo.png" alt="logo" class="logo">usr</h1>
+      <p>ultrafast shape recognition for ligand-based virtual screening</p>
+    </div>
+  </div>
+  <div class="container">
+    <section>
+      <div class="page-header">
+        <h1>Jobs</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12" id="pager">
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h1>New job</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>The input to usr is onefold:</p>
+          <ul>
+            <li>A query ligand in PDBQT format.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>The output from usr is twofold:</p>
+          <ul>
+            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: the usr score, molecular properties, link to substance information and supplier list of the entire database of ligands.</li>
+            <li><img src="/molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: the top 1000 ligands.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row" role="form">
+        <div class="col-md-5">
+          <div class="form-group">
+            <label for="ligand"><a title="must conform to PDBQT specification" id="ligand_label">Ligand in PDBQT format</a></label> <input type="file" id="ligand">
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <canvas>Your browser does not support WebGL.</canvas>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-1">
+          <div class="form-group">
+            <button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
+          </div>
+        </div>
+        <div class="col-md-1">
+          <p id="submissionStatus" style="display: none"><img src="/loading.gif" alt="loading"></p>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h1>Citations</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>Pedro J. Ballester and W. Graham Richards. Ultrafast shape recognition to search compound databases for similar molecular shapes. <em>Journal of Computational Chemistry</em>, 28(10):1711-1723, 2007. <a href="http://dx.doi.org/10.1002/jcc.20681">DOI: 10.1002/jcc.20681</a></p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer role="contentinfo">
+    <div class="container">
+      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2014 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+    </div>
+  </footer>
+  <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="/bootstrap.min.js"></script>
+  <script src="/jquery-ui-1.10.4.custom.min.js"></script>
+  <script src="/jquery-dateFormat.min.js"></script>
+  <script src="/jquery.pager.js"></script>
+  <script src="/jquery.lazyload.min.js"></script>
+  <script src="/iview/three.min.js"></script>
+  <script src="/istar.js"></script>
+  <script src="/validator.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
