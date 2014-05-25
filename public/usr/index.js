@@ -359,7 +359,7 @@ $(function() {
 					atom0.bonds.push(atom1);
 					atom1.bonds.push(atom0);
 				}
-			} else if (extension === 'xyz')
+			} else if (extension === 'xyz') {
 				var atomCount = parseInt(lines[0].substr(0, 3));
 				var offset = 2;
 				for (var i = 1; i <= atomCount; ++i) {
@@ -382,7 +382,7 @@ $(function() {
 						}
 					}
 				}
-			} else if (extension === "pdb") {
+			} else if (extension === 'pdb') {
 				for (var i in lines) {
 					var line = lines[i];
 					var record = line.substr(0, 6);
