@@ -93,7 +93,6 @@ int main(int argc, char* argv[])
 	vector<double> scores(n);
 	vector<size_t> scase(n);
 	array<double, 4> a;
-	string line;
 	std::ifstream ligands("16_lig.pdbqt");
 	while (true)
 	{
@@ -120,7 +119,7 @@ int main(int argc, char* argv[])
 				double s = 0;
 				for (size_t i = 0; i < 12; i += 4)
 				{
-					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_loadu_pd(&q[i]), _mm256_load_pd(&l[i])));
 					_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
 					s += a[0] + a[2];
 				}
@@ -145,12 +144,19 @@ int main(int argc, char* argv[])
 //			log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
 			ligands_pdbqt_gz.push(ligands_pdbqt);
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,USR score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
+			log_csv_gz << "ZINC ID,USR score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(8);
 			for (const size_t c : scase)
 			{
-//				ligands.seekg(headers[c]);
-				getline(ligands, line);
-//				cout << c << '\t' << scores[c] << endl;
+				log_csv_gz << c << ',' << scores[c] << '\n';
+			}
+			for (size_t i = 0; i < 1000; ++i)
+			{
+				ligands.seekg(headers[scase[i]]);
+				for (string line; getline(ligands, line);)
+				{
+					ligands_pdbqt_gz << line;
+					if (line.substr(0, 6) == "TORSDO") break;
+				}
 			}
 
 			// Update progress.
