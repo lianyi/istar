@@ -92,7 +92,8 @@ int main(int argc, char* argv[])
 	cout << setprecision(4);
 	vector<double> scores(n);
 	vector<size_t> scase(n);
-	array<double, 4> a;
+	vector<array<double, 4>> aw(1);
+	auto a = aw.front();
 	std::ifstream ligands("16_lig.pdbqt");
 	while (true)
 	{
@@ -107,7 +108,8 @@ int main(int argc, char* argv[])
 
 			// Obtain job properties.
 			const auto ligand = job["ligand"].Array();
-			array<double, 12> q;
+			vector<array<double, 12>> qw(1);
+			auto q = qw.front();
 			for (size_t i = 0; i < 12; ++i)
 			{
 				q[i] = stod(ligand[i].String());
@@ -119,7 +121,7 @@ int main(int argc, char* argv[])
 				double s = 0;
 				for (size_t i = 0; i < 12; i += 4)
 				{
-					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_loadu_pd(&q[i]), _mm256_load_pd(&l[i])));
+					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
 					_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
 					s += a[0] + a[2];
 				}
