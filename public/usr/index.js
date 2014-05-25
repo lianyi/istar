@@ -20,6 +20,31 @@ $(function() {
 		];
 	});
 
+	// Refresh the table of jobs and its pager every second
+	var jobs = [], skip = 0;
+	var tick = function() {
+		$.get('jobs', { skip: skip }, function(res) {
+			if (res.length) {
+				var nUpdate = 0;
+				for (var i = skip; i < jobs.length; ++i) {
+					var job = res[i - skip];
+					jobs[i].done = job.done;
+					if (job.done) ++nUpdate;
+				}
+				pager.pager('refresh', skip, skip + nUpdate, 2, 5, true);
+				if (res.length > jobs.length - skip) {
+					var len = jobs.length;
+					jobs = jobs.concat(res.slice(jobs.length - skip));
+					pager.pager('source', jobs);
+					pager.pager('refresh', len, jobs.length, 0, 5, true);
+				}
+				for (; skip < jobs.length && jobs[skip].done; ++skip);
+			}
+			setTimeout(tick, 1000);
+		});
+	};
+	tick();
+
 	var covalentRadii = { // http://en.wikipedia.org/wiki/Covalent_radius
 		 H: 0.31,
 		HE: 0.28,
