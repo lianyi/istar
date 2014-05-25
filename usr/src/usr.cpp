@@ -119,6 +119,7 @@ int main(int argc, char* argv[])
 			{
 				const auto& l = features[k];
 				double s = 0;
+				#pragma unroll
 				for (size_t i = 0; i < 12; i += 4)
 				{
 					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
