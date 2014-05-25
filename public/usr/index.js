@@ -334,10 +334,10 @@ $(function() {
 				++offset;
 				for (var i = 1; i <= bondCount; ++i) {
 					var line = lines[offset++];
-					var atom1 = atoms[parseInt(line.substr( 6, 5))];
-					var atom2 = atoms[parseInt(line.substr(11, 5))];
-					atoms[atom1].bonds.push(atom2);
-					atoms[atom2].bonds.push(atom1);
+					var atom0 = atoms[parseInt(line.substr( 6, 5))];
+					var atom1 = atoms[parseInt(line.substr(11, 5))];
+					atom0.bonds.push(atom1);
+					atom1.bonds.push(atom0);
 				}
 			} else if (extension === 'sdf') {
 				var atomCount = parseInt(lines[3].substr(0, 3));
