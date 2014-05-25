@@ -3,12 +3,13 @@ $(function() {
 	// Initialize pager
 	var pager = $('#pager');
 	pager.pager('init', [ 'Description', 'Submitted on', 'Status', 'Result' ], function(job) {
-		var status, progress, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
+		var status, result;
 		if (!job.done) {
 			status = 'Queued for execution';
+			result = '';
 		} else {
 			status = 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
-			result += '<a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
+			result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
 		}
 		return [
 			job.description,
