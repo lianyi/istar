@@ -52,7 +52,7 @@
 				this.error();
 			} else {
 				for (var i = 0; i < 12; ++i) {
-					if (isNaN(this.val[i])) {
+					if (Object.prototype.toString.call(this.val[i]) !== '[object Number]' || isNaN(this.val[i])) {
 						this.error();
 						break;
 					}
