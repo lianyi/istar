@@ -16,12 +16,10 @@ double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
 
 int main(int argc, char* argv[])
 {
-	cout.setf(ios::fixed, ios::floatfield);
-	cout << setprecision(4);
 	while (true)
 	{
 		vector<array<double, 3>> atoms;
-		atoms.reserve(100);
+		atoms.reserve(41);
 		for (string line, record; getline(cin, line) && (record = line.substr(0, 6)) != "TORSDO";)
 		{
 			if (record != "ATOM  " && record != "HETATM") continue;
@@ -70,7 +68,6 @@ int main(int argc, char* argv[])
 				ftf_dist = this_dist;
 			}
 		}
-		bool output = false;
 		for (const auto& rpt : { ctd, cst, fct, ftf })
 		{
 			vector<double> dists(n);
@@ -97,10 +94,7 @@ int main(int argc, char* argv[])
 				m[2] += d * d * d;
 			}
 			m[2] = cbrt(m[2] * v);
-			if (output) cout << ',';
-			cout << m[0] << ',' << m[1] << ',' << m[2];
-			output = true;
+			cout.write(static_cast<char*>(m.data()), sizeof(m));
 		}
-		cout << endl;
 	}
 }
