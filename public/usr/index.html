@@ -82,7 +82,7 @@
         <div class="col-md-12">
           <p>The input to usr is onefold:</p>
           <ul>
-            <li>A query ligand in PDBQT format.</li>
+            <li>A query ligand.</li>
           </ul>
         </div>
       </div>
@@ -96,15 +96,35 @@
         </div>
       </div>
       <div class="row" role="form">
-        <div class="col-md-5">
+        <div class="col-md-12">
           <div class="form-group">
-            <label for="ligand"><a title="must conform to PDBQT specification" id="ligand_label">Ligand in PDBQT format</a></label> <input type="file" id="ligand">
+            <label for="ligand"><a title="must conform to MOL2, SDF, XYZ, PDB or PDBQT format" id="ligand_label">Ligand in MOL2, SDF, XYZ, PDB or PDBQT format</a></label> <input type="file" id="ligand">
           </div>
         </div>
       </div>
       <div class="row">
         <div class="col-md-12">
           <canvas>Your browser does not support WebGL.</canvas>
+        </div>
+      </div>
+      <div class="row" role="form">
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="description"><a title="at most 20 characters" id="description_label">Briefly describe your job</a></label>
+            <div class="input-group">
+              <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
+              <input type="text" class="form-control" id="description" placeholder="TMC278">
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="email"><a title="compulsory" id="email_label">Email to receive completion notification</a></label>
+            <div class="input-group">
+              <span class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></span>
+              <input type="email" class="form-control" id="email" placeholder="Jacky@cuhk.edu.hk">
+            </div>
+          </div>
         </div>
       </div>
       <div class="row">
