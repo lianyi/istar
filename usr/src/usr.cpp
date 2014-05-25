@@ -12,6 +12,7 @@
 #include <thread>
 #include <immintrin.h>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -82,9 +83,9 @@ int main(int argc, char* argv[])
 	const size_t n = features.size();
 
 	// Read the header bin file.
-	vector<size_t> headers;
+/*	vector<size_t> headers;
 	read(headers, "16_hdr.bin");
-	assert(n == headers.size());
+	assert(n == headers.size());*/
 
 	// Search the features for records similar to the query.
 	cout.setf(ios::fixed, ios::floatfield);
@@ -107,8 +108,12 @@ int main(int argc, char* argv[])
 
 			// Obtain job properties.
 			const auto ligand = job["ligand"].Array();
+			array<double, 12> q;
+			for (size_t i = 0; i < 12; ++i)
+			{
+				q[i] = ligand[i].Number();
+			}
 
-			const array<double, 12> q = { 2.8676,1.1022,-0.5600,2.8974,1.2106,-0.6881,5.1474,2.3391,-2.0920,4.6221,2.0675,-1.1042 };
 			for (size_t k = 0; k < n; ++k)
 			{
 				const auto& l = features[k];
@@ -137,12 +142,13 @@ int main(int argc, char* argv[])
 			log_csv_gz.push(gzip_compressor());
 			ligands_pdbqt_gz.push(gzip_compressor());
 			log_csv_gz.push(log_csv);
+//			log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
 			ligands_pdbqt_gz.push(ligands_pdbqt);
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			log_csv_gz << "ZINC ID,USR score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
 			for (const size_t c : scase)
 			{
-				ligands.seekg(headers[c]);
+//				ligands.seekg(headers[c]);
 				getline(ligands, line);
 //				cout << c << '\t' << scores[c] << endl;
 			}
