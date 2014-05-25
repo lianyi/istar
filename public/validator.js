@@ -46,6 +46,19 @@
 	validator.prototype.objectid = function() {
 		return this.regex(/^[0-9a-fA-F]{24}$/);
 	};
+	validator.prototype.ligand = function() {
+		if (Object.prototype.toString.call(this.val) !== '[object Array]' || this.val.length != 12) {
+			this.error();
+		} else {
+			for (var i = 0; i < 12; ++i) {
+				if (isNaN(this.val[i])) {
+					this.error();
+					break;
+				}
+			}
+		}
+		return this;
+	};
 	validator.prototype.xss = function() {
 		typeof this.val === 'string' && this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		return this;

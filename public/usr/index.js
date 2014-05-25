@@ -309,10 +309,11 @@ $(function() {
 	};
 
 	// Load ligand locally
-	var x;
+	var ligand;
 	$('input[type="file"]').change(function() {
 		var file = this.files[0];
 		if (file === undefined) return;
+		$('#description').val(file.name);
 		var reader = new FileReader();
 		reader.onload = function () {
 			rot.remove(mdl);
@@ -386,7 +387,7 @@ $(function() {
 				for (var i in lines) {
 					var line = lines[i];
 					var record = line.substr(0, 6);
-					if (record == 'ATOM  ' || record == 'HETATM') {
+					if (record === 'ATOM  ' || record === 'HETATM') {
 						var atom = {
 							serial: parseInt(line.substr(6, 5)),
 							coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
@@ -394,13 +395,15 @@ $(function() {
 							bonds: [],
 						};
 						atoms[atom.serial] = atom;
-					} else if (record == 'CONECT') {
+					} else if (record === 'CONECT') {
 						var atom0 = atoms[parseInt(line.substr(6, 5))];
 						for (var j = 0; j < 4; ++j) {
 							var atom1 = atoms[parseInt(line.substr([11, 16, 21, 26][j], 5))];
 							if (atom1 === undefined) continue;
 							atom0.bonds.push(atom1);
 						}
+					} else if (record === 'ENDMDL') {
+						break;
 					}
 				}
 			} else {
@@ -441,6 +444,7 @@ $(function() {
 							atoms[r.x].bonds.push(atoms[r.y]);
 							atoms[r.y].bonds.push(atoms[r.x]);
 						}
+						break;
 					}
 				}
 			}
@@ -502,9 +506,9 @@ $(function() {
 					ftf_dist = this_dist;
 				}
 			}
-			x = [];
+			ligand = [];
 			[ ctd, cst, fct, ftf ].forEach(function (rpt) {
-				x = x.concat(moments(Object.keys(atoms).map(function (key) {
+				ligand = ligand.concat(moments(Object.keys(atoms).map(function (key) {
 					return atoms[key].coord.distanceTo(rpt);
 				}), lcnt, lcnv));
 			});
@@ -586,14 +590,30 @@ $(function() {
 	submit.click(function() {
 		// Hide tooltips
 		$('.form-group a').tooltip('hide');
+		// Do client side validation
+		var job = {
+			ligand: ligand,
+			description: $('#description').val(),
+			email: $('#email').val(),
+		}
+		var v = new validator(job);
+		if (v
+			.field('ligand').message('must conform to MOL2, SDF, XYZ, PDB or PDBQT format').ligand()
+			.field('description').message('must be provided, at most 20 characters').length(1, 20)
+			.field('email').message('must be valid').email()
+			.failed()) {
+			var keys = Object.keys(v.err);
+			keys.forEach(function(key) {
+				$('#' + key + '_label').tooltip('show');
+			});
+			$('#' + keys[0]).focus();
+			return;
+		}
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
 		submissionStatus.show();
 		// Post a new job with server side validation
-		$.post('jobs', {
-			x: x,
-			email: email,
-		}, function(res) {
+		$.post('jobs', job, function(res) {
 			submissionStatus.hide();
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
