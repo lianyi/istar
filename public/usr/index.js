@@ -608,7 +608,6 @@ $(function() {
 	$('.form-group a').tooltip();
 
 	// Process submission
-	var submissionStatus = $('#submissionStatus');
 	var submit = $('#submit');
 	submit.click(function() {
 		// Hide tooltips
@@ -634,10 +633,8 @@ $(function() {
 		}
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
-		submissionStatus.show();
 		// Post a new job with server side validation
 		$.post('jobs', job, function(res) {
-			submissionStatus.hide();
 			var keys = Object.keys(res);
 			// If server side validation fails, show the tooltips
 			if (keys.length) {
