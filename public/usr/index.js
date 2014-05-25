@@ -420,7 +420,6 @@ $(function() {
 						var elem = pdbqt2pdb[atom.elem];
 						if (elem) atom.elem = elem;
 						if (atom.elem === 'H') continue;
-						atom.color = atomColors[atom.elem] || defaultAtomColor;
 						atoms[atom.serial] = atom;
 						if (start_frame === undefined) start_frame = atom.serial;
 						for (var j = start_frame; j < atom.serial; ++j) {
@@ -451,6 +450,7 @@ $(function() {
 			var lcnt = 0;
 			for (var i in atoms) {
 				var atom = atoms[i];
+				atom.color = atomColors[atom.elem] || defaultAtomColor;
 				var coord = atom.coord;
 				lsum.add(coord);
 				lmin.min(coord);
