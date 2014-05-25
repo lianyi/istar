@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 				m[2] += d * d * d;
 			}
 			m[2] = cbrt(m[2] * v);
-			cout.write(static_cast<char*>(m.data()), sizeof(m));
+			cout.write(reinterpret_cast<char*>(m.data()), sizeof(m));
 		}
 	}
 }
