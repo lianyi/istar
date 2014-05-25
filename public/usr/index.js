@@ -317,43 +317,131 @@ $(function() {
 		reader.onload = function () {
 			rot.remove(mdl);
 			rot.add(mdl = new THREE.Object3D());
-			var lines = reader.result.split('\n'), atoms = {}, start_frame, rotors = [];
-			for (var i = 0, l = lines.length; i < l; ++i) {
-				var line = lines[i];
-				var record = line.substr(0, 6);
-				if (record === 'ATOM  ' || record === 'HETATM') {
-					var atom = {
-						serial: parseInt(line.substr(6, 5)),
-						name: line.substr(12, 4).replace(/ /g, ''),
-						coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
-						elqt: line.substr(77, 2),
-						elem: line.substr(77, 2).replace(/ /g, '').toUpperCase(),
+			var extension = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase(), lines = reader.result.split('\n'), atoms = {};
+			if (extension === 'mol2') {
+				var atomCount = parseInt(lines[2].substr(0, 5));
+				var bondCount = parseInt(lines[2].substr(5, 6));
+				var offset = 7;
+				for (var i = 1; i <= atomCount; ++i) {
+					var line = lines[offset++];
+					atoms[i] = {
+						serial: i,
+						coord: new THREE.Vector3(parseFloat(line.substr(16, 10)), parseFloat(line.substr(26, 10)), parseFloat(line.substr(36, 10))),
+						elem: line.substr(47, 2).replace(/\./g, '').toUpperCase(),
 						bonds: [],
 					};
-					var elem = pdbqt2pdb[atom.elem];
-					if (elem) atom.elem = elem;
-					if (atom.elem === 'H') continue;
-					atom.color = atomColors[atom.elem] || defaultAtomColor;
-					atoms[atom.serial] = atom;
-					if (start_frame === undefined) start_frame = atom.serial;
-					for (var j = start_frame; j < atom.serial; ++j) {
-						var a = atoms[j];
-						if (a && hasCovalentBond(a, atom)) {
-							a.bonds.push(atom);
-							atom.bonds.push(a);
+				}
+				++offset;
+				for (var i = 1; i <= bondCount; ++i) {
+					var line = lines[offset++];
+					var atom1 = atoms[parseInt(line.substr( 6, 5))];
+					var atom2 = atoms[parseInt(line.substr(11, 5))];
+					atoms[atom1].bonds.push(atom2);
+					atoms[atom2].bonds.push(atom1);
+				}
+			} else if (extension === 'sdf') {
+				var atomCount = parseInt(lines[3].substr(0, 3));
+				var bondCount = parseInt(lines[3].substr(3, 3));
+				var offset = 4;
+				for (var i = 1; i <= atomCount; ++i) {
+					var line = lines[offset++];
+					atoms[i] = {
+						serial: i,
+						coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
+						elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
+						bonds: [],
+					};
+				}
+				for (var i = 1; i <= bondCount; ++i) {
+					var line = lines[offset++];
+					var atom0 = atoms[parseInt(line.substr(0, 3))];
+					var atom1 = atoms[parseInt(line.substr(3, 3))];
+					atom0.bonds.push(atom1);
+					atom1.bonds.push(atom0);
+				}
+			} else if (extension === 'xyz')
+				var atomCount = parseInt(lines[0].substr(0, 3));
+				var offset = 2;
+				for (var i = 1; i <= atomCount; ++i) {
+					var line = lines[offset++];
+					var tokens = line.replace(/^\s+/, '').replace(/\s+/g, ' ').split(' ');
+					atoms[i] = {
+						serial: i,
+						elem: tokens[0].toUpperCase(),
+						coord: new THREE.Vector3(parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3])),
+						bonds: [],
+					};
+				}
+				for (var i = 1; i < atomCount; ++i) {
+					var atom0 = atoms[i];
+					for (var j = i + 1; j <= atomCount; ++j) {
+						var atom1 = atoms[j];
+						if (this.hasCovalentBond(atom0, atom1)) {
+							atom0.bonds.push(atom1);
+							atom1.bonds.push(atom0);
 						}
 					}
-				} else if (record === 'BRANCH') {
-					rotors.push({
-						x: parseInt(line.substr( 6, 4)),
-						y: parseInt(line.substr(10, 4)),
-					});
-					start_frame = undefined;
-				} else if (record === 'TORSDO') {
-					for (var j in rotors) {
-						var r = rotors[j];
-						atoms[r.x].bonds.push(atoms[r.y]);
-						atoms[r.y].bonds.push(atoms[r.x]);
+				}
+			} else if (extension === "pdb") {
+				for (var i in lines) {
+					var line = lines[i];
+					var record = line.substr(0, 6);
+					if (record == 'ATOM  ' || record == 'HETATM') {
+						var atom = {
+							serial: parseInt(line.substr(6, 5)),
+							coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
+							elem: line.substr(76, 2).replace(/ /g, ''),
+							bonds: [],
+						};
+						atoms[atom.serial] = atom;
+					} else if (record == 'CONECT') {
+						var atom0 = atoms[parseInt(line.substr(6, 5))];
+						for (var j = 0; j < 4; ++j) {
+							var atom1 = atoms[parseInt(line.substr([11, 16, 21, 26][j], 5))];
+							if (atom1 === undefined) continue;
+							atom0.bonds.push(atom1);
+						}
+					}
+				}
+			} else {
+				var start_frame, rotors = [];
+				for (var i in lines) {
+					var line = lines[i];
+					var record = line.substr(0, 6);
+					if (record === 'ATOM  ' || record === 'HETATM') {
+						var atom = {
+							serial: parseInt(line.substr(6, 5)),
+							name: line.substr(12, 4).replace(/ /g, ''),
+							coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
+							elqt: line.substr(77, 2),
+							elem: line.substr(77, 2).replace(/ /g, '').toUpperCase(),
+							bonds: [],
+						};
+						var elem = pdbqt2pdb[atom.elem];
+						if (elem) atom.elem = elem;
+						if (atom.elem === 'H') continue;
+						atom.color = atomColors[atom.elem] || defaultAtomColor;
+						atoms[atom.serial] = atom;
+						if (start_frame === undefined) start_frame = atom.serial;
+						for (var j = start_frame; j < atom.serial; ++j) {
+							var a = atoms[j];
+							if (a && hasCovalentBond(a, atom)) {
+								a.bonds.push(atom);
+								atom.bonds.push(a);
+							}
+						}
+					} else if (record === 'BRANCH') {
+						rotors.push({
+							x: parseInt(line.substr( 6, 4)),
+							y: parseInt(line.substr(10, 4)),
+						});
+						start_frame = undefined;
+					} else if (record === 'TORSDO') {
+						for (var j in rotors) {
+							var r = rotors[j];
+							atoms[r.x].bonds.push(atoms[r.y]);
+							atoms[r.y].bonds.push(atoms[r.x]);
+						}
 					}
 				}
 			}
