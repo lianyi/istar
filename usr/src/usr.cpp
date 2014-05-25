@@ -11,7 +11,7 @@
 #include <chrono>
 #include <thread>
 #include <immintrin.h>
-#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -38,8 +38,8 @@ inline static string now()
 template <typename T>
 void read(vector<T>& v, const string f)
 {
-	std::ifstream ifs(f, std::ifstream::binary);
-	ifs.seekg(0, std::ifstream::end);
+	ifstream ifs(f, ifstream::binary);
+	ifs.seekg(0, ifstream::end);
 	const size_t num_bytes = ifs.tellg();
 	v.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
@@ -92,9 +92,10 @@ int main(int argc, char* argv[])
 	cout << setprecision(4);
 	vector<double> scores(n);
 	vector<size_t> scase(n);
-	vector<array<double, 4>> aw(1);
+	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
-	std::ifstream ligands("16_lig.pdbqt");
+	string line;
+	ifstream ligands("16_lig.pdbqt");
 	while (true)
 	{
 		// Fetch jobs.
@@ -103,12 +104,11 @@ int main(int argc, char* argv[])
 		{
 			const auto job = cursor->next();
 			const auto _id = job["_id"].OID();
-			const auto job_path = jobs_path / _id.str();
 			cout << now() << "Executing job " << _id.str() << endl;
 
 			// Obtain job properties.
 			const auto ligand = job["ligand"].Array();
-			vector<array<double, 12>> qw(1);
+			array<array<double, 12>, 1> qw;
 			auto q = qw.front();
 			for (size_t i = 0; i < 12; ++i)
 			{
@@ -136,27 +136,24 @@ int main(int argc, char* argv[])
 			});
 
 			// Write results.
-			boost::filesystem::ofstream log_csv(job_path / "log.csv.gz");
-			boost::filesystem::ofstream ligands_pdbqt(job_path / "ligands.pdbqt.gz");
-			filtering_ostream log_csv_gz;
+			const auto job_path = jobs_path / _id.str();
+			create_directory(job_path);
 			filtering_ostream ligands_pdbqt_gz;
-			log_csv_gz.push(gzip_compressor());
 			ligands_pdbqt_gz.push(gzip_compressor());
-			log_csv_gz.push(log_csv);
-//			log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
-			ligands_pdbqt_gz.push(ligands_pdbqt);
-			log_csv_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,USR score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(8);
-			for (const size_t c : scase)
+			ligands_pdbqt_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
+			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
+			for (size_t k = 0; k < 1000; ++k)
 			{
-				log_csv_gz << c << ',' << scores[c] << '\n';
-			}
-			for (size_t i = 0; i < 1000; ++i)
-			{
-				ligands.seekg(headers[scase[i]]);
-				for (string line; getline(ligands, line);)
+				const size_t c = scase[k];
+				ligands.seekg(headers[c]);
+				for (size_t i = 0; i < 3 && getline(ligands, line); ++i)
 				{
-					ligands_pdbqt_gz << line;
+					ligands_pdbqt_gz << line << '\n';
+				}
+				ligands_pdbqt_gz << "REMARK     USR SCORE: " << setw(10) << setprecision(8) << scores[c] << '\n';
+				while (getline(ligands, line))
+				{
+					ligands_pdbqt_gz << line << '\n';
 					if (line.substr(0, 6) == "TORSDO") break;
 				}
 			}
