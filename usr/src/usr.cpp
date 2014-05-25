@@ -7,6 +7,9 @@
 #include <cmath>
 #include <numeric>
 #include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <thread>
 #include <immintrin.h>
 /*#include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -31,23 +34,15 @@ using namespace Poco::Net;*/
 	return to_simple_string(second_clock::local_time()) + " ";
 }*/
 
-vector<double> parse(const string& line)
+template <typename T>
+void read(vector<T>& v, const string f)
 {
-	vector<double> r;
-	if (line.size())
-	{
-		r.reserve(12);
-		for (size_t b = 0, e; true; b = e + 1)
-		{
-			if ((e = line.find(',', b + 6)) == string::npos)
-			{
-				r.push_back(stof(line.substr(b)));
-				break;
-			}
-			r.push_back(stof(line.substr(b, e - b)));
-		}
-	}
-	return r;
+	ifstream ifs(f, ifstream::binary);
+	ifs.seekg(0, ifstream::end);
+	const size_t num_bytes = ifs.tellg();
+	v.resize(num_bytes / sizeof(T));
+	ifs.seekg(0);
+	ifs.read(reinterpret_cast<char*>(v.data()), num_bytes);
 }
 
 int main(int argc, char* argv[])
@@ -79,57 +74,28 @@ int main(int argc, char* argv[])
 	const auto collection = "istar.usr";*/
 
 	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
+	const double qv = 1.0 / 12;
+//	const auto epoch = date(1970, 1, 1);
 
-	// Read the feature file.
-	string line;
-	vector<vector<double>> features;
-	features.reserve(23129083);
-	for (ifstream ifs(argv[1]); getline(ifs, line); features.push_back(parse(line)));
+	// Read the feature bin file.
+	vector<array<double, 12>> features;
+	read(features, "16_usr.bin");
 	const size_t n = features.size();
 
-	// Read the header file.
-	vector<string> headers;
-	headers.reserve(n);
-	for (ifstream ifs(argv[2]); getline(ifs, line); headers.push_back(move(line)));
+	// Read the header bin file.
+/*	vector<size_t> headers;
+	read(headers, "16_hdr.bin");
+	assert(n == headers.size());*/
 
-	// Search the features for records similar to each of the queries.
+	// Search the features for records similar to the query.
+	cout.setf(ios::fixed, ios::floatfield);
+	cout << setprecision(4);
 	vector<double> scores(n);
 	vector<size_t> scase(n);
 	array<double, 4> a;
-	cout.setf(ios::fixed, ios::floatfield);
-	cout << setprecision(4);
-	const double qv = 1.0 / 12;
-	while (getline(cin, line))
-	{
-		const auto& q = parse(line);
-		for (size_t k = 0; k < n; ++k)
-		{
-			const auto& l = features[k];
-			double s = 0;
-			for (size_t i = 0; i < 12; i += 4)
-			{
-				_mm256_stream_pd(a.data(), _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i]))));
-				s += a[0] + a[1] + a[2] + a[3];
-			}
-			scores[k] = 1 / (1 + s * qv);
-		}
-		iota(scase.begin(), scase.end(), 0);
-		sort(scase.begin(), scase.end(), [&scores](const size_t val1, const size_t val2)
-		{
-			return scores[val1] > scores[val2];
-		});
-		for (const size_t c : scase)
-		{
-			cout << c << '\t' << headers[c] << '\t' << scores[c] << endl;
-		}
-	}
-
-/*	// Initialize epoch
-	const auto epoch = date(1970, 1, 1);
-
 	while (true)
 	{
-		// Fetch jobs.
+/*		// Fetch jobs.
 		auto cursor = conn.query(collection, QUERY("done" << BSON("$exists" << false)).sort("submitted"), 100); // Each batch processes 100 jobs.
 		while (cursor->more())
 		{
@@ -161,9 +127,33 @@ int main(int argc, char* argv[])
 			session.login();
 			session.sendMessage(message);
 			session.close();
+		}*/
+
+		const array<double, 12> q = { 2.8676,1.1022,-0.5600,2.8974,1.2106,-0.6881,5.1474,2.3391,-2.0920,4.6221,2.0675,-1.1042 };
+		for (size_t k = 0; k < n; ++k)
+		{
+			const auto& l = features[k];
+			double s = 0;
+			for (size_t i = 0; i < 12; i += 4)
+			{
+				const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+				_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+				s += a[0] + a[2];
+			}
+			scores[k] = 1 / (1 + s * qv);
 		}
+		iota(scase.begin(), scase.end(), 0);
+		sort(scase.begin(), scase.end(), [&scores](const size_t val1, const size_t val2)
+		{
+			return scores[val1] > scores[val2];
+		});
+		for (const size_t c : scase)
+		{
+			cout << c << '\t' << scores[c] << endl;
+		}
+		break;
 
 		// Sleep for a while.
 		this_thread::sleep_for(std::chrono::seconds(10));
-	}*/
+	}
 }
