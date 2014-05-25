@@ -66,6 +66,7 @@ if (cluster.isMaster) {
 			var idock = db.collection('idock');
 			var igrow = db.collection('igrow');
 			var igrep = db.collection('igrep');
+			var usr   = db.collection('usr');
 			// Configure express server
 			var express = require('express');
 			var compress = require('compression');
@@ -375,6 +376,36 @@ if (cluster.isMaster) {
 					igrow.insert(v.res, {w: 0});
 					res.json({});
 				});
+			});
+			app.route('/usr/jobs').get(function(req, res) {
+				var v = new validator(req.query);
+				if (v
+					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
+					.failed()) {
+					res.json(v.err);
+					return;
+				};
+				usr.find({}, {
+					fields: {'description': 1, 'submitted': 1, 'done': 1},
+					sort: {'submitted': 1},
+					skip: v.res.skip
+				}).toArray(function(err, docs) {
+					if (err) throw err;
+					res.json(docs);
+				});
+			}).post(function(req, res) {
+				var v = new validator(req.body);
+				if (v
+					.field('email').message('must be valid').email().copy()
+					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
+					.field('ligand').message('must be an array of 12 numerical features').ligand().copy()
+					.failed()) {
+					res.json(v.err);
+					return;
+				}
+				v.res.submitted = new Date();
+				usr.insert(v.res, {w: 0});
+				res.json({});
 			});
 			app.route('/igrep/jobs').get(function(req, res) {
 				var v = new validator(req.query);
