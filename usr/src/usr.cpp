@@ -83,9 +83,9 @@ int main(int argc, char* argv[])
 	const size_t n = features.size();
 
 	// Read the header bin file.
-/*	vector<size_t> headers;
+	vector<size_t> headers;
 	read(headers, "16_hdr.bin");
-	assert(n == headers.size());*/
+	assert(n == headers.size());
 
 	// Search the features for records similar to the query.
 	cout.setf(ios::fixed, ios::floatfield);
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 			array<double, 12> q;
 			for (size_t i = 0; i < 12; ++i)
 			{
-				q[i] = ligand[i].Number();
+				q[i] = stod(ligand[i].String());
 			}
 
 			for (size_t k = 0; k < n; ++k)
