@@ -364,9 +364,9 @@ $(function () {
 		ES: new THREE.Color(0xB31FD4),
 		FM: new THREE.Color(0xB31FBA),
 	};
-	var defaultAtomColor  = new THREE.Color(0xCCCCCC);
-	var defaultBoxColor   = new THREE.Color(0x1FF01F);
-	var defaultBondColor  = new THREE.Color(0x2194D6);
+	var defaultAtomColor = new THREE.Color(0xCCCCCC);
+	var defaultBoxColor  = new THREE.Color(0x1FF01F);
+	var defaultBondColor = new THREE.Color(0x2194D6);
 	var defaultBackgroundColor = new THREE.Color(0x000000);
 	var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
 	var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
@@ -695,7 +695,6 @@ void main()\n\
 	labelGeo.faces.push(new THREE.Face3(0, 2, 3));
 	labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
 	labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
-	var entities = {};
 
 	var createSphere = function (atom, defaultRadius, forceDefault, scale) {
 		var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
@@ -825,27 +824,6 @@ void main()\n\
 		}
 		return obj;
 	};
-	var refreshMolecule = function (entity) {
-		var r = entity.representations[entity.active];
-		if (r === undefined) {
-			switch (entity.active) {
-				case 'line':
-					r = createLineRepresentation(entity.atoms);
-					break;
-				case 'stick':
-					r = createStickRepresentation(entity.atoms, cylinderRadius, cylinderRadius);
-					break;
-				case 'ball & stick':
-					r = createStickRepresentation(entity.atoms, cylinderRadius, cylinderRadius * 0.5);
-					break;
-				case 'sphere':
-					r = createSphereRepresentation(entity.atoms);
-					break;
-			}
-			entity.representations[entity.active] = r;
-		}
-		mdl.add(r);
-	};
 	var refreshLigand = function(ligand) {
 		if (ligand.representations === undefined) {
 			var atoms = ligand.atoms;
@@ -886,13 +864,14 @@ void main()\n\
 	$('#results a').each(function () {
 		$(this).attr('href', path + this.innerText);
 	});
+	var ligand;
 	$.ajax({
 		url: path + 'ligands.pdbqt.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
 	}).done(function (lsrcz) {
 		var gunzipWorker = new Worker('/gunzip.js');
 		gunzipWorker.addEventListener('message', function (e) {
-			var ligands = [], ligand, atoms, start_frame, rotors;
+			var ligands = [], atoms, start_frame, rotors;
 			var lines = e.data.split('\n')
 			for (var i = 0, l = lines.length; i < l; ++i) {
 				var line = lines[i];
@@ -904,7 +883,25 @@ void main()\n\
 					var ligand = {
 						atoms: {},
 						refresh: function() {
-							refreshMolecule(entities.ligand);
+							var r = ligand.representations[ligand.active];
+							if (r === undefined) {
+								switch (ligand.active) {
+									case 'line':
+										r = createLineRepresentation(ligand.atoms);
+										break;
+									case 'stick':
+										r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius);
+										break;
+									case 'ball & stick':
+										r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius * 0.5);
+										break;
+									case 'sphere':
+										r = createSphereRepresentation(ligand.atoms);
+										break;
+								}
+								ligand.representations[ligand.active] = r;
+							}
+							mdl.add(r);
 						},
 						id: id,
 						mwt: parseFloat(line.substr(20, 8)),
@@ -966,12 +963,11 @@ void main()\n\
 			}).join(''));
 			$(':first', ids).addClass('active');
 			$('> .btn', ids).click(function(e) {
-				var ligand = entities.ligand;
 				mdl.remove(ligand.representations.label);
 				mdl.remove(ligand.representations[ligand.active]);
 				ligands.forEach(function(l) {
 					if (l.id.toString() === $(e.target).text().trim()) {
-						ligand = entities.ligand = l;
+						ligand = l;
 					}
 				});
 				refreshLigand(ligand);
@@ -979,17 +975,13 @@ void main()\n\
 				ligand.refresh();
 				render();
 			});
-			refreshLigand(entities.ligand = ligands[0]);
-			key = 'ligand';
-			var entity = entities[key];
-			entity.active = $('#' + key + ' .active').text().trim();
-			entity.refresh();
-			$('#' + key).click(function (e) {
-				var key = e.currentTarget.id;
-				var entity = entities[key];
-				mdl.remove(entity.representations[entity.active]);
-				entity.active = $(e.target).text().trim();
-				entity.refresh();
+			refreshLigand(ligand = ligands[0]);
+			ligand.active = $('#ligand .active').text().trim();
+			ligand.refresh();
+			$('#ligand').click(function (e) {
+				mdl.remove(ligand.representations[ligand.active]);
+				ligand.active = $(e.target).text().trim();
+				ligand.refresh();
 				render();
 			});
 			render();
