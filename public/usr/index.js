@@ -621,7 +621,7 @@ $(function() {
 		}
 		var v = new validator(job);
 		if (v
-			.field('ligand').message('must conform to MOL2, SDF, XYZ, PDB or PDBQT format').ligand()
+			.field('ligand').message('must be an array of 12 numerical features').usr()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
 			.failed()) {

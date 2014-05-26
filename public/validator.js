@@ -47,7 +47,7 @@
 		objectid: function() {
 			return this.regex(/^[0-9a-fA-F]{24}$/);
 		},
-		ligand: function() {
+		usr: function() {
 			if (Object.prototype.toString.call(this.val) !== '[object Array]' || this.val.length != 12) {
 				this.error();
 			} else {

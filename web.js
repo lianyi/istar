@@ -398,7 +398,7 @@ if (cluster.isMaster) {
 				if (v
 					.field('email').message('must be valid').email().copy()
 					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
-					.field('ligand').message('must be an array of 12 numerical features').ligand().copy()
+					.field('ligand').message('must be an array of 12 numerical features').usr().copy()
 					.failed()) {
 					res.json(v.err);
 					return;
