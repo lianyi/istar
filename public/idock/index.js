@@ -704,14 +704,12 @@ $(function() {
 			});
 			canvas.bind('mousewheel', function (e) {
 				e.preventDefault();
-				var scaleFactor = (rot.position.z - camera.position.z) * 0.85;
-				rot.position.z -= scaleFactor * e.originalEvent.wheelDelta * 0.0025;
+				rot.position.z -= e.originalEvent.wheelDelta * 0.025;
 				render();
 			});
 			canvas.bind('DOMMouseScroll', function (e) {
 				e.preventDefault();
-				var scaleFactor = (rot.position.z - camera.position.z) * 0.85;
-				rot.position.z += scaleFactor * e.originalEvent.detail * 0.1;
+				rot.position.z += e.originalEvent.detail;
 				render();
 			});
 		};
