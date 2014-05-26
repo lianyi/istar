@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz.push(gzip_compressor());
 			ligands_pdbqt_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
+			ligands_pdbqt_gz << setprecision(8);
 			for (size_t k = 0; k < 1000; ++k)
 			{
 				const size_t c = scase[k];
@@ -151,7 +152,7 @@ int main(int argc, char* argv[])
 				{
 					ligands_pdbqt_gz << line << '\n';
 				}
-				ligands_pdbqt_gz << "REMARK     USR SCORE: " << setw(10) << setprecision(8) << scores[c] << '\n';
+				ligands_pdbqt_gz << "REMARK     USR SCORE: " << setw(10) << scores[c] << '\n';
 				while (getline(ligands, line))
 				{
 					ligands_pdbqt_gz << line << '\n';
