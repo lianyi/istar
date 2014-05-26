@@ -851,7 +851,7 @@ void main()\n\
 			var atoms = ligand.atoms;
 			var labels = ligand.labels = {};
 			ligand.representations = {
-//				label: createLabelRepresentation(labels),
+				label: createLabelRepresentation(labels),
 			};
 		}
 		mdl.add(ligand.representations.label);
@@ -886,19 +886,6 @@ void main()\n\
 	$('#results a').each(function () {
 		$(this).attr('href', path + this.innerText);
 	});
-	var initializeEntity = function (key) {
-		var entity = entities[key];
-		entity.active = $('#' + key + ' .active').text().trim();
-		entity.refresh();
-		$('#' + key).click(function (e) {
-			var key = e.currentTarget.id;
-			var entity = entities[key];
-			mdl.remove(entity.representations[entity.active]);
-			entity.active = $(e.target).text().trim();
-			entity.refresh();
-			render();
-		});
-	};
 	$.ajax({
 		url: path + 'ligands.pdbqt.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
@@ -993,7 +980,18 @@ void main()\n\
 				render();
 			});
 			refreshLigand(entities.ligand = ligands[0]);
-			initializeEntity('ligand');
+			key = 'ligand';
+			var entity = entities[key];
+			entity.active = $('#' + key + ' .active').text().trim();
+			entity.refresh();
+			$('#' + key).click(function (e) {
+				var key = e.currentTarget.id;
+				var entity = entities[key];
+				mdl.remove(entity.representations[entity.active]);
+				entity.active = $(e.target).text().trim();
+				entity.refresh();
+				render();
+			});
 			render();
 		});
 		gunzipWorker.postMessage(lsrcz);
