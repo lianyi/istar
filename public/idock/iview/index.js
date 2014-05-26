@@ -1187,7 +1187,7 @@ void main()\n\
 				mimeType: 'application/octet-stream; charset=x-user-defined',
 			}).done(function (lsrcz) {
 				if (lsrcz.length == 2) return;
-				var gunzipWorker = new Worker('gunzip.js');
+				var gunzipWorker = new Worker('/gunzip.js');
 				gunzipWorker.addEventListener('message', function (e) {
 					var ligands = [], ligand, atoms, start_frame, rotors;
 					var lines = e.data.split('\n')
