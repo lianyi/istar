@@ -349,18 +349,22 @@ $(function() {
 				var offset = 7;
 				for (var i = 1; i <= atomCount; ++i) {
 					var line = lines[offset++];
-					atoms[i] = {
+					var atom = {
 						serial: i,
 						coord: new THREE.Vector3(parseFloat(line.substr(16, 10)), parseFloat(line.substr(26, 10)), parseFloat(line.substr(36, 10))),
-						elem: line.substr(47, 2).replace(/\./g, '').toUpperCase(),
+						elem: line.substr(47, 2).replace(/[\.\s]/g, '').toUpperCase(),
 						bonds: [],
 					};
+					if (atom.elem === 'H') continue;
+					atoms[atom.serial] = atom;
 				}
 				++offset;
 				for (var i = 1; i <= bondCount; ++i) {
 					var line = lines[offset++];
 					var atom0 = atoms[parseInt(line.substr( 6, 5))];
+					if (atom0 === undefined) continue;
 					var atom1 = atoms[parseInt(line.substr(11, 5))];
+					if (atom1 === undefined) continue;
 					atom0.bonds.push(atom1);
 					atom1.bonds.push(atom0);
 				}
@@ -370,17 +374,21 @@ $(function() {
 				var offset = 4;
 				for (var i = 1; i <= atomCount; ++i) {
 					var line = lines[offset++];
-					atoms[i] = {
+					var atom = {
 						serial: i,
 						coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
 						elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
 						bonds: [],
 					};
+					if (atom.elem === 'H') continue;
+					atoms[atom.serial] = atom;
 				}
 				for (var i = 1; i <= bondCount; ++i) {
 					var line = lines[offset++];
 					var atom0 = atoms[parseInt(line.substr(0, 3))];
+					if (atom0 === undefined) continue;
 					var atom1 = atoms[parseInt(line.substr(3, 3))];
+					if (atom1 === undefined) continue;
 					atom0.bonds.push(atom1);
 					atom1.bonds.push(atom0);
 				}
@@ -390,12 +398,14 @@ $(function() {
 				for (var i = 1; i <= atomCount; ++i) {
 					var line = lines[offset++];
 					var tokens = line.replace(/^\s+/, '').replace(/\s+/g, ' ').split(' ');
-					atoms[i] = {
+					var atom = {
 						serial: i,
 						elem: tokens[0].toUpperCase(),
 						coord: new THREE.Vector3(parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3])),
 						bonds: [],
 					};
+					if (atom.elem === 'H') continue;
+					atoms[atom.serial] = atom;
 				}
 				for (var i = 1; i < atomCount; ++i) {
 					var atom0 = atoms[i];
@@ -418,9 +428,11 @@ $(function() {
 							elem: line.substr(76, 2).replace(/ /g, ''),
 							bonds: [],
 						};
+						if (atom.elem === 'H') continue;
 						atoms[atom.serial] = atom;
 					} else if (record === 'CONECT') {
 						var atom0 = atoms[parseInt(line.substr(6, 5))];
+						if (atom0 === undefined) continue;
 						for (var j = 0; j < 4; ++j) {
 							var atom1 = atoms[parseInt(line.substr([11, 16, 21, 26][j], 5))];
 							if (atom1 === undefined) continue;
