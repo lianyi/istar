@@ -651,12 +651,16 @@ $(function () {
 	var ambientLight = new THREE.AmbientLight(0x202020);
 	var rot = new THREE.Object3D();
 	var mdl = new THREE.Object3D();
+	var maxD = 20, sn = -maxD, sf = maxD;
 	rot.add(mdl);
+	rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
+	rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
+	mdl.position = new THREE.Vector3(0, 0, 0);
 	scene.add(directionalLight);
 	scene.add(ambientLight);
 	scene.add(rot);
 	scene.fog = new THREE.Fog(defaultBackgroundColor, 100, 200);
-	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800), sn, sf;
+	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800);
 	camera.position = new THREE.Vector3(0, 0, -150);
 	camera.lookAt(new THREE.Vector3(0, 0, 0));
 	var labelVertexShader = '\
@@ -811,6 +815,16 @@ void main()\n\
 		}));
 		return obj;
 	};
+	var createLabelRepresentation = function (atoms) {
+		var obj = new THREE.Object3D();
+		for (var i in atoms) {
+			var atom = atoms[i];
+			var bb = createLabel(atom.name === 'CA' ? atom.chain + ':' + atom.resn + ':' + atom.resi : atom.name, 24, '#dddddd');
+			bb.position = atom.coord;
+			obj.add(bb);
+		}
+		return obj;
+	};
 	var refreshMolecule = function (entity) {
 		var r = entity.representations[entity.active];
 		if (r === undefined) {
@@ -837,7 +851,7 @@ void main()\n\
 			var atoms = ligand.atoms;
 			var labels = ligand.labels = {};
 			ligand.representations = {
-				label: createLabelRepresentation(labels),
+//				label: createLabelRepresentation(labels),
 			};
 		}
 		mdl.add(ligand.representations.label);
@@ -872,132 +886,118 @@ void main()\n\
 	$('#results a').each(function () {
 		$(this).attr('href', path + this.innerText);
 	});
-			var initializeEntity = function (key) {
-				var entity = entities[key];
-				entity.active = $('#' + key + ' .active').text().trim();
-				entity.refresh();
-				$('#' + key).click(function (e) {
-					if (e.currentTarget.innerHTML.indexOf('disabled') > 0) return;
-					var key = e.currentTarget.id;
-					var entity = entities[key];
-					mdl.remove(entity.representations[entity.active]);
-					entity.active = $(e.target).text().trim();
-					entity.refresh();
-					render();
-				});
-			};
-			$.ajax({
-				url: path + 'ligands.pdbqt.gz',
-				mimeType: 'application/octet-stream; charset=x-user-defined',
-			}).done(function (lsrcz) {
-				if (lsrcz.length == 2) return;
-				var gunzipWorker = new Worker('gunzip.js');
-				gunzipWorker.addEventListener('message', function (e) {
-					var ligands = [], ligand, atoms, start_frame, rotors;
-					var lines = e.data.split('\n')
-					for (var i = 0, l = lines.length; i < l; ++i) {
-						var line = lines[i];
-						var record = line.substr(0, 6);
-						if (record === 'REMARK') {
-							var id = line.substr(11, 8);
-							if (isNaN(parseInt(id))) continue;
-							rotors = [];
-							var ligand = {
-								atoms: {},
-								refresh: function() {
-									refreshMolecule(entities.ligand);
-								},
-								id: id,
-								mwt: parseFloat(line.substr(20, 8)),
-								lgp: parseFloat(line.substr(29, 8)),
-								ads: parseFloat(line.substr(38, 8)),
-								pds: parseFloat(line.substr(47, 8)),
-								hbd: parseInt(line.substr(56, 3)),
-								hba: parseInt(line.substr(60, 3)),
-								psa: parseInt(line.substr(64, 3)),
-								chg: parseInt(line.substr(68, 3)),
-								nrb: parseInt(line.substr(72, 3)),
-							}, atoms = ligand.atoms;
-							ligand.smiles = lines[++i].substr(11);
-							ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
-							ligand.nsuppliers = ligand.suppliers.length;
-							ligand.idock_score = parseFloat(lines[++i].substr(55, 8));
-							ligand.e_total = parseFloat(lines[++i].substr(55, 8));
-							ligand.e_inter = parseFloat(lines[++i].substr(55, 8));
-							ligand.e_intra = parseFloat(lines[++i].substr(55, 8));
-							ligand.efficiency = parseFloat(lines[++i].substr(55, 8));
-							++i;
-							ligand.rf_score = parseFloat(lines[++i].substr(55, 8));
-							ligand.consensus_score = parseFloat(lines[++i].substr(55, 8));
-						} else if (record === 'ATOM  ' || record === 'HETATM') {
-							var atom = {
-								serial: parseInt(line.substr(6, 5)),
-								name: line.substr(12, 4).replace(/ /g, ''),
-								coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
-								elqt: line.substr(77, 2),
-								elem: line.substr(77, 2).replace(/ /g, '').toUpperCase(),
-								bonds: [],
-							};
-							if (atom.elem === 'H') continue;
-							var elem = pdbqt2pdb[atom.elem];
-							if (elem) atom.elem = elem;
-							atom.color = atomColors[atom.elem] || defaultAtomColor;
-							atoms[atom.serial] = atom;
-							if (start_frame === undefined) start_frame = atom.serial;
-							for (var j = start_frame; j < atom.serial; ++j) {
-								var a = atoms[j];
-								if (a && hasCovalentBond(a, atom)) {
-									a.bonds.push(atom);
-									atom.bonds.push(a);
-								}
-							}
-						} else if (record === 'BRANCH') {
-							rotors.push({
-								x: parseInt(line.substr( 6, 4)),
-								y: parseInt(line.substr(10, 4)),
-							});
-							start_frame = undefined;
-						} else if (record === 'TORSDO') {
-							for (var j in rotors) {
-								var r = rotors[j];
-								atoms[r.x].bonds.push(atoms[r.y]);
-								atoms[r.y].bonds.push(atoms[r.x]);
-							}
-							ligands.push(ligand);
-							start_frame = undefined;
+	var initializeEntity = function (key) {
+		var entity = entities[key];
+		entity.active = $('#' + key + ' .active').text().trim();
+		entity.refresh();
+		$('#' + key).click(function (e) {
+			var key = e.currentTarget.id;
+			var entity = entities[key];
+			mdl.remove(entity.representations[entity.active]);
+			entity.active = $(e.target).text().trim();
+			entity.refresh();
+			render();
+		});
+	};
+	$.ajax({
+		url: path + 'ligands.pdbqt.gz',
+		mimeType: 'application/octet-stream; charset=x-user-defined',
+	}).done(function (lsrcz) {
+		var gunzipWorker = new Worker('/gunzip.js');
+		gunzipWorker.addEventListener('message', function (e) {
+			var ligands = [], ligand, atoms, start_frame, rotors;
+			var lines = e.data.split('\n')
+			for (var i = 0, l = lines.length; i < l; ++i) {
+				var line = lines[i];
+				var record = line.substr(0, 6);
+				if (record === 'REMARK') {
+					var id = line.substr(11, 8);
+					if (isNaN(parseInt(id))) continue;
+					rotors = [];
+					var ligand = {
+						atoms: {},
+						refresh: function() {
+							refreshMolecule(entities.ligand);
+						},
+						id: id,
+						mwt: parseFloat(line.substr(20, 8)),
+						lgp: parseFloat(line.substr(29, 8)),
+						ads: parseFloat(line.substr(38, 8)),
+						pds: parseFloat(line.substr(47, 8)),
+						hbd: parseInt(line.substr(56, 3)),
+						hba: parseInt(line.substr(60, 3)),
+						psa: parseInt(line.substr(64, 3)),
+						chg: parseInt(line.substr(68, 3)),
+						nrb: parseInt(line.substr(72, 3)),
+					}, atoms = ligand.atoms;
+					ligand.smiles = lines[++i].substr(11);
+					ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
+					ligand.nsuppliers = ligand.suppliers.length;
+					ligand.usr_score = parseFloat(lines[++i].substr(22, 10));
+				} else if (record === 'ATOM  ' || record === 'HETATM') {
+					var atom = {
+						serial: parseInt(line.substr(6, 5)),
+						name: line.substr(12, 4).replace(/ /g, ''),
+						coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
+						elqt: line.substr(77, 2),
+						elem: line.substr(77, 2).replace(/ /g, '').toUpperCase(),
+						bonds: [],
+					};
+					var elem = pdbqt2pdb[atom.elem];
+					if (elem) atom.elem = elem;
+					if (atom.elem === 'H') continue;
+					atom.color = atomColors[atom.elem] || defaultAtomColor;
+					atoms[atom.serial] = atom;
+					if (start_frame === undefined) start_frame = atom.serial;
+					for (var j = start_frame; j < atom.serial; ++j) {
+						var a = atoms[j];
+						if (a && hasCovalentBond(a, atom)) {
+							a.bonds.push(atom);
+							atom.bonds.push(a);
 						}
 					}
-					$('#nligands').text(ligands.length);
-					var ids = $('#ids');
-					ids.html(ligands.map(function(ligand) {
-						return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';
-					}).join(''));
-					$(':first', ids).addClass('active');
-					$('> .btn', ids).click(function(e) {
-						var ligand = entities.ligand;
-						mdl.remove(ligand.representations.label);
-						mdl.remove(ligand.representations[ligand.active]);
-						ligands.forEach(function(l) {
-							if (l.id.toString() === $(e.target).text().trim()) {
-								ligand = entities.ligand = l;
-							}
-						});
-						refreshLigand(ligand);
-						ligand.active = $('#ligand .active').text().trim();
-						ligand.refresh();
-						render();
+				} else if (record === 'BRANCH') {
+					rotors.push({
+						x: parseInt(line.substr( 6, 4)),
+						y: parseInt(line.substr(10, 4)),
 					});
-					refreshLigand(entities.ligand = ligands[0]);
-					initializeEntity('ligand');
-					render();
-				});
-				gunzipWorker.postMessage(lsrcz);
-			}).always(function() {
-				for (var key in entities) {
-					initializeEntity(key);
+					start_frame = undefined;
+				} else if (record === 'TORSDO') {
+					for (var j in rotors) {
+						var r = rotors[j];
+						atoms[r.x].bonds.push(atoms[r.y]);
+						atoms[r.y].bonds.push(atoms[r.x]);
+					}
+					ligands.push(ligand);
+					start_frame = undefined;
 				}
+			}
+			$('#nligands').text(ligands.length);
+			var ids = $('#ids');
+			ids.html(ligands.map(function(ligand) {
+				return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';
+			}).join(''));
+			$(':first', ids).addClass('active');
+			$('> .btn', ids).click(function(e) {
+				var ligand = entities.ligand;
+				mdl.remove(ligand.representations.label);
+				mdl.remove(ligand.representations[ligand.active]);
+				ligands.forEach(function(l) {
+					if (l.id.toString() === $(e.target).text().trim()) {
+						ligand = entities.ligand = l;
+					}
+				});
+				refreshLigand(ligand);
+				ligand.active = $('#ligand .active').text().trim();
+				ligand.refresh();
 				render();
 			});
+			refreshLigand(entities.ligand = ligands[0]);
+			initializeEntity('ligand');
+			render();
+		});
+		gunzipWorker.postMessage(lsrcz);
+	});
 	var dg, wh, cx, cy, cq, cz, cp, cn, cf;
 	canvas.bind('contextmenu', function (e) {
 		e.preventDefault();
