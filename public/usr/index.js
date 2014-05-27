@@ -409,9 +409,11 @@ $(function() {
 				}
 				for (var i = 1; i < atomCount; ++i) {
 					var atom0 = atoms[i];
+					if (atom0 === undefined) continue;
 					for (var j = i + 1; j <= atomCount; ++j) {
 						var atom1 = atoms[j];
-						if (this.hasCovalentBond(atom0, atom1)) {
+						if (atom1 === undefined) continue;
+						if (hasCovalentBond(atom0, atom1)) {
 							atom0.bonds.push(atom1);
 							atom1.bonds.push(atom0);
 						}
