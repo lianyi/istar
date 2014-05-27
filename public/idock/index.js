@@ -721,25 +721,25 @@ $(function() {
 		range: true,
 		min: 55,
 		max: 567,
-		values: [ 400, 420 ]
+		values: [ 390, 420 ]
 	});
 	$('#lgp').slider({
 		range: true,
 		min: -6,
 		max: 12,
-		values: [ 0, 2 ]
+		values: [ 1, 3 ]
 	});
 	$('#ads').slider({
 		range: true,
 		min: -57,
 		max: 29,
-		values: [ 0, 5 ]
+		values: [ 0, 10 ]
 	});
 	$('#pds').slider({
 		range: true,
 		min: -543,
 		max: 1,
-		values: [ -20, 0 ]
+		values: [ -40, 0 ]
 	});
 	$('#hbd').slider({
 		range: true,
