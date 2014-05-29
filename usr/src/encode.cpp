@@ -24,8 +24,7 @@ int main(int argc, char* argv[])
 		{
 			if (record != "ATOM  " && record != "HETATM") continue;
 			if (line[77] == 'H' && (line[78] == ' ' || line[78] == 'D')) continue;
-			array<double, 3> a = { stof(line.substr(30, 8)), stof(line.substr(38, 8)), stof(line.substr(46, 8)) };
-			atoms.push_back(move(a));
+			atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
 		}
 		if (atoms.empty()) break;
 		const auto n = atoms.size();
