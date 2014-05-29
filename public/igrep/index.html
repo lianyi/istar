@@ -132,7 +132,33 @@ AAAAGTGTTATGGGTTGTTGAATCAACCACTGAACTGCGGGGTTGACTAGTTATAACTTA4</textarea>
       </div>
       <div class="row">
         <div class="col-md-12">
-          <div id="genomes"></div>
+          <div class="ui-accordion" id="genomes"></div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h1>Tutorials</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="ui-accordion">
+            <h3>How to use the REST API to programmatically submit multiple jobs in batch and query for job status</h3>
+            <div>
+              <p>Submit a new job via HTTP POST</p>
+              <pre>
+curl -d $'email=Jacky@cuhk.edu.hk
+&amp;taxid=9606
+&amp;queries=CTGCATGGTGGGGAAAAGGCATAGCCTGGG3
+AAAAGTGTTATGGGTTGTTTAATCAACCACTGAACTGCGGGGGTGACTAGTTATAACTTA6'
+http://istar.cse.cuhk.edu.hk/igrep/jobs
+              </pre>
+              <p>Obtain existing jobs via HTTP GET</p>
+              <pre>
+curl http://istar.cse.cuhk.edu.hk/igrep/jobs
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
     </section>

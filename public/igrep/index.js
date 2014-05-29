@@ -2648,14 +2648,17 @@ $(function() {
 		return '<h3>' + g.name + ', taxonomy id ' + g.taxid + ', NCBI build ' + g.ncbiBuild + ', version ' + g.version + ', released on ' + g.releaseDate + ', total ' + g.nucleotides.comma() + ' nucleotides in ' + g.files.length + ' files</h3><div class="table-responsive"><table class="table table-hover"><thead><tr><th>File</th><th>Header</th><th class="text-right">Nucleotides</th></tr></thead><tbody>' + trs.join('') + '</tbody></table></div>';
 	}
 
-	// Apply accordion to genomes
+	// Apply the contents of the genomes
 	var sections = new Array(genomes.length);
 	genomes.forEach(function(g, i) {
 		sections[i] = section(g);
 	});
-	$('#genomes').html(sections.join('')).accordion({
+	$('#genomes').html(sections.join(''));
+
+	// Apply accordion to genomes and tutorials
+	$('.ui-accordion').accordion({
 		collapsible: true,
 		active: false,
-		heightStyle: 'content'
+		heightStyle: 'content',
 	});
 });

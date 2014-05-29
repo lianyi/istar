@@ -193,6 +193,28 @@
             <div>
               <p>Take the CCR5 chemokine receptor (PDB code: <a href="http://www.pdb.org/pdb/explore/explore.do?structureId=4MBS">4MBS</a>) as an example.</p>
             </div>
+            <h3>How to use the REST API to programmatically submit multiple jobs in batch and query for job status</h3>
+            <div>
+              <p>Submit a new job via HTTP POST</p>
+              <pre>
+curl -d 'idock_id=525a0abab0717fe31a000001
+&amp;description=4MBS
+&amp;email=Jacky@cuhk.edu.hk
+&amp;mwt_lb=300
+&amp;mwt_ub=500
+&amp;nrb_lb=4
+&amp;nrb_ub=6
+&amp;hbd_lb=2
+&amp;hbd_ub=4
+&amp;hba_lb=4
+&amp;hba_ub=6'
+http://istar.cse.cuhk.edu.hk/igrow/jobs
+              </pre>
+              <p>Obtain existing jobs via HTTP GET</p>
+              <pre>
+curl http://istar.cse.cuhk.edu.hk/igrow/jobs
+              </pre>
+            </div>
           </div>
         </div>
       </div>
