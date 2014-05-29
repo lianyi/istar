@@ -40,7 +40,8 @@
   padding-right: 8px;
 }
 
-.page-header h1 {
+.page-header h2 {
+  font-size: 36px;
   font-weight: bold;
   text-align: center;
 }
