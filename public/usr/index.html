@@ -173,6 +173,20 @@
 		      <p>Firefox WebGL can be enabled by following <a href="https://wiki.mozilla.org/Blocklisting/Blocked_Graphics_Drivers#How_to_force-enable_blocked_graphics_features">these instructions</a>.</p>
 		      <p>Safari WebGL can be enabled by following <a href="https://discussions.apple.com/thread/3300585">these instructions</a>.</p>
             </div>
+            <h3>How to use the REST API to programmatically submit multiple jobs in batch and query for job status</h3>
+            <div>
+              <p>Submit a new job via HTTP POST</p>
+              <pre>
+curl -d 'ligand=[300]
+&amp;description=ZINC01493878.sdf
+&amp;email=Jacky@cuhk.edu.hk'
+http://istar.cse.cuhk.edu.hk/usr/jobs
+              </pre>
+              <p>Obtain existing jobs via HTTP GET</p>
+              <pre>
+curl http://istar.cse.cuhk.edu.hk/usr/jobs
+              </pre>
+            </div>
           </div>
         </div>
       </div>
