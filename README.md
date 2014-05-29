@@ -34,6 +34,11 @@ Components
 
 * [MongoDB]
 
+### Daemon
+
+* [MongoDB C++ Driver]
+* [POCO C++ Libraries]
+
 
 Supported browsers
 ------------------
@@ -66,9 +71,6 @@ Logo
 
 
 [istar]: http://istar.cse.cuhk.edu.hk
-[idock]: http://istar.cse.cuhk.edu.hk/idock
-[igrep]: http://istar.cse.cuhk.edu.hk/igrep
-[iview]: http://istar.cse.cuhk.edu.hk/iview
 [Twitter Bootstrap]: https://github.com/twitter/bootstrap
 [jQuery]: https://github.com/jquery/jquery
 [jQuery UI]: https://github.com/jquery/jquery-ui
@@ -79,9 +81,10 @@ Logo
 [node.js]: https://github.com/joyent/node
 [mongodb]: https://github.com/mongodb/node-mongodb-native
 [express]: https://github.com/visionmedia/express
-[validator]: https://github.com/chriso/node-validator
 [spdy]: https://github.com/indutny/node-spdy
 [MongoDB]: https://github.com/mongodb/mongo
+[MongoDB C++ Driver]: https://github.com/mongodb/mongo-cxx-driver
+[POCO C++ Libraries]: https://github.com/pocoproject/poco
 [Apache License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
 [CC BY 3.0]: http://creativecommons.org/licenses/by/3.0
 [Jacky Lee]: http://www.cse.cuhk.edu.hk/~hjli
