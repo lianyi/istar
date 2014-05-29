@@ -177,9 +177,7 @@
             <div>
               <p>Submit a new job via HTTP POST</p>
               <pre>
-curl -d 'description=ZINC01493878.sdf
-&amp;email=Jacky@cuhk.edu.hk'
-&amp;ligand=5.200141677708006
+curl http://istar.cse.cuhk.edu.hk/usr/jobs -d 'description=ZINC01493878.sdf&amp;email=Jacky@cuhk.edu.hk&amp;ligand=5.200141677708006
 &amp;ligand=2.166052181431031
 &amp;ligand=-1.399607264898816
 &amp;ligand=5.197602958025681
@@ -190,8 +188,7 @@ curl -d 'description=ZINC01493878.sdf
 &amp;ligand=-2.467728975807576
 &amp;ligand=8.093514551043354
 &amp;ligand=4.8821654420886365
-&amp;ligand=2.6021317950447176
-http://istar.cse.cuhk.edu.hk/usr/jobs
+&amp;ligand=2.6021317950447176'
               </pre>
               <p>Obtain existing jobs via HTTP GET</p>
               <pre>
