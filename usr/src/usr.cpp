@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 			auto q = qw.front();
 			for (size_t i = 0; i < qn; ++i)
 			{
-				q[i] = ligand[i].Double();
+				q[i] = ligand[i].Number();
 			}
 
 			for (size_t k = 0; k < n; ++k)
