@@ -197,10 +197,7 @@
             <div>
               <p>Submit a new job via HTTP POST</p>
               <pre>
-curl -d 'idock_id=525a0abab0717fe31a000001
-&amp;description=4MBS
-&amp;email=Jacky@cuhk.edu.hk
-&amp;mwt_lb=300
+curl http://istar.cse.cuhk.edu.hk/igrow/jobs -d 'idock_id=525a0abab0717fe31a000001&amp;description=4MBS&amp;email=Jacky@cuhk.edu.hk&amp;mwt_lb=300
 &amp;mwt_ub=500
 &amp;nrb_lb=4
 &amp;nrb_ub=6
@@ -208,7 +205,6 @@ curl -d 'idock_id=525a0abab0717fe31a000001
 &amp;hbd_ub=4
 &amp;hba_lb=4
 &amp;hba_ub=6'
-http://istar.cse.cuhk.edu.hk/igrow/jobs
               </pre>
               <p>Obtain existing jobs via HTTP GET</p>
               <pre>
