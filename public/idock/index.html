@@ -338,26 +338,7 @@ curl http://istar.cse.cuhk.edu.hk/idock/jobs/
               </pre>
               <p>Count the number of ligands satisfying your custom filtering conditions via HTTP GET</p>
               <pre>
-curl -Gd
-'mwt_lb=400
-&amp;mwt_ub=500
-&amp;lgp_lb=0
-&amp;lgp_ub=5
-&amp;nrb_lb=2
-&amp;nrb_ub=8
-&amp;hbd_lb=2
-&amp;hbd_ub=5
-&amp;hba_lb=2
-&amp;hba_ub=10
-&amp;chg_lb=0
-&amp;chg_ub=0
-&amp;ads_lb=0
-&amp;ads_ub=12
-&amp;pds_lb=-50
-&amp;pds_ub=0
-&amp;psa_lb=20
-&amp;psa_ub=100'
-http://istar.cse.cuhk.edu.hk/idock/ligands
+curl http://istar.cse.cuhk.edu.hk/idock/ligands -Gd 'mwt_lb=400&amp;mwt_ub=500&amp;lgp_lb=0&amp;lgp_ub=5&amp;nrb_lb=2&amp;nrb_ub=8&amp;hbd_lb=2&amp;hbd_ub=5&amp;hba_lb=2&amp;hba_ub=10&amp;chg_lb=0&amp;chg_ub=0&amp;ads_lb=0&amp;ads_ub=12&amp;pds_lb=-50&amp;pds_ub=0&amp;psa_lb=20&amp;psa_ub=100'
               </pre>
             </div>
           </div>
