@@ -74,11 +74,12 @@ int main(int argc, char* argv[])
 	}
 	const auto collection = "istar.usr";
 	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
-	const double qv = 1.0 / 12;
+	const auto qn = 12;
+	const auto qv = 1.0 / qn;
 	const auto epoch = date(1970, 1, 1);
 
 	// Read the feature bin file.
-	vector<array<double, 12>> features;
+	vector<array<double, qn>> features;
 	read(features, "16_usr.bin");
 	const size_t n = features.size();
 
@@ -108,9 +109,9 @@ int main(int argc, char* argv[])
 
 			// Obtain job properties.
 			const auto ligand = job["ligand"].Array();
-			array<array<double, 12>, 1> qw;
+			array<array<double, qn>, 1> qw;
 			auto q = qw.front();
-			for (size_t i = 0; i < 12; ++i)
+			for (size_t i = 0; i < qn; ++i)
 			{
 				q[i] = ligand[i].Double();
 			}
@@ -120,7 +121,7 @@ int main(int argc, char* argv[])
 				const auto& l = features[k];
 				double s = 0;
 				#pragma unroll
-				for (size_t i = 0; i < 12; i += 4)
+				for (size_t i = 0; i < qn; i += 4)
 				{
 					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
 					_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
