@@ -147,11 +147,9 @@ AAAAGTGTTATGGGTTGTTGAATCAACCACTGAACTGCGGGGTTGACTAGTTATAACTTA4</textarea>
             <div>
               <p>Submit a new job via HTTP POST</p>
               <pre>
-curl -d $'email=Jacky@cuhk.edu.hk
-&amp;taxid=9606
+curl http://istar.cse.cuhk.edu.hk/igrep/jobs -d 'email=Jacky@cuhk.edu.hk&amp;taxid=9606
 &amp;queries=CTGCATGGTGGGGAAAAGGCATAGCCTGGG3
 AAAAGTGTTATGGGTTGTTTAATCAACCACTGAACTGCGGGGGTGACTAGTTATAACTTA6'
-http://istar.cse.cuhk.edu.hk/igrep/jobs
               </pre>
               <p>Obtain existing jobs via HTTP GET</p>
               <pre>
