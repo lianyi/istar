@@ -83,7 +83,7 @@
 			return this;
 		},
 		in: function(options) {
-			if (!options.indexOf(this.val) == -1) this.error();
+			if (options.indexOf(this.val) == -1) this.error();
 			return this;
 		},
 		range: function(key0, key1) {
