@@ -300,37 +300,15 @@
             <div>
               <p>Submit a new job via HTTP POST</p>
               <pre>
-curl -d $'receptor=
-ATOM      1  N   PRO A  19     148.930 114.148   5.178  1.00138.31           N  \n
-ATOM      2  CA  PRO A  19     149.869 115.263   5.360  1.00138.99           C  \n
-TER    2743      GLN A 313                                                      \n
-&amp;center_x=150
-&amp;center_y=109
-&amp;center_z=22
-&amp;size_x=18
-&amp;size_y=17
-&amp;size_z=15
-&amp;description=4MBS
-&amp;email=Jacky@cuhk.edu.hk
-&amp;mwt_lb=400
-&amp;mwt_ub=420
-&amp;lgp_lb=0
-&amp;lgp_ub=2
-&amp;nrb_lb=4
-&amp;nrb_ub=6
-&amp;hbd_lb=2
-&amp;hbd_ub=4
-&amp;hba_lb=4
-&amp;hba_ub=6
-&amp;chg_lb=0
-&amp;chg_ub=0
-&amp;ads_lb=0
-&amp;ads_ub=5
-&amp;pds_lb=-20
-&amp;pds_ub=0
-&amp;psa_lb=60
-&amp;psa_ub=80'
-http://istar.cse.cuhk.edu.hk/idock/jobs
+curl http://istar.cse.cuhk.edu.hk/idock/jobs -d '&amp;description=4MBS&amp;email=Jacky@cuhk.edu.hk&amp;center_x=150&amp;center_y=109&amp;center_z=22&amp;size_x=18&amp;size_y=17&amp;size_z=15&amp;mwt_lb=390&amp;mwt_ub=420&amp;lgp_lb=1&amp;lgp_ub=3&amp;nrb_lb=4&amp;nrb_ub=6&amp;hbd_lb=2&amp;hbd_ub=4&amp;hba_lb=4&amp;hba_ub=6&amp;chg_lb=0&amp;chg_ub=0&amp;ads_lb=0&amp;ads_ub=10&amp;pds_lb=-40&amp;pds_ub=0&amp;psa_lb=60&amp;psa_ub=80&amp;receptor=ATOM      1  N   PRO A  19     148.930 114.148   5.178  1.00138.31           N  
+ATOM      2  CA  PRO A  19     149.869 115.263   5.360  1.00138.99           C  
+ATOM      3  C   PRO A  19     151.021 115.224   4.348  1.00144.31           C  
+ATOM      4  O   PRO A  19     150.914 114.542   3.320  1.00144.78           O  
+ATOM      5  CB  PRO A  19     150.357 115.076   6.800  1.00138.04           C  
+ATOM      6  CG  PRO A  19     149.222 114.376   7.496  1.00140.40           C  
+ATOM      7  CD  PRO A  19     148.354 113.704   6.460  1.00137.06           C  
+TER    2743      GLN A 313                                                      
+'
               </pre>
               <p>Obtain existing jobs via HTTP GET</p>
               <pre>
