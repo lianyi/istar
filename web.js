@@ -104,35 +104,52 @@ if (cluster.isMaster) {
 					ligands = m.ligands;
 				}
 			});
-			var getJobs = function(req, res, collection, progressFields, jobFields) {
+			var getJobs = function(req, res, collection, jobFields, progressFields) {
 				var v = new validator(req.query);
-				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
-					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
-					.failed() || v
-					.range('skip', 'count')
-					.failed()) {
-					res.json(v.err);
-					return;
-				};
-				collection.count(function(err, count) {
-					if (err) throw err;
+				if (progressFields === undefined) {
 					if (v
-						.field('count').message('must be no greater than ' + count).max(count)
+						.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
 						.failed()) {
 						res.json(v.err);
 						return;
-					}
+					};
 					collection.find({}, {
-						fields: v.res.count == count ? progressFields : jobFields,
+						fields: jobFields,
 						sort: {'submitted': 1},
-						skip: v.res.skip,
-						limit: count - v.res.skip
+						skip: v.res.skip
 					}).toArray(function(err, docs) {
 						if (err) throw err;
 						res.json(docs);
 					});
-				});
+				} else {
+					if (v
+						.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
+						.field('count').message('must be a non-negative integer').int(0).min(0).copy()
+						.failed() || v
+						.range('skip', 'count')
+						.failed()) {
+						res.json(v.err);
+						return;
+					};
+					collection.count(function(err, count) {
+						if (err) throw err;
+						if (v
+							.field('count').message('must be no greater than ' + count).max(count)
+							.failed()) {
+							res.json(v.err);
+							return;
+						}
+						collection.find({}, {
+							fields: v.res.count == count ? progressFields : jobFields,
+							sort: {'submitted': 1},
+							skip: v.res.skip,
+							limit: count - v.res.skip
+						}).toArray(function(err, docs) {
+							if (err) throw err;
+							res.json(docs);
+						});
+					});
+				}
 			};
 			var idockJobFields = {
 				'description': 1,
@@ -151,7 +168,7 @@ if (cluster.isMaster) {
 				idockProgressFields[i] = 1;
 			}
 			app.route('/idock/jobs').get(function(req, res) {
-				getJobs(req, res, idock, idockProgressFields, idockJobFields);
+				getJobs(req, res, idock, idockJobFields, idockProgressFields);
 			}).post(function(req, res) {
 				var v = new validator(req.body);
 				if (v
@@ -327,13 +344,13 @@ if (cluster.isMaster) {
 			});
 			app.route('/igrow/jobs').get(function(req, res) {
 				getJobs(req, res, igrow, {
-					'_id': 0,
-//					'scheduled': 1,
-					'done': 1
-				}, {
 					'description': 1,
 					'idock_id': 1,
 					'submitted': 1,
+//					'scheduled': 1,
+					'done': 1
+				}, {
+					'_id': 0,
 //					'scheduled': 1,
 					'done': 1
 				});
@@ -378,20 +395,10 @@ if (cluster.isMaster) {
 				});
 			});
 			app.route('/usr/jobs').get(function(req, res) {
-				var v = new validator(req.query);
-				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
-					.failed()) {
-					res.json(v.err);
-					return;
-				};
-				usr.find({}, {
-					fields: {'description': 1, 'submitted': 1, 'done': 1},
-					sort: {'submitted': 1},
-					skip: v.res.skip
-				}).toArray(function(err, docs) {
-					if (err) throw err;
-					res.json(docs);
+				getJobs(req, res, usr, {
+					'description': 1,
+					'submitted': 1,
+					'done': 1
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
@@ -408,20 +415,10 @@ if (cluster.isMaster) {
 				res.json({});
 			});
 			app.route('/igrep/jobs').get(function(req, res) {
-				var v = new validator(req.query);
-				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
-					.failed()) {
-					res.json(v.err);
-					return;
-				};
-				igrep.find({}, {
-					fields: {'taxid': 1, 'submitted': 1, 'done': 1},
-					sort: {'submitted': 1},
-					skip: v.res.skip
-				}).toArray(function(err, docs) {
-					if (err) throw err;
-					res.json(docs);
+				getJobs(req, res, igrep, {
+					'taxid': 1,
+					'submitted': 1,
+					'done': 1
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
