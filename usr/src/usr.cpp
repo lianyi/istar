@@ -38,8 +38,8 @@ inline static string now()
 template <typename T>
 void read(vector<T>& v, const string f)
 {
-	ifstream ifs(f, ifstream::binary);
-	ifs.seekg(0, ifstream::end);
+	ifstream ifs(f, ios::binary);
+	ifs.seekg(0, ios::end);
 	const size_t num_bytes = ifs.tellg();
 	v.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
