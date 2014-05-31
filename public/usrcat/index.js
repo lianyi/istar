@@ -588,9 +588,9 @@ $(function() {
 		}
 		var v = new validator(job);
 		if (v
+			.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
-			.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
 			.failed()) {
 			var keys = Object.keys(v.err);
 			keys.forEach(function(key) {
