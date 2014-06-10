@@ -13,6 +13,7 @@
 #include <immintrin.h>
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
+#include <boost/tokenizer.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -138,6 +139,68 @@ int main(int argc, char* argv[])
 				if (record != "ATOM  " && record != "HETATM") continue;
 				atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
 			}
+			vector<string> lines;
+			try
+			{
+			}
+			catch (const exception& e)
+			{
+			}
+			if (format == "mol2")
+			{
+				const auto atomCount = stoul(lines[2].substr(0, 5));
+				for (auto i = 0; i < atomCount; ++i)
+				{
+					const auto& line = lines[7 + i];
+					atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
+				}
+			}
+			else if (format == "sdf")
+			{
+				const auto atomCount = stoul(lines[3].substr(0, 3));
+				for (auto i = 0; i < atomCount; ++i)
+				{
+					const auto& line = lines[4 + i];
+					atoms.push_back({ stod(line.substr(0, 10)), stod(line.substr(10, 10)), stod(line.substr(20, 10)) });
+				}
+			}
+			else if (format == "xyz")
+			{
+				boost::char_separator<char> sep(" ");
+				const auto atomCount = stoul(lines[0].substr(0, 3));
+				for (auto i = 0; i < atomCount; ++i)
+				{
+					const auto& line = lines[2+i];
+					const boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+					auto ti = tokens.begin();
+					atoms.push_back({ stod(*++ti), stod(*++ti), stod(*++ti) });
+				}
+			}
+			else if (format == "pdb")
+			{
+				for (const auto& line : lines)
+				{
+					const auto record = line.substr(0, 6);
+					if (record == "ATOM  " || record == "HETATM")
+					{
+						atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
+					}
+					else if (record == "ENDMDL") break;
+				}
+			}
+			else if (format == "pdbqt")
+			{
+				for (const auto& line : lines)
+				{
+					const auto record = line.substr(0, 6);
+					if (record == "ATOM  " || record == "HETATM")
+					{
+						atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
+					}
+					else if (record == "TORSDO") break;
+				}
+			}
+			if (atoms.empty()) return 0;
 
 			OBConversion obConversion;
 			obConversion.SetInFormat(format.c_str());
