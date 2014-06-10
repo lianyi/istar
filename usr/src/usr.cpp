@@ -89,8 +89,6 @@ int main(int argc, char* argv[])
 	assert(n == headers.size());
 
 	// Search the features for records similar to the query.
-	cout.setf(ios::fixed, ios::floatfield);
-	cout << setprecision(4);
 	vector<double> scores(n);
 	vector<size_t> scase(n);
 	array<array<double, 4>, 1> aw;
