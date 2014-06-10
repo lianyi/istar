@@ -11,6 +11,8 @@
 #include <chrono>
 #include <thread>
 #include <immintrin.h>
+#include <openbabel/obconversion.h>
+#include <openbabel/mol.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -22,6 +24,7 @@
 #include <Poco/Net/SMTPClientSession.h>
 using namespace std;
 using namespace std::chrono;
+using namespace OpenBabel;
 using namespace boost::filesystem;
 using namespace boost::iostreams;
 using namespace boost::gregorian;
@@ -38,12 +41,20 @@ inline static string now()
 template <typename T>
 void read(vector<T>& v, const string f)
 {
-	ifstream ifs(f, ifstream::binary);
-	ifs.seekg(0, ifstream::end);
+	ifstream ifs(f, ios::binary);
+	ifs.seekg(0, ios::end);
 	const size_t num_bytes = ifs.tellg();
 	v.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
 	ifs.read(reinterpret_cast<char*>(v.data()), num_bytes);
+}
+
+double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
+{
+	const auto d0 = p0[0] - p1[0];
+	const auto d1 = p0[1] - p1[1];
+	const auto d2 = p0[2] - p1[2];
+	return d0 * d0 + d1 * d1 + d2 * d2;
 }
 
 int main(int argc, char* argv[])
@@ -77,6 +88,14 @@ int main(int argc, char* argv[])
 	const auto qn = 60;
 	const auto qv = 1.0 / qn;
 	const auto epoch = date(1970, 1, 1);
+	const array<string, 5> SmartsPatterns =
+	{
+		"[!#1]", // heavy
+		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
+		"[a]", // aromatic
+		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
+		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
+	};
 
 	// Read the feature bin file.
 	vector<array<double, qn>> features;
@@ -89,8 +108,6 @@ int main(int argc, char* argv[])
 	assert(n == headers.size());
 
 	// Search the features for records similar to the query.
-	cout.setf(ios::fixed, ios::floatfield);
-	cout << setprecision(4);
 	vector<double> scores(n);
 	vector<size_t> scase(n);
 	array<array<double, 4>, 1> aw;
@@ -108,13 +125,117 @@ int main(int argc, char* argv[])
 			cout << now() << "Executing job " << _id.str() << endl;
 
 			// Obtain job properties.
-			const auto ligand = job["ligand"].Array();
+			const auto ligand = job["ligand"].str(); // If .String() were used, exceptions would be thrown when the ligand property is not a string.
+			const auto format = job["format"].String();
+
+			vector<array<double, 3>> atoms;
+			atoms.reserve(80);
+			stringstream ss(ligand);
+			for (string line; getline(ss, line);)
+			{
+				const auto record = line.substr(0, 6);
+				if (record == "TORSDO") break;
+				if (record != "ATOM  " && record != "HETATM") continue;
+				atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
+			}
+
+			OBConversion obConversion;
+			obConversion.SetInFormat(format.c_str());
+			OBMol obMol;
+			obConversion.Read(&obMol, &ss);
+			array<vector<int>, 5> subsets;
+			for (size_t k = 0; k < 5; ++k)
+			{
+				auto& subset = subsets[k];
+				subset.reserve(atoms.size());
+				OBSmartsPattern smarts;
+				smarts.Init(SmartsPatterns[k]);
+				smarts.Match(obMol);
+				for (const auto& map : smarts.GetMapList())
+				{
+					subset.push_back(map.front() - 1);
+				}
+			}
+			const auto& subset0 = subsets.front();
+			const auto n = subset0.size();
+			const auto v = 1.0 / n;
+			array<double, 3> ctd{};
+			array<double, 3> cst{};
+			array<double, 3> fct{};
+			array<double, 3> ftf{};
+			for (size_t k = 0; k < 3; ++k)
+			{
+				for (const auto i : subset0)
+				{
+					const auto& a = atoms[i];
+					ctd[k] += a[k];
+				}
+				ctd[k] *= v;
+			}
+			double cst_dist = numeric_limits<double>::max();
+			double fct_dist = numeric_limits<double>::lowest();
+			double ftf_dist = numeric_limits<double>::lowest();
+			for (const auto i : subset0)
+			{
+				const auto& a = atoms[i];
+				const auto this_dist = dist2(a, ctd);
+				if (this_dist < cst_dist)
+				{
+					cst = a;
+					cst_dist = this_dist;
+				}
+				if (this_dist > fct_dist)
+				{
+					fct = a;
+					fct_dist = this_dist;
+				}
+			}
+			for (const auto i : subset0)
+			{
+				const auto& a = atoms[i];
+				const auto this_dist = dist2(a, fct);
+				if (this_dist > ftf_dist)
+				{
+					ftf = a;
+					ftf_dist = this_dist;
+				}
+			}
+			for (const auto& subset : subsets)
+			{
+				const auto n = subset.size();
+				const auto v = 1.0 / n;
+				for (const auto& rpt : { ctd, cst, fct, ftf })
+				{
+					vector<double> dists(n);
+					for (size_t i = 0; i < n; ++i)
+					{
+						dists[i] = sqrt(dist2(atoms[subset[i]], rpt));
+					}
+					array<double, 3> m{};
+					for (size_t i = 0; i < n; ++i)
+					{
+						const auto d = dists[i];
+						m[0] += d;
+					}
+					m[0] *= v;
+					for (size_t i = 0; i < n; ++i)
+					{
+						const auto d = dists[i] - m[0];
+						m[1] += d * d;
+					}
+					m[1] = sqrt(m[1] * v);
+					for (size_t i = 0; i < n; ++i)
+					{
+						const auto d = dists[i] - m[0];
+						m[2] += d * d * d;
+					}
+					m[2] = cbrt(m[2] * v);
+					cout.write(reinterpret_cast<char*>(m.data()), sizeof(m));
+				}
+			}
+
 			array<array<double, qn>, 1> qw;
 			auto q = qw.front();
-			for (size_t i = 0; i < qn; ++i)
-			{
-				q[i] = ligand[i].Number();
-			}
 
 			for (size_t k = 0; k < n; ++k)
 			{
@@ -153,7 +274,7 @@ int main(int argc, char* argv[])
 				{
 					ligands_pdbqt_gz << line << '\n';
 				}
-				ligands_pdbqt_gz << "REMARK     USR SCORE: " << setw(10) << scores[c] << '\n';
+				ligands_pdbqt_gz << "REMARK     USRCAT SCORE: " << setw(10) << scores[c] << '\n';
 				while (getline(ligands, line))
 				{
 					ligands_pdbqt_gz << line << '\n';
@@ -175,8 +296,8 @@ int main(int argc, char* argv[])
 			cout << now() << "Sending a completion notification email to " << email << endl;
 			MailMessage message;
 			message.setSender("istar <noreply@cse.cuhk.edu.hk>");
-			message.setSubject("Your usr job has completed");
-			message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. View result at http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
+			message.setSubject("Your usrcat job has completed");
+			message.setContent("Your usrcat job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. View result at http://istar.cse.cuhk.edu.hk/usrcat/iview/?" + _id.str());
 			message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 			SMTPClientSession session("137.189.91.190");
 			session.login();
