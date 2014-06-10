@@ -129,78 +129,81 @@ int main(int argc, char* argv[])
 			const auto ligand = job["ligand"].str(); // If .String() were used, exceptions would be thrown when the ligand property is not a string.
 			const auto format = job["format"].String();
 
+			// Split the ligand string into lines.
+			vector<string> lines;
+			lines.reserve(200);
+			stringstream ss(ligand);
+			for (string line; getline(ss, line); lines.push_back(line));
+
+			// Parse the ligand lines.
 			vector<array<double, 3>> atoms;
 			atoms.reserve(80);
-			stringstream ss(ligand);
-			for (string line; getline(ss, line);)
-			{
-				const auto record = line.substr(0, 6);
-				if (record == "TORSDO") break;
-				if (record != "ATOM  " && record != "HETATM") continue;
-				atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
-			}
-			vector<string> lines;
+			bool invalid = false;
 			try
 			{
+				if (format == "mol2")
+				{
+					const auto atomCount = stoul(lines[2].substr(0, 5));
+					for (auto i = 0; i < atomCount; ++i)
+					{
+						const auto& line = lines[7 + i];
+						atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
+					}
+				}
+				else if (format == "sdf")
+				{
+					const auto atomCount = stoul(lines[3].substr(0, 3));
+					for (auto i = 0; i < atomCount; ++i)
+					{
+						const auto& line = lines[4 + i];
+						atoms.push_back({ stod(line.substr(0, 10)), stod(line.substr(10, 10)), stod(line.substr(20, 10)) });
+					}
+				}
+				else if (format == "xyz")
+				{
+					boost::char_separator<char> sep(" ");
+					const auto atomCount = stoul(lines[0].substr(0, 3));
+					for (auto i = 0; i < atomCount; ++i)
+					{
+						const auto& line = lines[2+i];
+						const boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+						auto ti = tokens.begin();
+						atoms.push_back({ stod(*++ti), stod(*++ti), stod(*++ti) });
+					}
+				}
+				else if (format == "pdb")
+				{
+					for (const auto& line : lines)
+					{
+						const auto record = line.substr(0, 6);
+						if (record == "ATOM  " || record == "HETATM")
+						{
+							atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
+						}
+						else if (record == "ENDMDL") break;
+					}
+				}
+				else if (format == "pdbqt")
+				{
+					for (const auto& line : lines)
+					{
+						const auto record = line.substr(0, 6);
+						if (record == "ATOM  " || record == "HETATM")
+						{
+							atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
+						}
+						else if (record == "TORSDO") break;
+					}
+				}
 			}
 			catch (const exception& e)
 			{
+				invalid = true;
 			}
-			if (format == "mol2")
+			if (invalid || atoms.empty())
 			{
-				const auto atomCount = stoul(lines[2].substr(0, 5));
-				for (auto i = 0; i < atomCount; ++i)
-				{
-					const auto& line = lines[7 + i];
-					atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
-				}
+				continue;
 			}
-			else if (format == "sdf")
-			{
-				const auto atomCount = stoul(lines[3].substr(0, 3));
-				for (auto i = 0; i < atomCount; ++i)
-				{
-					const auto& line = lines[4 + i];
-					atoms.push_back({ stod(line.substr(0, 10)), stod(line.substr(10, 10)), stod(line.substr(20, 10)) });
-				}
-			}
-			else if (format == "xyz")
-			{
-				boost::char_separator<char> sep(" ");
-				const auto atomCount = stoul(lines[0].substr(0, 3));
-				for (auto i = 0; i < atomCount; ++i)
-				{
-					const auto& line = lines[2+i];
-					const boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
-					auto ti = tokens.begin();
-					atoms.push_back({ stod(*++ti), stod(*++ti), stod(*++ti) });
-				}
-			}
-			else if (format == "pdb")
-			{
-				for (const auto& line : lines)
-				{
-					const auto record = line.substr(0, 6);
-					if (record == "ATOM  " || record == "HETATM")
-					{
-						atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
-					}
-					else if (record == "ENDMDL") break;
-				}
-			}
-			else if (format == "pdbqt")
-			{
-				for (const auto& line : lines)
-				{
-					const auto record = line.substr(0, 6);
-					if (record == "ATOM  " || record == "HETATM")
-					{
-						atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
-					}
-					else if (record == "TORSDO") break;
-				}
-			}
-			if (atoms.empty()) return 0;
 
 			OBConversion obConversion;
 			obConversion.SetInFormat(format.c_str());
@@ -263,6 +266,9 @@ int main(int argc, char* argv[])
 					ftf_dist = this_dist;
 				}
 			}
+			array<array<double, qn>, 1> qw;
+			auto q = qw.front();
+			size_t qo = 0;
 			for (const auto& subset : subsets)
 			{
 				const auto n = subset.size();
@@ -293,13 +299,14 @@ int main(int argc, char* argv[])
 						m[2] += d * d * d;
 					}
 					m[2] = cbrt(m[2] * v);
-					cout.write(reinterpret_cast<char*>(m.data()), sizeof(m));
+					for (const auto e : m)
+					{
+						q[qo++] = e;
+					}
 				}
 			}
 
-			array<array<double, qn>, 1> qw;
-			auto q = qw.front();
-
+			// Compute USRCAT scores.
 			for (size_t k = 0; k < n; ++k)
 			{
 				const auto& l = features[k];
