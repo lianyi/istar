@@ -20,7 +20,8 @@ double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
 
 int main(int argc, char* argv[])
 {
-	const array<string, 5> SmartsPatterns = {
+	const array<string, 5> SmartsPatterns =
+	{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
 		"[a]", // aromatic
@@ -102,9 +103,8 @@ int main(int argc, char* argv[])
 				ftf_dist = this_dist;
 			}
 		}
-		for (size_t k = 0; k < 5; ++k)
+		for (const auto& subset : subsets)
 		{
-			const auto& subset = subsets[k];
 			const auto n = subset.size();
 			const auto v = 1.0 / n;
 			for (const auto& rpt : { ctd, cst, fct, ftf })
