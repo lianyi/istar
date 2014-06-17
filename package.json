@@ -2,7 +2,7 @@
   "name": "istar",
   "description": "a software-as-a-service platform for bioinformatics and chemoinformatics",
   "keywords": [ "SaaS", "bioinformatics", "chemoinformatics", "web", "REST" ],
-  "version": "2.1.0",
+  "version": "2.1.1",
   "author": {
     "name": "Hongjian Li",
     "email": "JackyLeeHongJian@Gmail.com"
@@ -14,7 +14,7 @@
     "body-parser": ">= 1.0.0",
     "compression": ">= 1.0.0",
     "errorhandler": ">= 1.0.0",
-    "static-favicon": ">= 1.0.0",
+    "serve-favicon": ">= 2.0.0",
     "utils-merge": ">= 1.0.0"
   },
   "repository": {

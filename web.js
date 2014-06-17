@@ -72,7 +72,7 @@ if (cluster.isMaster) {
 			var express = require('express');
 			var compress = require('compression');
 			var bodyParser = require('body-parser');
-			var favicon = require('static-favicon');
+			var favicon = require('serve-favicon');
 			var errorHandler = require('errorhandler');
 			var app = express();
 			app.use(compress());
@@ -82,13 +82,13 @@ if (cluster.isMaster) {
 			if (env == 'development') {
 				app.use(express.static(__dirname + '/public'));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public'));
-				app.use(favicon(__dirname + '/public'));
+				app.use(favicon(__dirname + '/public/favicon.ico'));
 			} else if (env == 'production') {
 				var oneDay = 1000 * 60 * 60 * 24;
 				var oneYear = oneDay * 365.25;
 				app.use(express.static(__dirname + '/public', { maxAge: oneDay }));
 				app.use(express.static('/home/hjli/nfs/hjli/istar/public', { maxAge: oneDay }));
-				app.use(favicon(__dirname + '/public', { maxAge: oneYear }));
+				app.use(favicon(__dirname + '/public/favicon.ico', { maxAge: oneYear }));
 			};
 			// Define helper variables and functions
 			var child_process = require('child_process');
