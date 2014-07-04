@@ -10,11 +10,11 @@
  *
  * EDTSurf
  * http://zhanglab.ccmb.med.umich.edu/EDTSurf
- * D. Xu, Y. Zhang (2009) Generating Triangulated Macromolecular Surfaces
- * by Euclidean Distance Transform. PLoS ONE 4(12): e8140.
- * D. Xu, H. Li, Y. Zhang (2013) Protein Depth Calculation and the Use
+ * Dong Xu and Yang Zhang. Generating Triangulated Macromolecular Surfaces
+ * by Euclidean Distance Transform. PLoS ONE, 4(12):e8140, 2009.
+ * Dong Xu, Hua Li and Yang Zhang. Protein Depth Calculation and the Use
  * for Improving Accuracy of Protein Fold Recognition.
- * Journal of Computational Biology 20(10):805-816.
+ * Journal of Computational Biology, 20(10):805-816, 2013.
  */
 
 var ProteinSurface = function (data) {
