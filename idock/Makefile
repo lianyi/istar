@@ -15,7 +15,7 @@ obj/main.o: src/main.cpp
 	${CC} -o $@ $< -c -I${BOOST_ROOT} -I${MONGODBCXXDRIVER_ROOT}/src -I${POCO_ROOT}/Foundation/include -I${POCO_ROOT}/Net/include -Wno-deprecated-declarations -Wno-deprecated-register
 
 obj/%.o: src/%.cpp
-	${CC} -o $@ $< -c -I${BOOST_ROOT}
+	${CC} -o $@ $< -c -I${BOOST_ROOT} -Wno-deprecated-register
 
 clean:
 	rm -f bin/idock bin/idock2 obj/*.o
