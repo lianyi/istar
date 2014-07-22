@@ -72,6 +72,7 @@ var iview = function (id) {
 		'anaglyph': new THREE.AnaglyphEffect(this.renderer),
 		'parallax barrier': new THREE.ParallaxBarrierEffect(this.renderer),
 		'oculus rift': new THREE.OculusRiftEffect(this.renderer),
+		'stereo': new THREE.StereoEffect(this.renderer),
 		'none': this.renderer,
 	};
 
@@ -1410,7 +1411,7 @@ void main()\n\
 				break;
 		}
 
-		this.renderer.autoClear = this.options.effect !== 'oculus rift';
+		this.renderer.autoClear = this.options.effect !== 'oculus rift' && this.options.effect !== 'stereo';
 		this.effect = this.effects[this.options.effect];
 		this.effect.setSize(this.container.width(), this.container.height());
 	},
