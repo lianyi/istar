@@ -649,7 +649,7 @@ $(function () {
 	renderer.setClearColor(defaultBackgroundColor);
 	var scene = new THREE.Scene();
 	var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
-	directionalLight.position = new THREE.Vector3(0.2, 0.2, -1).normalize();
+	directionalLight.position.set(0.2, 0.2, -1).normalize();
 	var ambientLight = new THREE.AmbientLight(0x202020);
 	var rot = new THREE.Object3D();
 	var mdl = new THREE.Object3D();
@@ -659,7 +659,7 @@ $(function () {
 	scene.add(rot);
 	scene.fog = new THREE.Fog(defaultBackgroundColor, 100, 200);
 	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800), sn, sf;
-	camera.position = new THREE.Vector3(0, 0, -150);
+	camera.position.set(0, 0, -150);
 	camera.lookAt(new THREE.Vector3(0, 0, 0));
 	var labelVertexShader = '\
 uniform float width, height;\n\
@@ -698,12 +698,12 @@ void main()\n\
 	var createSphere = function (atom, defaultRadius, forceDefault, scale) {
 		var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
 		mesh.scale.x = mesh.scale.y = mesh.scale.z = forceDefault ? defaultRadius : (vdwRadii[atom.elem] || defaultRadius) * (scale ? scale : 1);
-		mesh.position = atom.coord;
+		mesh.position.copy(atom.coord);
 		return mesh;
 	};
 	var createCylinder = function (p0, p1, radius, color) {
 		var mesh = new THREE.Mesh(cylinderGeometry, new THREE.MeshLambertMaterial({ color: color }));
-		mesh.position = p0.clone().add(p1).multiplyScalar(0.5);
+		mesh.position.copy(p0).add(p1).multiplyScalar(0.5);
 		mesh.matrixAutoUpdate = false;
 		mesh.lookAt(p0);
 		mesh.updateMatrix();
@@ -758,10 +758,8 @@ void main()\n\
 				}
 			}
 		}
-		if (ged.vertices.length) {
-			ged.computeLineDistances();
-			return new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
-		}
+		ged.computeLineDistances();
+		return new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
 	};
 	var createSphereRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
@@ -828,7 +826,7 @@ void main()\n\
 		for (var i in atoms) {
 			var atom = atoms[i];
 			var bb = createLabel(atom.name === 'CA' ? atom.chain + ':' + atom.resn + ':' + atom.resi : atom.name, 24, '#dddddd');
-			bb.position = atom.coord;
+			bb.position.copy(atom.coord);
 			obj.add(bb);
 		}
 		return obj;
@@ -1002,7 +1000,7 @@ void main()\n\
 		bgeo.vertices.push(b111);
 		bgeo.computeLineDistances();
 		mdl.add(new THREE.Line(bgeo, new THREE.LineDashedMaterial({ linewidth: 4, color: defaultBoxColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
-		mdl.position = bctr.clone().multiplyScalar(-1);
+		mdl.position.copy(bctr).multiplyScalar(-1);
 		$.get(path + 'receptor.pdbqt', function (psrc) {
 			var protein = entities.protein = {
 				atoms: {},
@@ -1167,7 +1165,7 @@ void main()\n\
 			sn = -maxD * 0.50;
 			sf =  maxD * 0.25;
 			rot.position.z = maxD * 0.08 / Math.tan(Math.PI / 180.0 * 10) - 150;
-			rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
+			rot.quaternion.set(1, 0, 0, 0);
 			var initializeEntity = function (key) {
 				var entity = entities[key];
 				entity.active = $('#' + key + ' .active').text().trim();
@@ -1339,14 +1337,14 @@ void main()\n\
 			sf = cf + dy * 100;
 		} else if (e.ctrlKey || wh == 3) { // Translate
 			var scaleFactor = Math.max((rot.position.z - camera.position.z) * 0.85, 20);
-			mdl.position = cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(rot.quaternion.clone().inverse().normalize()));
+			mdl.position.copy(cp).add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(rot.quaternion.clone().inverse().normalize()));
 		} else if (e.shiftKey || wh == 2) { // Zoom
 			var scaleFactor = Math.max((rot.position.z - camera.position.z) * 0.85, 80);
 			rot.position.z = cz - dy * scaleFactor;
 		} else { // Rotate
 			var r = Math.sqrt(dx * dx + dy * dy);
 			var rs = Math.sin(r * Math.PI) / r;
-			rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq));
+			rot.quaternion.set(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq);
 		}
 		render();
 	});

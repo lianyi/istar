@@ -78,10 +78,10 @@ var iview = function (id) {
 
 	this.camera_z = -150;
 	this.perspectiveCamera = new THREE.PerspectiveCamera(20, this.container.whratio, 1, 800);
-	this.perspectiveCamera.position = new THREE.Vector3(0, 0, this.camera_z);
+	this.perspectiveCamera.position.set(0, 0, this.camera_z);
 	this.perspectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
 	this.orthographicCamera = new THREE.OrthographicCamera();
-	this.orthographicCamera.position = new THREE.Vector3(0, 0, this.camera_z);
+	this.orthographicCamera.position.set(0, 0, this.camera_z);
 	this.orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
 	this.cameras = {
 		 perspective: this.perspectiveCamera,
@@ -179,7 +179,7 @@ var iview = function (id) {
 		} else if (mode === 'translate' || e.ctrlKey || me.mouseButton == 3) { // Translate
 			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
 			if (scaleFactor < 20) scaleFactor = 20;
-			me.mdl.position = me.cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
+			me.mdl.position.copy(me.cp).add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
 		} else if (mode === 'zoom' || e.shiftKey || me.mouseButton == 2) { // Zoom
 			var scaleFactor = (me.rot.position.z - me.camera_z) * 0.85;
 			if (scaleFactor < 80) scaleFactor = 80;
@@ -187,7 +187,7 @@ var iview = function (id) {
 		} else { // Rotate
 			var r = Math.sqrt(dx * dx + dy * dy);
 			var rs = Math.sin(r * Math.PI) / r;
-			me.rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq));
+			me.rot.quaternion.set(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq);
 		}
 		me.render();
 	});
@@ -808,26 +808,26 @@ void main()\n\
 			4: undefined,
 		};
 		this.rebuildScene();
-		this.mdl.position = psum.clone().multiplyScalar(-1 / cnt);
+		this.mdl.position.copy(psum).multiplyScalar(-1 / cnt);
 		var maxD = pmax.distanceTo(pmin);
 		if (maxD < 25) maxD = 25;
 		this.slabNear = -maxD * 0.50;
 		this.slabFar  =  maxD * 0.25;
 		this.rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
-		this.rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
+		this.rot.quaternion.set(1, 0, 0, 0);
 		this.render();
 	},
 
 	createSphere: function (atom, defaultRadius, forceDefault, scale) {
 		var mesh = new THREE.Mesh(this.sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
 		mesh.scale.x = mesh.scale.y = mesh.scale.z = forceDefault ? defaultRadius : (this.vdwRadii[atom.elem] || defaultRadius) * (scale ? scale : 1);
-		mesh.position = atom.coord;
+		mesh.position.copy(atom.coord);
 		this.mdl.add(mesh);
 	},
 
 	createCylinder: function (p0, p1, radius, color) {
 		var mesh = new THREE.Mesh(this.cylinderGeometry, new THREE.MeshLambertMaterial({ color: color }));
-		mesh.position = p0.clone().add(p1).multiplyScalar(0.5);
+		mesh.position.copy(p0).add(p1).multiplyScalar(0.5);
 		mesh.matrixAutoUpdate = false;
 		mesh.lookAt(p0);
 		mesh.updateMatrix();
@@ -1226,7 +1226,7 @@ void main()\n\
 		for (var i in atoms) {
 			var atom = atoms[i];
 			var bb = this.createLabel(label(atom), 20, '#dddddd');
-			bb.position = atom.coord;
+			bb.position.copy(atom.coord);
 			this.mdl.add(bb);
 		}
 	},
@@ -1235,7 +1235,7 @@ void main()\n\
 		$.extend(this.options, options);
 		this.scene = new THREE.Scene();
 		var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
-		directionalLight.position = new THREE.Vector3(0.2, 0.2, -1).normalize();
+		directionalLight.position.set(0.2, 0.2, -1).normalize();
 		var ambientLight = new THREE.AmbientLight(0x202020);
 		this.scene.add(directionalLight);
 		this.scene.add(ambientLight);
@@ -1243,7 +1243,7 @@ void main()\n\
 		var rz = this.rot ? this.rot.position.z : 0;
 		var rq = this.rot ? this.rot.quaternion : new THREE.Quaternion();
 		this.mdl = new THREE.Object3D();
-		this.mdl.position = mp;
+		this.mdl.position.copy(mp);
 		this.rot = new THREE.Object3D();
 		this.rot.position.z = rz;
 		this.rot.quaternion.copy(rq);

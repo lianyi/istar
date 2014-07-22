@@ -286,7 +286,7 @@ $(function() {
 	renderer.setClearColor(defaultBackgroundColor);
 	var scene = new THREE.Scene();
 	var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
-	directionalLight.position = new THREE.Vector3(0.2, 0.2, -1).normalize();
+	directionalLight.position.set(0.2, 0.2, -1).normalize();
 	var ambientLight = new THREE.AmbientLight(0x202020);
 	var rot = new THREE.Object3D(), mdl, box;
 	scene.add(directionalLight);
@@ -294,7 +294,7 @@ $(function() {
 	scene.add(rot);
 	scene.fog = new THREE.Fog(defaultBackgroundColor, 100, 200);
 	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800), sn, sf;
-	camera.position = new THREE.Vector3(0, 0, -150);
+	camera.position.set(0, 0, -150);
 	camera.lookAt(new THREE.Vector3(0, 0, 0));
 	var surfaceWorker = new Worker('../iview/surface.min.js');
 
@@ -305,12 +305,12 @@ $(function() {
 	var createSphere = function (atom, defaultRadius) {
 		var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
 		mesh.scale.x = mesh.scale.y = mesh.scale.z = defaultRadius;
-		mesh.position = atom.coord;
+		mesh.position.copy(atom.coord);
 		return mesh;
 	};
 	var createCylinder = function (p0, p1, radius, color) {
 		var mesh = new THREE.Mesh(cylinderGeometry, new THREE.MeshLambertMaterial({ color: color }));
-		mesh.position = p0.clone().add(p1).multiplyScalar(0.5);
+		mesh.position.copy(p0).add(p1).multiplyScalar(0.5);
 		mesh.matrixAutoUpdate = false;
 		mesh.lookAt(p0);
 		mesh.updateMatrix();
@@ -557,8 +557,8 @@ $(function() {
 			sn = -maxD * 0.50;
 			sf =  maxD * 0.25;
 			rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
-			rot.quaternion = new THREE.Quaternion(1, 0, 0, 0);
-			mdl.position = pavg.clone().multiplyScalar(-1);
+			rot.quaternion.set(1, 0, 0, 0);
+			mdl.position.copy(pavg).multiplyScalar(-1);
 			var ged = new THREE.Geometry();
 			var model = function (atoms, f0, f01) {
 				for (var i in atoms) {
@@ -650,7 +650,7 @@ $(function() {
 				$('#center_' + d).change(r).val(bctr[d] = Math.round(bctr[d]));
 				$('#size_'   + d).change(r).val(bsiz[d] = Math.round(bsiz[d]));
 			});
-			mdl.position = bctr.clone().multiplyScalar(-1);
+			mdl.position.copy(bctr).multiplyScalar(-1);
 			r();
 			var dg, wh, cx, cy, cq, cz, cp, cn, cf;
 			canvas.bind('mouseup touchend', function (e) {
@@ -691,14 +691,14 @@ $(function() {
 					sf = cf + dy * 100;
 				} else if (e.ctrlKey || wh == 3) { // Translate
 					var scaleFactor = Math.max((rot.position.z - camera.position.z) * 0.85, 20);
-					mdl.position = cp.clone().add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(rot.quaternion.clone().inverse().normalize()));
+					mdl.position.copy(cp).add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(rot.quaternion.clone().inverse().normalize()));
 				} else if (e.shiftKey || wh == 2) { // Zoom
 					var scaleFactor = Math.max((rot.position.z - camera.position.z) * 0.85, 80);
 					rot.position.z = cz - dy * scaleFactor;
 				} else { // Rotate
 					var r = Math.sqrt(dx * dx + dy * dy);
 					var rs = Math.sin(r * Math.PI) / r;
-					rot.quaternion.copy(new THREE.Quaternion(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq));
+					rot.quaternion.set(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq);
 				}
 				render();
 			});
