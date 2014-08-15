@@ -39,17 +39,6 @@ inline static string now()
 	return to_simple_string(second_clock::local_time()) + " ";
 }
 
-template <typename T>
-void read(vector<T>& v, const string f)
-{
-	ifstream ifs(f, ios::binary);
-	ifs.seekg(0, ios::end);
-	const size_t num_bytes = ifs.tellg();
-	v.resize(num_bytes / sizeof(T));
-	ifs.seekg(0);
-	ifs.read(reinterpret_cast<char*>(v.data()), num_bytes);
-}
-
 double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
 {
 	const auto d0 = p0[0] - p1[0];
@@ -98,15 +87,20 @@ int main(int argc, char* argv[])
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	};
 
-	// Read the feature bin file.
-	vector<array<double, qn>> features;
-	read(features, "16_usrcat.bin");
-	const size_t n = features.size();
-
 	// Read the header bin file.
 	vector<size_t> headers;
-	read(headers, "16_hdr.bin");
-	assert(n == headers.size());
+	{
+		ifstream ifs("16_hdr.bin", ios::binary | ios::ate);
+		const size_t num_bytes = ifs.tellg();
+		headers.resize(num_bytes / sizeof(size_t));
+		ifs.seekg(0);
+		ifs.read(reinterpret_cast<char*>(headers.data()), num_bytes);
+	}
+	const size_t n = headers.size();
+
+	// Read the feature bin file.
+	vector<array<double, qn>> features;
+	ifstream usrcat("16_usrcat.bin", ios::binary);
 
 	// Search the features for records similar to the query.
 	vector<double> scores(n);
@@ -126,13 +120,12 @@ int main(int argc, char* argv[])
 			cout << now() << "Executing job " << _id.str() << endl;
 
 			// Obtain job properties.
-			const auto ligand = job["ligand"].str(); // If .String() were used, exceptions would be thrown when the ligand property is not a string.
 			const auto format = job["format"].String();
 
 			// Split the ligand string into lines.
 			vector<string> lines;
-			lines.reserve(200);
-			stringstream ss(ligand);
+			lines.reserve(2000);
+			ifstream ss("ligand." + format);
 			for (string line; getline(ss, line); lines.push_back(line));
 
 			// Parse the ligand lines.
@@ -306,6 +299,10 @@ int main(int argc, char* argv[])
 				}
 			}
 
+			// Read features chunk by chunk.
+			usrcat.seekg(0);
+//			usrcat.read(reinterpret_cast<char*>(features.data()), num_bytes);
+
 			// Compute USRCAT scores.
 			for (size_t k = 0; k < n; ++k)
 			{
@@ -366,8 +363,8 @@ int main(int argc, char* argv[])
 			cout << now() << "Sending a completion notification email to " << email << endl;
 			MailMessage message;
 			message.setSender("istar <noreply@cse.cuhk.edu.hk>");
-			message.setSubject("Your usrcat job has completed");
-			message.setContent("Your usrcat job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. View result at http://istar.cse.cuhk.edu.hk/usrcat/iview/?" + _id.str());
+			message.setSubject("Your usr job has completed");
+			message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. View result at http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
 			message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 			SMTPClientSession session("137.189.91.190");
 			session.login();
