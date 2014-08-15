@@ -311,29 +311,9 @@ $(function() {
 		scene.fog.far = camera.far;
 		renderer.render(scene, camera);
 	};
-	var moments = function (dists, n, v) {
-		var m = [ 0, 0, 0 ];
-		for (var i = 0; i < n; ++i) {
-			var d = dists[i];
-			m[0] += d;
-		}
-		m[0] *= v;
-		for (var i = 0; i < n; ++i) {
-			var d = dists[i] - m[0];
-			m[1] += d * d;
-		}
-		m[1] = Math.sqrt(m[1] * v);
-		for (var i = 0; i < n; ++i) {
-			var d = dists[i] - m[0];
-			m[2] += d * d * d;
-		}
-		var sign = (m[2] > 0) - (m[2] < 0);
-		m[2] = sign * Math.pow(sign * m[2] * v, 1 / 3);
-		return m;
-	};
 
 	// Load ligand locally
-	var ligand;
+	var ligand, format;
 	$('input[type="file"]').change(function() {
 		var file = this.files[0];
 		if (file === undefined) return;
@@ -342,8 +322,10 @@ $(function() {
 		reader.onload = function () {
 			rot.remove(mdl);
 			rot.add(mdl = new THREE.Object3D());
-			var extension = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase(), lines = reader.result.split('\n'), atoms = {};
-			if (extension === 'mol2') {
+			ligand = reader.result;
+			format = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase();
+			var lines = ligand.split('\n'), atoms = {};
+			if (format === 'mol2') {
 				var atomCount = parseInt(lines[2].substr(0, 5));
 				var bondCount = parseInt(lines[2].substr(5, 6));
 				var offset = 7;
@@ -368,7 +350,7 @@ $(function() {
 					atom0.bonds.push(atom1);
 					atom1.bonds.push(atom0);
 				}
-			} else if (extension === 'sdf') {
+			} else if (format === 'sdf') {
 				var atomCount = parseInt(lines[3].substr(0, 3));
 				var bondCount = parseInt(lines[3].substr(3, 3));
 				var offset = 4;
@@ -392,7 +374,7 @@ $(function() {
 					atom0.bonds.push(atom1);
 					atom1.bonds.push(atom0);
 				}
-			} else if (extension === 'xyz') {
+			} else if (format === 'xyz') {
 				var atomCount = parseInt(lines[0].substr(0, 3));
 				var offset = 2;
 				for (var i = 1; i <= atomCount; ++i) {
@@ -419,7 +401,7 @@ $(function() {
 						}
 					}
 				}
-			} else if (extension === 'pdb') {
+			} else if (format === 'pdb') {
 				for (var i in lines) {
 					var line = lines[i];
 					var record = line.substr(0, 6);
@@ -444,7 +426,7 @@ $(function() {
 						break;
 					}
 				}
-			} else {
+			} else if (format === 'pdbqt') {
 				var start_frame, rotors = [];
 				for (var i in lines) {
 					var line = lines[i];
@@ -523,33 +505,6 @@ $(function() {
 				}
 			}
 			render();
-			var ctd = lavg, cst, fct, ftf, cst_dist = 9999, fct_dist = -9999, ftf_dist = -9999;
-			for (var i in atoms) {
-				var atom = atoms[i];
-				var this_dist = atom.coord.distanceToSquared(ctd);
-				if (this_dist < cst_dist) {
-					cst = atom.coord;
-					cst_dist = this_dist;
-				}
-				if (this_dist > fct_dist) {
-					fct = atom.coord;
-					fct_dist = this_dist;
-				}
-			}
-			for (var i in atoms) {
-				var atom = atoms[i];
-				var this_dist = atom.coord.distanceToSquared(fct);
-				if (this_dist > ftf_dist) {
-					ftf = atom.coord;
-					ftf_dist = this_dist;
-				}
-			}
-			ligand = [];
-			[ ctd, cst, fct, ftf ].forEach(function (rpt) {
-				ligand = ligand.concat(moments(Object.keys(atoms).map(function (key) {
-					return atoms[key].coord.distanceTo(rpt);
-				}), lcnt, lcnv));
-			});
 		};
 		reader.readAsText(file);
 	});
@@ -627,23 +582,24 @@ $(function() {
 		$('.form-group a').tooltip('hide');
 		// Do client side validation
 		var job = {
-			ligand: ligand,
 			description: $('#description').val(),
 			email: $('#email').val(),
+			format: format,
 		}
 		var v = new validator(job);
 		if (v
-			.field('ligand').message('must be an array of 12 numerical features').usr()
+			.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
 			.failed()) {
 			var keys = Object.keys(v.err);
 			keys.forEach(function(key) {
-				$('#' + key + '_label').tooltip('show');
+				$('#' + (key === 'format' ? 'ligand' : key) + '_label').tooltip('show');
 			});
-			$('#' + keys[0]).focus();
+			$('#' + (keys[0] === 'format' ? 'ligand' : keys[0])).focus();
 			return;
 		}
+		job.ligand = ligand;
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
 		// Post a new job with server side validation
@@ -652,8 +608,9 @@ $(function() {
 			// If server side validation fails, show the tooltips
 			if (keys.length) {
 				keys.forEach(function(key) {
-					$('#' + key + '_label').tooltip('show');
+					$('#' + (key === 'format' ? 'ligand' : key) + '_label').tooltip('show');
 				});
+				$('#' + (keys[0] === 'format' ? 'ligand' : keys[0])).focus();
 			} else {
 				$('html, body').animate({ scrollTop: pager.offset().top });
 			}

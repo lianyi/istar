@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 	while (true)
 	{
 		// Fetch jobs.
-		auto cursor = conn.query(collection, QUERY("done" << BSON("$exists" << false)).sort("submitted"), 100); // Each batch processes 100 jobs.
+		auto cursor = conn.query(collection, QUERY("done" << BSON("$exists" << false)).sort("submitted"), 1); // Each batch processes 1 job.
 		while (cursor->more())
 		{
 			const auto job = cursor->next();

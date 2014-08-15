@@ -67,7 +67,6 @@ if (cluster.isMaster) {
 			var igrow = db.collection('igrow');
 			var igrep = db.collection('igrep');
 			var usr   = db.collection('usr');
-			var usrcat= db.collection('usrcat');
 			// Configure express server
 			var express = require('express');
 			var compress = require('compression');
@@ -157,12 +156,12 @@ if (cluster.isMaster) {
 				'ligands': 1,
 				'submitted': 1,
 				'scheduled': 1,
-				'done': 1
+				'done': 1,
 			};
 			var idockProgressFields = {
 				'_id': 0,
 				'scheduled': 1,
-				'done': 1
+				'done': 1,
 			};
 			for (var i = 0; i < 10; ++i) {
 				idockJobFields[i] = 1;
@@ -349,11 +348,11 @@ if (cluster.isMaster) {
 					'idock_id': 1,
 					'submitted': 1,
 //					'scheduled': 1,
-					'done': 1
+					'done': 1,
 				}, {
 					'_id': 0,
 //					'scheduled': 1,
-					'done': 1
+					'done': 1,
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
@@ -399,27 +398,7 @@ if (cluster.isMaster) {
 				getJobs(req, res, usr, {
 					'description': 1,
 					'submitted': 1,
-					'done': 1
-				});
-			}).post(function(req, res) {
-				var v = new validator(req.body);
-				if (v
-					.field('email').message('must be valid').email().copy()
-					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
-					.field('ligand').message('must be an array of 12 numerical features').usr().copy()
-					.failed()) {
-					res.json(v.err);
-					return;
-				}
-				v.res.submitted = new Date();
-				usr.insert(v.res, {w: 0});
-				res.json({});
-			});
-			app.route('/usrcat/jobs').get(function(req, res) {
-				getJobs(req, res, usrcat, {
-					'description': 1,
-					'submitted': 1,
-					'done': 1
+					'done': 1,
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
@@ -434,12 +413,12 @@ if (cluster.isMaster) {
 				}
 				v.res.submitted = new Date();
 				v.res._id = new mongodb.ObjectID();
-				var dir = '/home/hjli/nfs/hjli/istar/public/usrcat/jobs/' + v.res._id;
+				var dir = '/home/hjli/nfs/hjli/istar/public/usr/jobs/' + v.res._id;
 				fs.mkdir(dir, function (err) {
 					if (err) throw err;
 					fs.writeFile(dir + '/ligand.' + v.res.format, req.body['ligand'], function(err) {
 						if (err) throw err;
-						usrcat.insert(v.res, { w: 0 });
+						usr.insert(v.res, { w: 0 });
 						res.json({});
 					});
 				});
@@ -448,7 +427,7 @@ if (cluster.isMaster) {
 				getJobs(req, res, igrep, {
 					'taxid': 1,
 					'submitted': 1,
-					'done': 1
+					'done': 1,
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
