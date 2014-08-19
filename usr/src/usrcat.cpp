@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
 			bool invalid = false;
 			try
 			{
-				if (format == "mol2")
+				if (format == "mol2") // @<TRIPOS>MOLECULE at the beginning of a molecule
 				{
 					const auto atomCount = stoul(lines[2].substr(0, 5));
 					for (auto i = 0; i < atomCount; ++i)
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 						atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
 					}
 				}
-				else if (format == "sdf")
+				else if (format == "sdf") // $$$$  at the end of a molecule
 				{
 					const auto atomCount = stoul(lines[3].substr(0, 3));
 					for (auto i = 0; i < atomCount; ++i)
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 			}
 			if (invalid || atoms.empty())
 			{
-				continue;
+				continue; // TODO: still send email to inform the user.
 			}
 
 			OBConversion obConversion;
