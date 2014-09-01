@@ -15,6 +15,7 @@
 #include <openbabel/mol.h>
 #include <boost/tokenizer.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -90,7 +91,7 @@ int main(int argc, char* argv[])
 	// Read the header bin file.
 	vector<size_t> headers;
 	{
-		ifstream ifs("16_hdr.bin", ios::binary | ios::ate);
+		std::ifstream ifs("16_hdr.bin", ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
 		headers.resize(num_bytes / sizeof(size_t));
 		ifs.seekg(0);
@@ -99,8 +100,10 @@ int main(int argc, char* argv[])
 	const size_t n = headers.size();
 
 	// Read the feature bin file.
-	vector<array<double, qn>> features;
-	ifstream usrcat("16_usrcat.bin", ios::binary);
+//	vector<array<double, qn>> features;
+	array<array<double, qn>, 1> lw;
+	auto l = lw.front();
+	std::ifstream usrcat("16_usrcat.bin", ios::binary);
 
 	// Search the features for records similar to the query.
 	vector<double> scores(n);
@@ -108,7 +111,7 @@ int main(int argc, char* argv[])
 	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
 	string line;
-	ifstream ligands("16_lig.pdbqt");
+	std::ifstream ligands("16_lig.pdbqt");
 	while (true)
 	{
 		// Fetch jobs.
@@ -118,6 +121,7 @@ int main(int argc, char* argv[])
 			const auto job = cursor->next();
 			const auto _id = job["_id"].OID();
 			cout << now() << "Executing job " << _id.str() << endl;
+			const auto job_path = jobs_path / _id.str();
 
 			// Obtain job properties.
 			const auto format = job["format"].String();
@@ -125,7 +129,7 @@ int main(int argc, char* argv[])
 			// Split the ligand string into lines.
 			vector<string> lines;
 			lines.reserve(2000);
-			ifstream ss("ligand." + format);
+			boost::filesystem::ifstream ss(job_path / ("ligand." + format));
 			for (string line; getline(ss, line); lines.push_back(line));
 
 			// Parse the ligand lines.
@@ -299,14 +303,12 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			// Read features chunk by chunk.
+			// Read features chunk by chunk, and compute USRCAT scores.
 			usrcat.seekg(0);
-//			usrcat.read(reinterpret_cast<char*>(features.data()), num_bytes);
-
-			// Compute USRCAT scores.
 			for (size_t k = 0; k < n; ++k)
 			{
-				const auto& l = features[k];
+//				const auto& l = features[k];
+				usrcat.read(reinterpret_cast<char*>(l.data()), sizeof(l));
 				double s = 0;
 				#pragma unroll
 				for (size_t i = 0; i < qn; i += 4)
@@ -326,8 +328,6 @@ int main(int argc, char* argv[])
 			});
 
 			// Write results.
-			const auto job_path = jobs_path / _id.str();
-			create_directory(job_path);
 			filtering_ostream ligands_pdbqt_gz;
 			ligands_pdbqt_gz.push(gzip_compressor());
 			ligands_pdbqt_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
