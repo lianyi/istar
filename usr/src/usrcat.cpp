@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 			}
 			if (invalid || atoms.empty())
 			{
-				continue; // TODO: still send email to inform the user.
+				continue; // TODO: still set done and send email to inform the user.
 			}
 
 			OBConversion obConversion;
