@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 					const auto atomCount = stoul(lines[2].substr(0, 5));
 					for (auto i = 0; i < atomCount; ++i)
 					{
-						const auto& line = lines[7 + i];
+						const auto& line = lines[7 + i]; // Cannot rely on 7.  Instead, search for @<TRIPOS>ATOM
 						atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
 					}
 				}
