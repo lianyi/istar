@@ -58,9 +58,8 @@ if (cluster.isMaster) {
 } else {
 	// Connect to MongoDB
 	var mongodb = require('mongodb');
-	new mongodb.MongoClient(new mongodb.Server(process.argv[2], 27017), {native_parser: true}).open(function(err, mongoClient) {
+	new mongodb.MongoClient.connect('mongodb://' + process.argv[2] + '/istar', function(err, db) {
 		if (err) throw err;
-		var db = mongoClient.db('istar');
 		db.authenticate(process.argv[3], process.argv[4], function(err, authenticated) {
 			if (err) throw err;
 			var idock = db.collection('idock');
