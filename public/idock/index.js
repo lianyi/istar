@@ -413,6 +413,7 @@ $(function() {
 						elem: line.substr(76, 2).replace(/ /g, ''),
 						bonds: [],
 					};
+					if (atom.elem.length === 0) atom.elem = atom.name[0].match(/[0-9]/) ? atom.name[1] : atom.name[0];
 					if (atom.elem === 'H') continue;
 					atom.color = atomColors[atom.elem] || defaultAtomColor;
 					atoms[atom.serial] = atom;
