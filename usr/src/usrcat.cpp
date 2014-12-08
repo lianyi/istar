@@ -76,8 +76,6 @@ int main(int argc, char* argv[])
 	}
 	const auto collection = "istar.usr";
 	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
-	const auto qn = 60;
-	const auto qv = 1.0 / qn;
 	const auto epoch = date(1970, 1, 1);
 	const array<string, 5> SmartsPatterns =
 	{
@@ -87,6 +85,9 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	};
+	const size_t num_usrs = 2;
+	constexpr array<size_t, num_usrs> qn = { 12, 60 };
+	constexpr array<double, num_usrs> qv = { 1.0 / qn[0], 1.0 / qn[1] };
 
 	// Read the header bin file.
 	vector<size_t> headers;
@@ -97,17 +98,17 @@ int main(int argc, char* argv[])
 		ifs.seekg(0);
 		ifs.read(reinterpret_cast<char*>(headers.data()), num_bytes);
 	}
-	const size_t n = headers.size();
+	const size_t num_ligands = headers.size();
 
 	// Read the feature bin file.
 //	vector<array<double, qn>> features;
-	array<array<double, qn>, 1> lw;
+	array<array<double, qn.back()>, 1> lw;
 	auto l = lw.front();
 	std::ifstream usrcat("16_usrcat.bin", ios::binary);
 
 	// Search the features for records similar to the query.
-	vector<double> scores(n);
-	vector<size_t> scase(n);
+	array<vector<double>, 2> scores{ vector<double>(num_ligands), vector<double>(num_ligands) };
+	vector<size_t> scase(num_ligands);
 	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
 	string line;
@@ -128,9 +129,10 @@ int main(int argc, char* argv[])
 			const auto email = job["email"].String();
 
 			// Split the ligand string into lines.
+			const auto ligand_path = job_path / ("ligand." + format);
 			vector<string> lines;
 			lines.reserve(2000);
-			boost::filesystem::ifstream ss(job_path / ("ligand." + format));
+			boost::filesystem::ifstream ss(ligand_path);
 			for (string line; getline(ss, line); lines.push_back(line));
 
 			// Parse the ligand lines.
@@ -222,10 +224,10 @@ int main(int argc, char* argv[])
 				session.close();
 			}
 
+			OBMol obMol;
 			OBConversion obConversion;
 			obConversion.SetInFormat(format.c_str());
-			OBMol obMol;
-			obConversion.Read(&obMol, &ss);
+			obConversion.ReadFile(&obMol, ligand_path.string());
 			array<vector<int>, 5> subsets;
 			for (size_t k = 0; k < 5; ++k)
 			{
@@ -283,7 +285,7 @@ int main(int argc, char* argv[])
 					ftf_dist = this_dist;
 				}
 			}
-			array<array<double, qn>, 1> qw;
+			array<array<double, qn.back()>, 1> qw;
 			auto q = qw.front();
 			size_t qo = 0;
 			for (const auto& subset : subsets)
@@ -323,28 +325,37 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			// Read features chunk by chunk, and compute USRCAT scores.
+			// Read features chunk by chunk, and compute USR and USRCAT scores.
+			cout << "num_ligands=" << num_ligands << endl;
 			usrcat.seekg(0);
-			for (size_t k = 0; k < n; ++k)
+			for (size_t k = 0; k < num_ligands; ++k)
 			{
 //				const auto& l = features[k];
 				usrcat.read(reinterpret_cast<char*>(l.data()), sizeof(l));
 				double s = 0;
+				size_t i = 0;
 				#pragma unroll
-				for (size_t i = 0; i < qn; i += 4)
+				for (size_t u = 0; u < num_usrs; ++u)
 				{
-					const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-					_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-					s += a[0] + a[2];
+					#pragma unroll
+					for (; i < qn[u]; i += 4)
+					{
+//						cout << "q[i]=" << q[i] << ",l[i]=" << l[i] << endl;
+						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+						s += a[0] + a[2];
+					}
+					scores[u][k] = 1 / (1 + s * qv[u]);
 				}
-				scores[k] = 1 / (1 + s * qv);
 			}
 
 			// Sort the scores.
+			cout << "Sorting" << endl;
+			const auto& uscores = scores[1];
 			iota(scase.begin(), scase.end(), 0);
-			sort(scase.begin(), scase.end(), [&scores](const size_t val1, const size_t val2)
+			sort(scase.begin(), scase.end(), [&uscores](const size_t val1, const size_t val2)
 			{
-				return scores[val1] > scores[val2];
+				return uscores[val1] > uscores[val2];
 			});
 
 			// Write results.
@@ -361,7 +372,8 @@ int main(int argc, char* argv[])
 				{
 					ligands_pdbqt_gz << line << '\n';
 				}
-				ligands_pdbqt_gz << "REMARK     USRCAT SCORE: " << setw(10) << scores[c] << '\n';
+				ligands_pdbqt_gz << "REMARK 951    USR SCORE: " << setw(10) << scores[0][c] << '\n';
+				ligands_pdbqt_gz << "REMARK 952 USRCAT SCORE: " << setw(10) << scores[1][c] << '\n';
 				while (getline(ligands, line))
 				{
 					ligands_pdbqt_gz << line << '\n';
