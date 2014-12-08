@@ -915,7 +915,8 @@ void main()\n\
 					ligand.smiles = lines[++i].substr(11);
 					ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
 					ligand.nsuppliers = ligand.suppliers.length;
-					ligand.usr_score = parseFloat(lines[++i].substr(22, 10));
+					ligand.usr_score = parseFloat(lines[++i].substr(25, 10));
+					ligand.usrcat_score = parseFloat(lines[++i].substr(25, 10));
 				} else if (record === 'ATOM  ' || record === 'HETATM') {
 					var atom = {
 						serial: parseInt(line.substr(6, 5)),
