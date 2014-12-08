@@ -125,6 +125,7 @@ int main(int argc, char* argv[])
 
 			// Obtain job properties.
 			const auto format = job["format"].String();
+			const auto email = job["email"].String();
 
 			// Split the ligand string into lines.
 			vector<string> lines;
@@ -199,7 +200,26 @@ int main(int argc, char* argv[])
 			}
 			if (invalid || atoms.empty())
 			{
-				continue; // TODO: still set done and send email to inform the user.
+				// Update progress.
+				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
+				conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
+				const auto err = conn.getLastError();
+				if (!err.empty())
+				{
+					cerr << now() << err << endl;
+				}
+
+				// Send error notification email.
+				cout << now() << "Sending an error notification email to " << email << endl;
+				MailMessage message;
+				message.setSender("istar <noreply@cse.cuhk.edu.hk>");
+				message.setSubject("Your usr job has failed to complete");
+				message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" failed on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC because of the invalidity of your provided ligand file.");
+				message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
+				SMTPClientSession session("137.189.91.190");
+				session.login();
+				session.sendMessage(message);
+				session.close();
 			}
 
 			OBConversion obConversion;
@@ -359,7 +379,6 @@ int main(int argc, char* argv[])
 			}
 
 			// Send completion notification email.
-			const auto email = job["email"].String();
 			cout << now() << "Sending a completion notification email to " << email << endl;
 			MailMessage message;
 			message.setSender("istar <noreply@cse.cuhk.edu.hk>");
