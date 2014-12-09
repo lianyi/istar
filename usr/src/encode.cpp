@@ -20,7 +20,8 @@ double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
 
 int main(int argc, char* argv[])
 {
-	const array<string, 5> SmartsPatterns =
+	const size_t num_subsets = 5;
+	const array<string, num_subsets> SmartsPatterns =
 	{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
@@ -46,8 +47,8 @@ int main(int argc, char* argv[])
 		if (atoms.empty()) break;
 		OBMol obMol;
 		obConversion.Read(&obMol, &ss);
-		array<vector<int>, 5> subsets;
-		for (size_t k = 0; k < 5; ++k)
+		array<vector<int>, num_subsets> subsets;
+		for (size_t k = 0; k < num_subsets; ++k)
 		{
 			auto& subset = subsets[k];
 			subset.reserve(atoms.size());
@@ -106,7 +107,6 @@ int main(int argc, char* argv[])
 		for (const auto& subset : subsets)
 		{
 			const auto n = subset.size();
-			const auto v = 1.0 / n;
 			for (const auto& rpt : { ctd, cst, fct, ftf })
 			{
 				vector<double> dists(n);
@@ -115,24 +115,37 @@ int main(int argc, char* argv[])
 					dists[i] = sqrt(dist2(atoms[subset[i]], rpt));
 				}
 				array<double, 3> m{};
-				for (size_t i = 0; i < n; ++i)
+				if (n > 2)
 				{
-					const auto d = dists[i];
-					m[0] += d;
+					const auto v = 1.0 / n;
+					for (size_t i = 0; i < n; ++i)
+					{
+						const auto d = dists[i];
+						m[0] += d;
+					}
+					m[0] *= v;
+					for (size_t i = 0; i < n; ++i)
+					{
+						const auto d = dists[i] - m[0];
+						m[1] += d * d;
+					}
+					m[1] = sqrt(m[1] * v);
+					for (size_t i = 0; i < n; ++i)
+					{
+						const auto d = dists[i] - m[0];
+						m[2] += d * d * d;
+					}
+					m[2] = cbrt(m[2] * v);
 				}
-				m[0] *= v;
-				for (size_t i = 0; i < n; ++i)
+				else if (n == 2)
 				{
-					const auto d = dists[i] - m[0];
-					m[1] += d * d;
+					m[0] = 0.5 * (dists[0] + dists[1]);
+					m[1] = 0.5 * fabs(dists[0] - dists[1]);
 				}
-				m[1] = sqrt(m[1] * v);
-				for (size_t i = 0; i < n; ++i)
+				else if (n == 1)
 				{
-					const auto d = dists[i] - m[0];
-					m[2] += d * d * d;
+					m[0] = dists[0];
 				}
-				m[2] = cbrt(m[2] * v);
 				cout.write(reinterpret_cast<char*>(m.data()), sizeof(m));
 			}
 		}
