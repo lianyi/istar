@@ -63,10 +63,11 @@ int main(int argc, char* argv[])
 		const auto& subset0 = subsets.front();
 		const auto n = subset0.size();
 		const auto v = 1.0 / n;
-		array<double, 3> ctd{};
-		array<double, 3> cst{};
-		array<double, 3> fct{};
-		array<double, 3> ftf{};
+		array<array<double, 3>, 4> rpts{};
+		auto& ctd = rpts[0];
+		auto& cst = rpts[1];
+		auto& fct = rpts[2];
+		auto& ftf = rpts[3];
 		for (size_t k = 0; k < 3; ++k)
 		{
 			for (const auto i : subset0)
@@ -107,7 +108,7 @@ int main(int argc, char* argv[])
 		for (const auto& subset : subsets)
 		{
 			const auto n = subset.size();
-			for (const auto& rpt : { ctd, cst, fct, ftf })
+			for (const auto& rpt : rpts)
 			{
 				vector<double> dists(n);
 				for (size_t i = 0; i < n; ++i)
