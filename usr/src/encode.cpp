@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iomanip>
 #include <array>
 #include <vector>
 #include <cmath>
@@ -34,6 +33,7 @@ int main(int argc, char* argv[])
 	obConversion.SetInFormat("pdbqt");
 	while (true)
 	{
+		// Parse PDBQT into atoms, and save a copy in a stringstream to pipe to OBConversion.
 		vector<array<double, 3>> atoms;
 		atoms.reserve(80);
 		stringstream ss;
@@ -41,12 +41,14 @@ int main(int argc, char* argv[])
 		{
 			ss << line << endl;
 			const auto record = line.substr(0, 6);
-			if (record == "TORSDO") break;
+			if (record == "TORSDO") break; // Change to "ENDMDL" if the input PDBQT is from idock output.
 			if (record != "ATOM  " && record != "HETATM") continue;
 			atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
 		}
 		const size_t num_atoms = atoms.size();
 		if (!num_atoms) break;
+
+		// Call OpenBabel API to categorize atoms into pharmacophoric subsets.
 		OBMol obMol;
 		obConversion.Read(&obMol, &ss);
 		array<vector<int>, num_subsets> subsets;
@@ -62,6 +64,8 @@ int main(int argc, char* argv[])
 				subset.push_back(map.front() - 1);
 			}
 		}
+
+		// Determine the reference points.
 		const auto& subset0 = subsets.front();
 		const auto n = subset0.size();
 		const auto v = 1.0 / n;
@@ -107,6 +111,8 @@ int main(int argc, char* argv[])
 				ftf_dist = this_dist;
 			}
 		}
+
+		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
 		array<vector<double>, num_references> dista;
 		for (size_t k = 0; k < num_references; ++k)
 		{
@@ -118,17 +124,22 @@ int main(int argc, char* argv[])
 				dists[subset0[i]] = sqrt(dist2(atoms[subset0[i]], reference));
 			}
 		}
+
+		// Loop over pharmacophoric subsets and reference points.
 		for (const auto& subset : subsets)
 		{
 			const auto n = subset.size();
 			for (size_t k = 0; k < num_references; ++k)
 			{
+				// Load distances from precalculated ones.
 				const auto& distp = dista[k];
 				vector<double> dists(n);
 				for (size_t i = 0; i < n; ++i)
 				{
 					dists[i] = distp[subset[i]];
 				}
+
+				// Compute moments.
 				array<double, 3> m{};
 				if (n > 2)
 				{
@@ -154,13 +165,15 @@ int main(int argc, char* argv[])
 				}
 				else if (n == 2)
 				{
-					m[0] = 0.5 * (dists[0] + dists[1]);
+					m[0] = 0.5 *     (dists[0] + dists[1]);
 					m[1] = 0.5 * fabs(dists[0] - dists[1]);
 				}
 				else if (n == 1)
 				{
 					m[0] = dists[0];
 				}
+
+				// Write moments.
 				cout.write(reinterpret_cast<char*>(m.data()), sizeof(m));
 			}
 		}
