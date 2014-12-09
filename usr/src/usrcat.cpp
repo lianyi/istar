@@ -74,10 +74,17 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 	}
+
+	// Initialize constants.
 	const auto collection = "istar.usr";
 	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 	const auto epoch = date(1970, 1, 1);
-	const array<string, 5> SmartsPatterns =
+	const size_t num_usrs = 2;
+	constexpr array<size_t, num_usrs> qn = { 12, 60 };
+	constexpr array<double, num_usrs> qv = { 1.0 / qn[0], 1.0 / qn[1] };
+	const size_t num_references = 4;
+	const size_t num_subsets = 5;
+	const array<string, num_subsets> SmartsPatterns =
 	{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
@@ -85,34 +92,30 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	};
-	const size_t num_usrs = 2;
-	constexpr array<size_t, num_usrs> qn = { 12, 60 };
-	constexpr array<double, num_usrs> qv = { 1.0 / qn[0], 1.0 / qn[1] };
 
 	// Read the header bin file.
 	vector<size_t> headers;
 	{
-		std::ifstream ifs("16_hdr.bin", ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
+		std::ifstream hdr_bin("16_hdr.bin", ios::binary | ios::ate);
+		const size_t num_bytes = hdr_bin.tellg();
 		headers.resize(num_bytes / sizeof(size_t));
-		ifs.seekg(0);
-		ifs.read(reinterpret_cast<char*>(headers.data()), num_bytes);
+		hdr_bin.seekg(0);
+		hdr_bin.read(reinterpret_cast<char*>(headers.data()), num_bytes);
 	}
 	const size_t num_ligands = headers.size();
 
-	// Read the feature bin file.
-//	vector<array<double, qn>> features;
-	array<array<double, qn.back()>, 1> lw;
-	auto l = lw.front();
-	std::ifstream usrcat("16_usrcat.bin", ios::binary);
-
 	// Search the features for records similar to the query.
+//	vector<array<double, qn.back()>> features;
+	array<array<double, qn.back()>, 2> qlw;
+	array<array<double, 4>, 1> aw;
+	auto q = qlw[0];
+	auto l = qlw[1];
+	auto a = aw.front();
 	array<vector<double>, 2> scores{ vector<double>(num_ligands), vector<double>(num_ligands) };
 	vector<size_t> scase(num_ligands);
-	array<array<double, 4>, 1> aw;
-	auto a = aw.front();
 	string line;
-	std::ifstream ligands("16_lig.pdbqt");
+	std::ifstream usrcat_bin("16_usrcat.bin", ios::binary);
+	std::ifstream lig_pdbqt("16_lig.pdbqt");
 	while (true)
 	{
 		// Fetch jobs.
@@ -127,45 +130,65 @@ int main(int argc, char* argv[])
 			// Obtain job properties.
 			const auto format = job["format"].String();
 			const auto email = job["email"].String();
-
-			// Split the ligand string into lines.
 			const auto ligand_path = job_path / ("ligand." + format);
-			vector<string> lines;
-			lines.reserve(2000);
-			boost::filesystem::ifstream ss(ligand_path);
-			for (string line; getline(ss, line); lines.push_back(line));
 
-			// Parse the ligand lines.
+			// Parse the user-supplied ligand.
+			bool invalid = false;
 			vector<array<double, 3>> atoms;
 			atoms.reserve(80);
-			bool invalid = false;
+			boost::filesystem::ifstream ligand_format(ligand_path);
 			try
 			{
-				if (format == "mol2") // @<TRIPOS>MOLECULE at the beginning of a molecule
+				if (format == "mol2")
 				{
-					const auto atomCount = stoul(lines[2].substr(0, 5));
+					// Locate @<TRIPOS>MOLECULE so as to parse the number of atoms.
+					while (getline(ligand_format, line))
+					{
+						if (line == "@<TRIPOS>MOLECULE") break;
+					}
+					getline(ligand_format, line);
+					getline(ligand_format, line);
+					const auto atomCount = stoul(line.substr(0, 5));
+
+					// Locate @<TRIPOS>MOLECULE so as to parse the atoms.
+					while (getline(ligand_format, line))
+					{
+						if (line == "@<TRIPOS>ATOM") break;
+					}
 					for (auto i = 0; i < atomCount; ++i)
 					{
-						const auto& line = lines[7 + i]; // Cannot rely on 7.  Instead, search for @<TRIPOS>ATOM
+						getline(ligand_format, line);
 						atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
 					}
 				}
-				else if (format == "sdf") // $$$$  at the end of a molecule
+				else if (format == "sdf") // $$$$ at the end of a molecule.
 				{
-					const auto atomCount = stoul(lines[3].substr(0, 3));
+					// Parse the number of atoms.
+					getline(ligand_format, line);
+					getline(ligand_format, line);
+					getline(ligand_format, line);
+					getline(ligand_format, line);
+					const auto atomCount = stoul(line.substr(0, 3));
+
+					// Parse the atoms.
 					for (auto i = 0; i < atomCount; ++i)
 					{
-						const auto& line = lines[4 + i];
-						atoms.push_back({ stod(line.substr(0, 10)), stod(line.substr(10, 10)), stod(line.substr(20, 10)) });
+						getline(ligand_format, line);
+						atoms.push_back({ stod(line.substr( 0, 10)), stod(line.substr(10, 10)), stod(line.substr(20, 10)) });
 					}
 				}
 				else if (format == "xyz")
 				{
-					boost::char_separator<char> sep(" ");
-					const auto atomCount = stoul(lines[0].substr(0, 3));
+					// Parse the number of atoms.
+					getline(ligand_format, line);
+					const auto atomCount = stoul(line);
+
+					// Parse the atoms.
+					const boost::char_separator<char> sep(" ");
+					getline(ligand_format, line);
 					for (auto i = 0; i < atomCount; ++i)
 					{
-						const auto& line = lines[2+i];
+						getline(ligand_format, line);
 						const boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
 						auto ti = tokens.begin();
 						atoms.push_back({ stod(*++ti), stod(*++ti), stod(*++ti) });
@@ -173,7 +196,7 @@ int main(int argc, char* argv[])
 				}
 				else if (format == "pdb")
 				{
-					for (const auto& line : lines)
+					while (getline(ligand_format, line))
 					{
 						const auto record = line.substr(0, 6);
 						if (record == "ATOM  " || record == "HETATM")
@@ -185,7 +208,7 @@ int main(int argc, char* argv[])
 				}
 				else if (format == "pdbqt")
 				{
-					for (const auto& line : lines)
+					while (getline(ligand_format, line))
 					{
 						const auto record = line.substr(0, 6);
 						if (record == "ATOM  " || record == "HETATM")
@@ -228,8 +251,8 @@ int main(int argc, char* argv[])
 			OBConversion obConversion;
 			obConversion.SetInFormat(format.c_str());
 			obConversion.ReadFile(&obMol, ligand_path.string());
-			array<vector<int>, 5> subsets;
-			for (size_t k = 0; k < 5; ++k)
+			array<vector<int>, num_subsets> subsets;
+			for (size_t k = 0; k < num_subsets; ++k)
 			{
 				auto& subset = subsets[k];
 				subset.reserve(atoms.size());
@@ -244,10 +267,11 @@ int main(int argc, char* argv[])
 			const auto& subset0 = subsets.front();
 			const auto n = subset0.size();
 			const auto v = 1.0 / n;
-			array<double, 3> ctd{};
-			array<double, 3> cst{};
-			array<double, 3> fct{};
-			array<double, 3> ftf{};
+			array<array<double, 3>, num_references> references{};
+			auto& ctd = references[0];
+			auto& cst = references[1];
+			auto& fct = references[2];
+			auto& ftf = references[3];
 			for (size_t k = 0; k < 3; ++k)
 			{
 				for (const auto i : subset0)
@@ -285,53 +309,75 @@ int main(int argc, char* argv[])
 					ftf_dist = this_dist;
 				}
 			}
-			array<array<double, qn.back()>, 1> qw;
-			auto q = qw.front();
+			array<vector<double>, num_references> dista;
+			for (size_t k = 0; k < num_references; ++k)
+			{
+				const auto& reference = references[k];
+				auto& dists = dista[k];
+				dists.resize(atoms.size());
+				for (size_t i = 0; i < n; ++i)
+				{
+					dists[subset0[i]] = sqrt(dist2(atoms[subset0[i]], reference));
+				}
+			}
 			size_t qo = 0;
 			for (const auto& subset : subsets)
 			{
 				const auto n = subset.size();
-				const auto v = 1.0 / n;
-				for (const auto& rpt : { ctd, cst, fct, ftf })
+				for (size_t k = 0; k < num_references; ++k)
 				{
+					const auto& distp = dista[k];
 					vector<double> dists(n);
 					for (size_t i = 0; i < n; ++i)
 					{
-						dists[i] = sqrt(dist2(atoms[subset[i]], rpt));
+						dists[i] = distp[subset[i]];
 					}
 					array<double, 3> m{};
-					for (size_t i = 0; i < n; ++i)
+					if (n > 2)
 					{
-						const auto d = dists[i];
-						m[0] += d;
+						const auto v = 1.0 / n;
+						for (size_t i = 0; i < n; ++i)
+						{
+							const auto d = dists[i];
+							m[0] += d;
+						}
+						m[0] *= v;
+						for (size_t i = 0; i < n; ++i)
+						{
+							const auto d = dists[i] - m[0];
+							m[1] += d * d;
+						}
+						m[1] = sqrt(m[1] * v);
+						for (size_t i = 0; i < n; ++i)
+						{
+							const auto d = dists[i] - m[0];
+							m[2] += d * d * d;
+						}
+						m[2] = cbrt(m[2] * v);
 					}
-					m[0] *= v;
-					for (size_t i = 0; i < n; ++i)
+					else if (n == 2)
 					{
-						const auto d = dists[i] - m[0];
-						m[1] += d * d;
+						m[0] = 0.5 * (dists[0] + dists[1]);
+						m[1] = 0.5 * fabs(dists[0] - dists[1]);
 					}
-					m[1] = sqrt(m[1] * v);
-					for (size_t i = 0; i < n; ++i)
+					else if (n == 1)
 					{
-						const auto d = dists[i] - m[0];
-						m[2] += d * d * d;
+						m[0] = dists[0];
 					}
-					m[2] = cbrt(m[2] * v);
 					for (const auto e : m)
 					{
 						q[qo++] = e;
 					}
 				}
 			}
+			assert(qo == qn.back());
 
 			// Read features chunk by chunk, and compute USR and USRCAT scores.
-			cout << "num_ligands=" << num_ligands << endl;
-			usrcat.seekg(0);
+			usrcat_bin.seekg(0);
 			for (size_t k = 0; k < num_ligands; ++k)
 			{
 //				const auto& l = features[k];
-				usrcat.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+				usrcat_bin.read(reinterpret_cast<char*>(l.data()), sizeof(l));
 				double s = 0;
 				size_t i = 0;
 				#pragma unroll
@@ -340,7 +386,6 @@ int main(int argc, char* argv[])
 					#pragma unroll
 					for (; i < qn[u]; i += 4)
 					{
-//						cout << "q[i]=" << q[i] << ",l[i]=" << l[i] << endl;
 						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
 						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
 						s += a[0] + a[2];
@@ -349,8 +394,7 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			// Sort the scores.
-			cout << "Sorting" << endl;
+			// Sort the ligands by USRCAT scores.
 			const auto& uscores = scores[1];
 			iota(scase.begin(), scase.end(), 0);
 			sort(scase.begin(), scase.end(), [&uscores](const size_t val1, const size_t val2)
@@ -367,14 +411,14 @@ int main(int argc, char* argv[])
 			for (size_t k = 0; k < 1000; ++k)
 			{
 				const size_t c = scase[k];
-				ligands.seekg(headers[c]);
-				for (size_t i = 0; i < 3 && getline(ligands, line); ++i)
+				lig_pdbqt.seekg(headers[c]);
+				for (size_t i = 0; i < 3 && getline(lig_pdbqt, line); ++i)
 				{
 					ligands_pdbqt_gz << line << '\n';
 				}
 				ligands_pdbqt_gz << "REMARK 951    USR SCORE: " << setw(10) << scores[0][c] << '\n';
 				ligands_pdbqt_gz << "REMARK 952 USRCAT SCORE: " << setw(10) << scores[1][c] << '\n';
-				while (getline(ligands, line))
+				while (getline(lig_pdbqt, line))
 				{
 					ligands_pdbqt_gz << line << '\n';
 					if (line.substr(0, 6) == "TORSDO") break;
