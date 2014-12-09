@@ -20,6 +20,7 @@ double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
 
 int main(int argc, char* argv[])
 {
+	const size_t num_references = 4;
 	const size_t num_subsets = 5;
 	const array<string, num_subsets> SmartsPatterns =
 	{
@@ -44,14 +45,15 @@ int main(int argc, char* argv[])
 			if (record != "ATOM  " && record != "HETATM") continue;
 			atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
 		}
-		if (atoms.empty()) break;
+		const size_t num_atoms = atoms.size();
+		if (!num_atoms) break;
 		OBMol obMol;
 		obConversion.Read(&obMol, &ss);
 		array<vector<int>, num_subsets> subsets;
 		for (size_t k = 0; k < num_subsets; ++k)
 		{
 			auto& subset = subsets[k];
-			subset.reserve(atoms.size());
+			subset.reserve(num_atoms);
 			OBSmartsPattern smarts;
 			smarts.Init(SmartsPatterns[k]);
 			smarts.Match(obMol);
@@ -63,11 +65,11 @@ int main(int argc, char* argv[])
 		const auto& subset0 = subsets.front();
 		const auto n = subset0.size();
 		const auto v = 1.0 / n;
-		array<array<double, 3>, 4> rpts{};
-		auto& ctd = rpts[0];
-		auto& cst = rpts[1];
-		auto& fct = rpts[2];
-		auto& ftf = rpts[3];
+		array<array<double, 3>, num_references> references{};
+		auto& ctd = references[0];
+		auto& cst = references[1];
+		auto& fct = references[2];
+		auto& ftf = references[3];
 		for (size_t k = 0; k < 3; ++k)
 		{
 			for (const auto i : subset0)
@@ -105,15 +107,27 @@ int main(int argc, char* argv[])
 				ftf_dist = this_dist;
 			}
 		}
+		array<vector<double>, num_references> dista;
+		for (size_t k = 0; k < num_references; ++k)
+		{
+			const auto& reference = references[k];
+			auto& dists = dista[k];
+			dists.resize(num_atoms);
+			for (size_t i = 0; i < n; ++i)
+			{
+				dists[subset0[i]] = sqrt(dist2(atoms[subset0[i]], reference));
+			}
+		}
 		for (const auto& subset : subsets)
 		{
 			const auto n = subset.size();
-			for (const auto& rpt : rpts)
+			for (size_t k = 0; k < num_references; ++k)
 			{
+				const auto& distp = dista[k];
 				vector<double> dists(n);
 				for (size_t i = 0; i < n; ++i)
 				{
-					dists[i] = sqrt(dist2(atoms[subset[i]], rpt));
+					dists[i] = distp[subset[i]];
 				}
 				array<double, 3> m{};
 				if (n > 2)
