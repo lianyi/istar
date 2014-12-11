@@ -326,9 +326,11 @@ $(function() {
 			format = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase();
 			var lines = ligand.split('\n'), atoms = {};
 			if (format === 'mol2') {
-				var atomCount = parseInt(lines[2].substr(0, 5));
-				var bondCount = parseInt(lines[2].substr(5, 6));
-				var offset = 7;
+				var offset = 0;
+				while (lines[offset++].substr(0, 17) !== '@<TRIPOS>MOLECULE');
+				var atomCount = parseInt(lines[++offset].substr(0, 5));
+				var bondCount = parseInt(lines[offset++].substr(5, 6));
+				while (lines[offset++].substr(0, 13) !== '@<TRIPOS>ATOM');
 				for (var i = 1; i <= atomCount; ++i) {
 					var line = lines[offset++];
 					var atom = {
@@ -340,7 +342,7 @@ $(function() {
 					if (atom.elem === 'H') continue;
 					atoms[atom.serial] = atom;
 				}
-				++offset;
+				while (lines[offset++].substr(0, 13) !== '@<TRIPOS>BOND');
 				for (var i = 1; i <= bondCount; ++i) {
 					var line = lines[offset++];
 					var atom0 = atoms[parseInt(line.substr( 6, 5))];
