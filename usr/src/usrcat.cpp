@@ -135,7 +135,6 @@ int main(int argc, char* argv[])
 			// Parse the user-supplied ligand.
 			bool invalid = false;
 			vector<array<double, 3>> atoms;
-			atoms.reserve(80);
 			boost::filesystem::ifstream ligand_format(ligand_path);
 			try
 			{
@@ -144,16 +143,17 @@ int main(int argc, char* argv[])
 					// Locate @<TRIPOS>MOLECULE so as to parse the number of atoms.
 					while (getline(ligand_format, line))
 					{
-						if (line == "@<TRIPOS>MOLECULE") break;
+						if (line.substr(0, 17) == "@<TRIPOS>MOLECULE") break;
 					}
 					getline(ligand_format, line);
 					getline(ligand_format, line);
-					const auto atomCount = stoul(line.substr(0, 5));
+					const auto atomCount = stoul(*boost::tokenizer<boost::char_separator<char>>(line, boost::char_separator<char>(" ")).begin());
+					atoms.reserve(atomCount);
 
 					// Locate @<TRIPOS>MOLECULE so as to parse the atoms.
 					while (getline(ligand_format, line))
 					{
-						if (line == "@<TRIPOS>ATOM") break;
+						if (line.substr(0, 13) == "@<TRIPOS>ATOM") break;
 					}
 					for (auto i = 0; i < atomCount; ++i)
 					{
@@ -169,6 +169,7 @@ int main(int argc, char* argv[])
 					getline(ligand_format, line);
 					getline(ligand_format, line);
 					const auto atomCount = stoul(line.substr(0, 3));
+					atoms.reserve(atomCount);
 
 					// Parse the atoms.
 					for (auto i = 0; i < atomCount; ++i)
@@ -182,6 +183,7 @@ int main(int argc, char* argv[])
 					// Parse the number of atoms.
 					getline(ligand_format, line);
 					const auto atomCount = stoul(line);
+					atoms.reserve(atomCount);
 
 					// Parse the atoms.
 					const boost::char_separator<char> sep(" ");
@@ -196,6 +198,7 @@ int main(int argc, char* argv[])
 				}
 				else if (format == "pdb")
 				{
+					atoms.reserve(80);
 					while (getline(ligand_format, line))
 					{
 						const auto record = line.substr(0, 6);
@@ -208,6 +211,7 @@ int main(int argc, char* argv[])
 				}
 				else if (format == "pdbqt")
 				{
+					atoms.reserve(80);
 					while (getline(ligand_format, line))
 					{
 						const auto record = line.substr(0, 6);
@@ -239,7 +243,7 @@ int main(int argc, char* argv[])
 				MailMessage message;
 				message.setSender("istar <noreply@cse.cuhk.edu.hk>");
 				message.setSubject("Your usr job has failed to complete");
-				message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" failed on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC because of the invalidity of your provided ligand file.");
+				message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" failed on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC because your provided ligand failed to be parsed.");
 				message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 				SMTPClientSession session("137.189.91.190");
 				session.login();
@@ -357,7 +361,7 @@ int main(int argc, char* argv[])
 					}
 					else if (n == 2)
 					{
-						m[0] = 0.5 * (dists[0] + dists[1]);
+						m[0] = 0.5 *     (dists[0] + dists[1]);
 						m[1] = 0.5 * fabs(dists[0] - dists[1]);
 					}
 					else if (n == 1)
