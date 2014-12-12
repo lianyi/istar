@@ -40,14 +40,6 @@ inline static string now()
 	return to_simple_string(second_clock::local_time()) + " ";
 }
 
-double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
-{
-	const auto d0 = p0[0] - p1[0];
-	const auto d1 = p0[1] - p1[1];
-	const auto d2 = p0[2] - p1[2];
-	return d0 * d0 + d1 * d1 + d2 * d2;
-}
-
 int main(int argc, char* argv[])
 {
 	// Check the required number of command line arguments.
@@ -108,7 +100,6 @@ int main(int argc, char* argv[])
 //	vector<array<double, qn.back()>> features;
 	array<array<double, qn.back()>, 2> qlw;
 	array<array<double, 4>, 1> aw;
-	auto q = qlw[0];
 	auto l = qlw[1];
 	auto a = aw.front();
 	array<vector<double>, 2> scores{ vector<double>(num_ligands), vector<double>(num_ligands) };
@@ -130,104 +121,30 @@ int main(int argc, char* argv[])
 			// Obtain job properties.
 			const auto format = job["format"].String();
 			const auto email = job["email"].String();
-			const auto ligand_path = job_path / ("ligand." + format);
 
 			// Parse the user-supplied ligand.
-			bool invalid = false;
-			vector<array<double, 3>> atoms;
-			boost::filesystem::ifstream ligand_format(ligand_path);
-			try
+			OBMol obMol;
+			OBConversion obConversion;
+			obConversion.SetInFormat(format.c_str());
+			obConversion.ReadFile(&obMol, (job_path / ("ligand." + format)).string());
+			const auto num_atoms = obMol.NumAtoms();
+//			obMol.AddHydrogens(); // Adding hydrogens does not seem to affect SMARTS matching.
+			array<vector<int>, num_subsets> subsets;
+			for (size_t k = 0; k < num_subsets; ++k)
 			{
-				if (format == "mol2")
+				auto& subset = subsets[k];
+				subset.reserve(num_atoms);
+				OBSmartsPattern smarts;
+				smarts.Init(SmartsPatterns[k]);
+				smarts.Match(obMol);
+				for (const auto& map : smarts.GetMapList())
 				{
-					// Locate @<TRIPOS>MOLECULE so as to parse the number of atoms.
-					while (getline(ligand_format, line))
-					{
-						if (line.substr(0, 17) == "@<TRIPOS>MOLECULE") break;
-					}
-					getline(ligand_format, line);
-					getline(ligand_format, line);
-					const auto atomCount = stoul(*boost::tokenizer<boost::char_separator<char>>(line, boost::char_separator<char>(" ")).begin());
-					atoms.reserve(atomCount);
-
-					// Locate @<TRIPOS>MOLECULE so as to parse the atoms.
-					while (getline(ligand_format, line))
-					{
-						if (line.substr(0, 13) == "@<TRIPOS>ATOM") break;
-					}
-					for (auto i = 0; i < atomCount; ++i)
-					{
-						getline(ligand_format, line);
-						atoms.push_back({ stod(line.substr(16, 10)), stod(line.substr(26, 10)), stod(line.substr(36, 10)) });
-					}
+					subset.push_back(map.front());
 				}
-				else if (format == "sdf") // $$$$ at the end of a molecule.
-				{
-					// Parse the number of atoms.
-					getline(ligand_format, line);
-					getline(ligand_format, line);
-					getline(ligand_format, line);
-					getline(ligand_format, line);
-					const auto atomCount = stoul(line.substr(0, 3));
-					atoms.reserve(atomCount);
-
-					// Parse the atoms.
-					for (auto i = 0; i < atomCount; ++i)
-					{
-						getline(ligand_format, line);
-						atoms.push_back({ stod(line.substr( 0, 10)), stod(line.substr(10, 10)), stod(line.substr(20, 10)) });
-					}
-				}
-				else if (format == "xyz")
-				{
-					// Parse the number of atoms.
-					getline(ligand_format, line);
-					const auto atomCount = stoul(line);
-					atoms.reserve(atomCount);
-
-					// Parse the atoms.
-					const boost::char_separator<char> sep(" ");
-					getline(ligand_format, line);
-					for (auto i = 0; i < atomCount; ++i)
-					{
-						getline(ligand_format, line);
-						const boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
-						auto ti = tokens.begin();
-						atoms.push_back({ stod(*++ti), stod(*++ti), stod(*++ti) });
-					}
-				}
-				else if (format == "pdb")
-				{
-					atoms.reserve(80);
-					while (getline(ligand_format, line))
-					{
-						const auto record = line.substr(0, 6);
-						if (record == "ATOM  " || record == "HETATM")
-						{
-							atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
-						}
-						else if (record == "ENDMDL") break;
-					}
-				}
-				else if (format == "pdbqt")
-				{
-					atoms.reserve(80);
-					while (getline(ligand_format, line))
-					{
-						const auto record = line.substr(0, 6);
-						if (record == "ATOM  " || record == "HETATM")
-						{
-							atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
-						}
-						else if (record == "TORSDO") break;
-					}
-				}
+				cout << k << '\t' << subset.size() << endl;
 			}
-			catch (const exception& e)
-			{
-				invalid = true;
-			}
-			if (invalid || atoms.empty())
+			const auto& subset0 = subsets.front();
+			if (subset0.empty())
 			{
 				// Update progress.
 				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -250,48 +167,25 @@ int main(int argc, char* argv[])
 				session.sendMessage(message);
 				session.close();
 			}
-
-			OBMol obMol;
-			OBConversion obConversion;
-			obConversion.SetInFormat(format.c_str());
-			obConversion.ReadFile(&obMol, ligand_path.string());
-			array<vector<int>, num_subsets> subsets;
-			for (size_t k = 0; k < num_subsets; ++k)
-			{
-				auto& subset = subsets[k];
-				subset.reserve(atoms.size());
-				OBSmartsPattern smarts;
-				smarts.Init(SmartsPatterns[k]);
-				smarts.Match(obMol);
-				for (const auto& map : smarts.GetMapList())
-				{
-					subset.push_back(map.front() - 1);
-				}
-			}
-			const auto& subset0 = subsets.front();
 			const auto n = subset0.size();
 			const auto v = 1.0 / n;
-			array<array<double, 3>, num_references> references{};
+			array<vector3, num_references> references{};
 			auto& ctd = references[0];
 			auto& cst = references[1];
 			auto& fct = references[2];
 			auto& ftf = references[3];
-			for (size_t k = 0; k < 3; ++k)
+			for (const auto i : subset0)
 			{
-				for (const auto i : subset0)
-				{
-					const auto& a = atoms[i];
-					ctd[k] += a[k];
-				}
-				ctd[k] *= v;
+				ctd += obMol.GetAtom(i)->GetVector();
 			}
+			ctd *= v;
 			double cst_dist = numeric_limits<double>::max();
 			double fct_dist = numeric_limits<double>::lowest();
 			double ftf_dist = numeric_limits<double>::lowest();
 			for (const auto i : subset0)
 			{
-				const auto& a = atoms[i];
-				const auto this_dist = dist2(a, ctd);
+				const auto& a = obMol.GetAtom(i)->GetVector();
+				const auto this_dist = a.distSq(ctd);
 				if (this_dist < cst_dist)
 				{
 					cst = a;
@@ -305,8 +199,8 @@ int main(int argc, char* argv[])
 			}
 			for (const auto i : subset0)
 			{
-				const auto& a = atoms[i];
-				const auto this_dist = dist2(a, fct);
+				const auto& a = obMol.GetAtom(i)->GetVector();
+				const auto this_dist = a.distSq(fct);
 				if (this_dist > ftf_dist)
 				{
 					ftf = a;
@@ -318,12 +212,13 @@ int main(int argc, char* argv[])
 			{
 				const auto& reference = references[k];
 				auto& dists = dista[k];
-				dists.resize(atoms.size());
+				dists.resize(1 + num_atoms); // OpenBabel atom index starts from 1.
 				for (size_t i = 0; i < n; ++i)
 				{
-					dists[subset0[i]] = sqrt(dist2(atoms[subset0[i]], reference));
+					dists[subset0[i]] = sqrt(obMol.GetAtom(subset0[i])->GetVector().distSq(reference));
 				}
 			}
+			auto q = qlw[0];
 			size_t qo = 0;
 			for (const auto& subset : subsets)
 			{
