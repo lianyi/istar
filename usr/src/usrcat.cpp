@@ -10,7 +10,7 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
-#include <immintrin.h>
+//#include <immintrin.h>
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
 #include <boost/tokenizer.hpp>
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 
 	// Initialize constants.
 	const auto collection = "istar.usr";
-	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
+//	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 	const auto epoch = date(1970, 1, 1);
 	const size_t num_usrs = 2;
 	constexpr array<size_t, num_usrs> qn = { 12, 60 };
@@ -141,7 +141,6 @@ int main(int argc, char* argv[])
 				{
 					subset.push_back(map.front());
 				}
-				cout << k << '\t' << subset.size() << endl;
 			}
 			const auto& subset0 = subsets.front();
 			if (subset0.empty())
@@ -285,9 +284,14 @@ int main(int argc, char* argv[])
 					#pragma unroll
 					for (; i < qn[u]; i += 4)
 					{
-						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-						s += a[0] + a[2];
+//						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+//						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+//						s += a[0] + a[2];
+						#pragma unroll
+						for (size_t o = i; o < i + 4; ++o)
+						{
+							s += fabs(q[o] - l[o]);
+						}
 					}
 					scores[u][k] = 1 / (1 + s * qv[u]);
 				}
