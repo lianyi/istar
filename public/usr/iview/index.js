@@ -651,11 +651,7 @@ $(function () {
 	var ambientLight = new THREE.AmbientLight(0x202020);
 	var rot = new THREE.Object3D();
 	var mdl = new THREE.Object3D();
-	var maxD = 20, sn = -maxD, sf = maxD;
 	rot.add(mdl);
-	rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
-	rot.quaternion.set(1, 0, 0, 0);
-	mdl.position.set(0, 0, 0);
 	scene.add(directionalLight);
 	scene.add(ambientLight);
 	scene.add(rot);
@@ -663,6 +659,7 @@ $(function () {
 	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800);
 	camera.position.set(0, 0, -150);
 	camera.lookAt(new THREE.Vector3(0, 0, 0));
+	var sn, sf;
 	var labelVertexShader = '\
 uniform float width, height;\n\
 varying vec2 vUv;\n\
@@ -831,6 +828,8 @@ void main()\n\
 			};
 		}
 		mdl.add(ligand.representations.label);
+		mdl.position.set(0, 0, 0);
+		rot.quaternion.set(1, 0, 0, 0);
 		var data = $('#data');
 		$('span', data).each(function() {
 			var $this = $(this);
@@ -983,6 +982,19 @@ void main()\n\
 				ligand.refresh();
 				render();
 			});
+			var lmin = new THREE.Vector3( 9999, 9999, 9999);
+			var lmax = new THREE.Vector3(-9999,-9999,-9999);
+			atoms = ligand.atoms;
+			for (var i in atoms) {
+				var atom = atoms[i];
+				var coord = atom.coord;
+				lmin.min(coord);
+				lmax.max(coord);
+			}
+			var maxD = lmax.distanceTo(lmin) + 4;
+			sn = -maxD;
+			sf =  maxD;
+			rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
 			render();
 		});
 		gunzipWorker.postMessage(lsrcz);
