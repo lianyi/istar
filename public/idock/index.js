@@ -47,7 +47,7 @@ $(function() {
 					var newJobs = res.slice(jobs.length - skip);
 					newJobs.forEach(function(job) {
 						if (!job.done) {
-							job.max_ligands_inv = 1 / Math.min(job.ligands, 1e+5);
+							job.max_ligands_inv = 1 / Math.min(job.ligands, 1e+6);
 						}
 					});
 					var len = jobs.length;

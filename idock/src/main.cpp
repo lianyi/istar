@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 	const size_t num_threads = thread::hardware_concurrency();
 	const size_t num_mc_tasks = 32;
 	const fl grid_granularity = 0.08;
-	const fl max_ligands_per_job = 1e+5;
+	const fl max_ligands_per_job = 1e+6;
 	const auto epoch = boost::gregorian::date(1970, 1, 1);
 
 	// Calculate the slice split points on the fly.
