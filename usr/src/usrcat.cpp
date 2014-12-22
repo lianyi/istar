@@ -165,6 +165,7 @@ int main(int argc, char* argv[])
 				session.login();
 				session.sendMessage(message);
 				session.close();
+				continue;
 			}
 			const auto n = subset0.size();
 			const auto v = 1.0 / n;
