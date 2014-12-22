@@ -113,14 +113,16 @@ int main(int argc, char* argv[])
 		auto cursor = conn.query(collection, QUERY("done" << BSON("$exists" << false)).sort("submitted"), 1); // Each batch processes 1 job.
 		while (cursor->more())
 		{
+			// Obtain job properties.
 			const auto job = cursor->next();
 			const auto _id = job["_id"].OID();
 			cout << now() << "Executing job " << _id.str() << endl;
 			const auto job_path = jobs_path / _id.str();
-
-			// Obtain job properties.
 			const auto format = job["format"].String();
 			const auto email = job["email"].String();
+
+			// Record job starting time stamp.
+			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count()))));
 
 			// Parse the user-supplied ligand.
 			OBMol obMol;
@@ -145,14 +147,9 @@ int main(int argc, char* argv[])
 			const auto& subset0 = subsets.front();
 			if (subset0.empty())
 			{
-				// Update progress.
+				// Record job completion time stamp.
 				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 				conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
-				const auto err = conn.getLastError();
-				if (!err.empty())
-				{
-					cerr << now() << err << endl;
-				}
 
 				// Send error notification email.
 				cout << now() << "Sending an error notification email to " << email << endl;
@@ -340,11 +337,6 @@ int main(int argc, char* argv[])
 			// Update progress.
 			const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
-			const auto err = conn.getLastError();
-			if (!err.empty())
-			{
-				cerr << now() << err << endl;
-			}
 
 			// Send completion notification email.
 			cout << now() << "Sending a completion notification email to " << email << endl;
