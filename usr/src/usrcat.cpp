@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialize constants.
+	cout << now() << "Initializing" << endl;
 	const auto collection = "istar.usr";
 //	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 	const auto epoch = date(1970, 1, 1);
@@ -107,6 +108,7 @@ int main(int argc, char* argv[])
 	string line;
 	std::ifstream usrcat_bin("16_usrcat.bin", ios::binary);
 	std::ifstream lig_pdbqt("16_lig.pdbqt");
+	cout << now() << "Entering event loop" << endl;
 	while (true)
 	{
 		// Fetch jobs.
