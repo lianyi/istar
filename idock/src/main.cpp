@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialize default values of constant arguments.
+	cout << now() << "Initializing" << endl;
 	const auto collection = "istar.idock";
 	const auto jobid_fields = BSON("_id" << 1 << "scheduled" << 1);
 	const auto param_fields = BSON("_id" << 0 << "ligands" << 1 << "mwt_lb" << 1 << "mwt_ub" << 1 << "lgp_lb" << 1 << "lgp_ub" << 1 << "ads_lb" << 1 << "ads_ub" << 1 << "pds_lb" << 1 << "pds_ub" << 1 << "hbd_lb" << 1 << "hbd_ub" << 1 << "hba_lb" << 1 << "hba_ub" << 1 << "psa_lb" << 1 << "psa_ub" << 1 << "chg_lb" << 1 << "chg_ub" << 1 << "nrb_lb" << 1 << "nrb_ub" << 1);
@@ -166,6 +167,7 @@ int main(int argc, char* argv[])
 	boost::filesystem::ifstream headers(headers_path);
 	boost::filesystem::ifstream ligands(ligands_path);
 
+	cout << now() << "Entering event loop" << endl;
 	while (true)
 	{
 		// Fetch a job in a first-come-first-served manner.
