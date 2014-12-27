@@ -1,6 +1,9 @@
 CC=clang++
 
-all: bin/encode bin/usrcat
+all: bin/subset bin/encode bin/usrcat
+
+bin/subset: src/subset.cpp
+	${CC} -o $@ $^ -std=c++11 -O2 -I${OPENBABEL_ROOT}/include -L${OPENBABEL_ROOT}/lib -lopenbabel
 
 bin/encode: src/encode.cpp
 	${CC} -o $@ $^ -std=c++11 -O2 -pthread -I${OPENBABEL_ROOT}/include -L${OPENBABEL_ROOT}/lib -lopenbabel
