@@ -9,7 +9,7 @@
 using namespace std;
 using namespace OpenBabel;
 
-double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
+double dist2(const vector3& p0, const vector3& p1)
 {
 	const auto d0 = p0[0] - p1[0];
 	const auto d1 = p0[1] - p1[1];
@@ -19,9 +19,15 @@ double dist2(const array<double, 3>& p0, const array<double, 3>& p1)
 
 int main(int argc, char* argv[])
 {
+	if (argc < 2)
+	{
+		cout << "subset ZINC00537755.mol2" << endl;
+		return 0;
+	}
+
 	const size_t num_references = 4;
 	const size_t num_subsets = 5;
-	const array<string, num_subsets> SmartsPatterns =
+	const array<string, num_subsets> SubsetSMARTS
 	{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
@@ -29,66 +35,51 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	};
-	OBConversion obConversion;
-	obConversion.SetInFormat("pdbqt");
-	while (true)
+	OBConversion conv;
+	conv.SetInFormat(argv[1] + string(argv[1]).find_last_of('.') + 1);
+	for (ifstream ifs(argv[1]); true;)
 	{
-		// Parse PDBQT into atoms, and save a copy in a stringstream to pipe to OBConversion.
-		vector<array<double, 3>> atoms;
-		atoms.reserve(80);
-		stringstream ss;
-		for (string line; getline(cin, line);)
-		{
-			ss << line << endl;
-			const auto record = line.substr(0, 6);
-			if (record == "TORSDO") break; // Change to "ENDMDL" if the input PDBQT is from idock output.
-			if (record != "ATOM  " && record != "HETATM") continue;
-			atoms.push_back({ stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)) });
-		}
-		const size_t num_atoms = atoms.size();
+		// Categorize atoms into pharmacophoric subsets.
+		OBMol mol;
+		conv.Read(&mol, &ifs);
+		const auto num_atoms = mol.NumAtoms();
 		if (!num_atoms) break;
 
-		// Call OpenBabel API to categorize atoms into pharmacophoric subsets.
-		OBMol obMol;
-		obConversion.Read(&obMol, &ss);
 		array<vector<int>, num_subsets> subsets;
 		for (size_t k = 0; k < num_subsets; ++k)
 		{
 			auto& subset = subsets[k];
 			subset.reserve(num_atoms);
 			OBSmartsPattern smarts;
-			smarts.Init(SmartsPatterns[k]);
-			smarts.Match(obMol);
+			smarts.Init(SubsetSMARTS[k]);
+			smarts.Match(mol);
 			for (const auto& map : smarts.GetMapList())
 			{
-				subset.push_back(map.front() - 1);
+				subset.push_back(map.front());
 			}
 		}
-
-		// Determine the reference points.
 		const auto& subset0 = subsets.front();
 		const auto n = subset0.size();
 		const auto v = 1.0 / n;
-		array<array<double, 3>, num_references> references{};
+
+		// Determine the reference points.
+		array<vector3, num_references> references{};
 		auto& ctd = references[0];
 		auto& cst = references[1];
 		auto& fct = references[2];
 		auto& ftf = references[3];
-		for (size_t k = 0; k < 3; ++k)
+		for (const auto i : subset0)
 		{
-			for (const auto i : subset0)
-			{
-				const auto& a = atoms[i];
-				ctd[k] += a[k];
-			}
-			ctd[k] *= v;
+			const auto& a = mol.GetAtom(i)->GetVector();
+			ctd += a;
 		}
+		ctd *= v;
 		double cst_dist = numeric_limits<double>::max();
 		double fct_dist = numeric_limits<double>::lowest();
 		double ftf_dist = numeric_limits<double>::lowest();
 		for (const auto i : subset0)
 		{
-			const auto& a = atoms[i];
+			const auto& a = mol.GetAtom(i)->GetVector();
 			const auto this_dist = dist2(a, ctd);
 			if (this_dist < cst_dist)
 			{
@@ -103,7 +94,7 @@ int main(int argc, char* argv[])
 		}
 		for (const auto i : subset0)
 		{
-			const auto& a = atoms[i];
+			const auto& a = mol.GetAtom(i)->GetVector();
 			const auto this_dist = dist2(a, fct);
 			if (this_dist > ftf_dist)
 			{
@@ -121,7 +112,7 @@ int main(int argc, char* argv[])
 			dists.resize(num_atoms);
 			for (size_t i = 0; i < n; ++i)
 			{
-				dists[subset0[i]] = sqrt(dist2(atoms[subset0[i]], reference));
+				dists[subset0[i]] = sqrt(dist2(mol.GetAtom(subset0[i])->GetVector(), reference));
 			}
 		}
 
