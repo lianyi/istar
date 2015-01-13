@@ -9,7 +9,8 @@
 using namespace std;
 using namespace OpenBabel;
 
-double dist2(const vector3& p0, const vector3& p1)
+template<typename T>
+double dist2(const T& p0, const T& p1)
 {
 	const auto d0 = p0[0] - p1[0];
 	const auto d1 = p0[1] - p1[1];
