@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 	constexpr array<double, num_usrs> qv = { 1.0 / qn[0], 1.0 / qn[1] };
 	const size_t num_references = 4;
 	const size_t num_subsets = 5;
-	const array<string, num_subsets> SmartsPatterns =
+	const array<string, num_subsets> SubsetSMARTS =
 	{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 				auto& subset = subsets[k];
 				subset.reserve(num_atoms);
 				OBSmartsPattern smarts;
-				smarts.Init(SmartsPatterns[k]);
+				smarts.Init(SubsetSMARTS[k]);
 				smarts.Match(obMol);
 				for (const auto& map : smarts.GetMapList())
 				{
