@@ -721,6 +721,7 @@ void main()\n\
 		ctx.fillStyle = color;
 		ctx.fillText(text, 0, size);
 		var tex = new THREE.Texture(canvas);
+		tex.minFilter = THREE.LinearFilter;
 		tex.flipY = false;
 		tex.needsUpdate = true;
 		return new THREE.Mesh(labelGeo, new THREE.ShaderMaterial({
