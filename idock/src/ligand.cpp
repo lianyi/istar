@@ -547,7 +547,10 @@ void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, 
 	// Dump binding conformations to the output ligand file.
 	using namespace std;
 	ligands_pdbqt_gz
-		<< property << '\n' << smiles << '\n' << supplier << '\n'
+		<< "MODEL \n"
+		<< property << '\n'
+		<< smiles << '\n'
+		<< supplier << '\n'
 		<< "REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f * flexibility_penalty_factor << " KCAL/MOL\n"
 		<< "REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.e       << " KCAL/MOL\n"
 		<< "REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f       << " KCAL/MOL\n"
@@ -579,4 +582,5 @@ void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, 
 		}
 		ligands_pdbqt_gz << '\n';
 	}
+	ligands_pdbqt_gz << "ENDMDL\n";
 }
