@@ -1148,17 +1148,7 @@ void main()\n\
 				curResAtoms.push(atom);
 				atom.hbda = isHBondDonorAcceptor(atom.elqt);
 				if (atom.hbda == 0) continue;
-				var r2 = 0;
-				for (var j = 0; j < 3; ++j) {
-					if (coord.getComponent(j) < b000.getComponent(j)) {
-						var d = coord.getComponent(j) - b000.getComponent(j);
-						r2 += d * d;
-					} else if (coord.getComponent(j) > b111.getComponent(j)) {
-						var d = coord.getComponent(j) - b111.getComponent(j);
-						r2 += d * d;
-					}
-				}
-				if (r2 >= hbondCutoffSquared) continue;
+				if (coord.clone().clamp(b000, b111).distanceToSquared(coord) >= hbondCutoffSquared) continue;
 				protein.hbda[i] = atom;
 			}
 			refreshBonds();
