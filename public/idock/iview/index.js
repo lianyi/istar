@@ -375,6 +375,7 @@ $(function () {
 	var cylinderRadius = 0.3;
 	var linewidth = 2;
 	var hbondCutoffSquared = 3.5 * 3.5;
+	var hbondAngleCutoff = (1 - 40/180) * Math.PI;
 	var pdbqt2pdb = {
 		HD: 'H',
 		A : 'C',
@@ -860,36 +861,19 @@ void main()\n\
 			var atoms = ligand.atoms;
 			var hbonds = ligand.hbonds = [], ds;
 			var labels = ligand.labels = {};
-			for (var pi in protein.hbd) {
-				var pa = protein.hbd[pi];
+			for (var pi in protein.hbda) {
+				var pa = protein.hbda[pi];
 				for (var li in atoms) {
 					var la = atoms[li];
-					if (isHBondAcceptor(la.elqt) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
-						hbonds.push({
-							p: pa,
-							l: la,
-							d: Math.sqrt(ds),
-						});
-						labels['p' + pa.serial] = pa;
-						labels['l' + la.serial] = la;
-						for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
-							if (ps.name === 'CA') {
-								labels['p' + ps.serial] = ps;
-							}
+					la.hbda = isHBondDonorAcceptor(la.elqt);
+					if (((pa.hbda > 0 && la.hbda < 0) || (pa.hbda < 0 && la.hbda > 0)) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
+						var angle = Math.PI;
+						if (pa.hbda === 1) {
+							angle = pa.bonds[0].coord.clone().sub(pa.coord).angleTo(la.coord.clone().sub(pa.coord));
+						} else if (la.hbda === 1) {
+							angle = la.bonds[0].coord.clone().sub(la.coord).angleTo(pa.coord.clone().sub(la.coord));
 						}
-						for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
-							if (ps.name === 'CA') {
-								labels['p' + ps.serial] = ps;
-							}
-						}
-					}
-				}
-			}
-			for (var pi in protein.hba) {
-				var pa = protein.hba[pi];
-				for (var li in atoms) {
-					var la = atoms[li];
-					if (isHBondDonor(la.elqt) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
+						if (angle < hbondAngleCutoff) continue;
 						hbonds.push({
 							p: pa,
 							l: la,
@@ -951,11 +935,33 @@ void main()\n\
 		var r = covalentRadii[atom1.elem] + covalentRadii[atom2.elem];
 		return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
 	};
-	var isHBondDonor = function (elqt) {
-		return elqt === 'HD' || elqt === 'Zn' || elqt === 'Fe' || elqt === 'Mg' || elqt === 'Ca' || elqt === 'Mn' || elqt === 'Cu' || elqt === 'Na' || elqt === 'K ' || elqt === 'Hg' || elqt === 'Ni' || elqt === 'Co' || elqt === 'Cd' || elqt === 'As' || elqt === 'Sr' || elqt === 'U ';
-	};
-	var isHBondAcceptor = function (elqt) {
-		return elqt === 'NA' || elqt === 'OA' || elqt === 'SA';
+	var isHBondDonorAcceptor = function (elqt) {
+		switch (elqt) {
+			case 'NA':
+			case 'OA':
+			case 'SA':
+				return -1;
+			case 'HD':
+				return 1;
+			case 'Zn':
+			case 'Fe':
+			case 'Mg':
+			case 'Ca':
+			case 'Mn':
+			case 'Cu':
+			case 'Na':
+			case 'K ':
+			case 'Hg':
+			case 'Ni':
+			case 'Co':
+			case 'Cd':
+			case 'As':
+			case 'Sr':
+			case 'U ':
+				return 2;
+			default:
+				return 0;
+		}
 	};
 	var path = '/idock/jobs/' + location.search.substr(1) + '/';
 	$('#results a').each(function () {
@@ -1009,8 +1015,7 @@ void main()\n\
 				refresh: function () {
 					refreshMolecule(protein);
 				},
-				hbd: {},
-				hba: {},
+				hbda: {},
 			}, atoms = protein.atoms, patoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
@@ -1141,7 +1146,8 @@ void main()\n\
 					curResAtoms.length = 0;
 				}
 				curResAtoms.push(atom);
-				if (!isHBondDonor(atom.elqt) && !isHBondAcceptor(atom.elqt)) continue;
+				atom.hbda = isHBondDonorAcceptor(atom.elqt);
+				if (atom.hbda == 0) continue;
 				var r2 = 0;
 				for (var j = 0; j < 3; ++j) {
 					if (coord.getComponent(j) < b000.getComponent(j)) {
@@ -1153,11 +1159,7 @@ void main()\n\
 					}
 				}
 				if (r2 >= hbondCutoffSquared) continue;
-				if (isHBondAcceptor(atom.elqt)) {
-					protein.hba[i] = atom;
-				} else {
-					protein.hbd[i] = atom;
-				}
+				protein.hbda[i] = atom;
 			}
 			refreshBonds();
 			surface.min = pmin;
