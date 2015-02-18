@@ -368,14 +368,17 @@ $(function () {
 	var defaultBoxColor   = new THREE.Color(0x1FF01F);
 	var defaultBondColor  = new THREE.Color(0x2194D6);
 	var defaultHBondColor = new THREE.Color(0x94FFFF);
+	var defaultHContactColor = new THREE.Color(0x74E277);
 	var defaultBackgroundColor = new THREE.Color(0x000000);
 	var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
 	var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
 	var sphereRadius = 1.5;
 	var cylinderRadius = 0.3;
 	var linewidth = 2;
+	var r2d = 180 / Math.PI;
 	var hbondCutoffSquared = 3.5 * 3.5;
 	var hbondAngleCutoff = (1 - 40/180) * Math.PI;
+	var hydrophobicCutoffSquared = 3.5 * 3.5;
 	var pdbqt2pdb = {
 		HD: 'H',
 		A : 'C',
@@ -813,15 +816,15 @@ void main()\n\
 		}));
 		return obj;
 	};
-	var createHBondRepresentation = function (hbonds) {
+	var createCustomLineRepresentation = function (interactions, color) {
 		var geo = new THREE.Geometry();
-		for (var i in hbonds) {
-			var hbond = hbonds[i];
-			geo.vertices.push(hbond.p.coord);
-			geo.vertices.push(hbond.l.coord);
+		for (var i in interactions) {
+			var interaction = interactions[i];
+			geo.vertices.push(interaction[0]);
+			geo.vertices.push(interaction[1]);
 		}
 		geo.computeLineDistances();
-		return new THREE.Line(geo, new THREE.LineDashedMaterial({ linewidth: 4, color: defaultHBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		return new THREE.Line(geo, new THREE.LineDashedMaterial({ linewidth: 4, color: color, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
 	};
 	var createLabelRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
@@ -860,12 +863,30 @@ void main()\n\
 			var patoms = protein.atoms;
 			var atoms = ligand.atoms;
 			var hbonds = ligand.hbonds = [], ds;
+			var hcontacts = ligand.hcontacts = [];
 			var labels = ligand.labels = {};
+			var refreshLabels = function (pa, la) {
+				labels['p' + pa.serial] = pa;
+				labels['l' + la.serial] = la;
+				// Find the CA atom of the interacting residue.
+				for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
+					if (ps.name === 'CA') {
+						labels['p' + ps.serial] = ps;
+						break;
+					}
+				}
+				for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
+					if (ps.name === 'CA') {
+						labels['p' + ps.serial] = ps;
+						break;
+					}
+				}
+			};
 			for (var pi in protein.hbda) {
 				var pa = protein.hbda[pi];
 				for (var li in atoms) {
 					var la = atoms[li];
-					la.hbda = isHBondDonorAcceptor(la.elqt);
+					assignHBondDonorAcceptor(la);
 					if (((pa.hbda > 0 && la.hbda < 0) || (pa.hbda < 0 && la.hbda > 0)) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
 						var angle = Math.PI;
 						if (pa.hbda === 1) {
@@ -878,29 +899,41 @@ void main()\n\
 							p: pa,
 							l: la,
 							d: Math.sqrt(ds),
+							a: angle * r2d,
 						});
-						labels['p' + pa.serial] = pa;
-						labels['l' + la.serial] = la;
-						for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
-							if (ps.name === 'CA') {
-								labels['p' + ps.serial] = ps;
-							}
-						}
-						for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
-							if (ps.name === 'CA') {
-								labels['p' + ps.serial] = ps;
-							}
-						}
+						refreshLabels(pa, la);
+					}
+				}
+			}
+			for (var pi in protein.hydrophobic) {
+				var pa = protein.hydrophobic[pi];
+				for (var li in atoms) {
+					var la = atoms[li];
+					assignHydrophobicCarbon(la);
+					if (la.hydrophobic && (ds = la.coord.distanceToSquared(pa.coord)) < hydrophobicCutoffSquared) {
+						hcontacts.push({
+							p: pa,
+							l: la,
+							d: Math.sqrt(ds),
+						});
+						refreshLabels(pa, la);
 					}
 				}
 			}
 			ligand.nhbonds = hbonds.length;
+			ligand.nhcontacts = hcontacts.length;
 			ligand.representations = {
-				hbond: createHBondRepresentation(hbonds),
+				hbond: createCustomLineRepresentation(hbonds.map(function(hbond) {
+					return [ hbond.p.coord, hbond.l.coord ];
+				}), defaultHBondColor),
+				hcontact: createCustomLineRepresentation(hcontacts.map(function(hcontact) {
+					return [ hcontact.p.coord, hcontact.l.coord ];
+				}), defaultHContactColor),
 				label: createLabelRepresentation(labels),
 			};
 		}
 		mdl.add(ligand.representations.hbond);
+		mdl.add(ligand.representations.hcontact);
 		mdl.add(ligand.representations.label);
 		var data = $('#data');
 		$('span', data).each(function() {
@@ -916,6 +949,13 @@ void main()\n\
 			var p = hbond.p;
 			var l = hbond.l;
 			var d = hbond.d;
+			var a = hbond.a;
+			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;' + (p.hbda === 1 || l.hbda === 1 ? ', ' + a.toFixed(0) + '&deg;' : '') + '</li>';
+		}).join(''));
+		$('#hcontacts', data).html(ligand.hcontacts.map(function(hcontact) {
+			var p = hcontact.p;
+			var l = hcontact.l;
+			var d = hcontact.d;
 			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;</li>';
 		}).join(''));
 	}
@@ -935,14 +975,16 @@ void main()\n\
 		var r = covalentRadii[atom1.elem] + covalentRadii[atom2.elem];
 		return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
 	};
-	var isHBondDonorAcceptor = function (elqt) {
-		switch (elqt) {
+	var assignHBondDonorAcceptor = function (atom) {
+		switch (atom.elqt) {
 			case 'NA':
 			case 'OA':
 			case 'SA':
-				return -1;
+				atom.hbda = -1;
+				break;
 			case 'HD':
-				return 1;
+				atom.hbda = 1;
+				break;
 			case 'Zn':
 			case 'Fe':
 			case 'Mg':
@@ -958,10 +1000,19 @@ void main()\n\
 			case 'As':
 			case 'Sr':
 			case 'U ':
-				return 2;
+				atom.hbda = 2;
+				break;
 			default:
-				return 0;
+				atom.hbda = 0;
+				break;
 		}
+	};
+	var assignHydrophobicCarbon = function (atom) {
+		atom.hydrophobic = atom.elem === 'C' && atom.bonds.map(function (a) {
+			return a.elem !== 'C';
+		}).reduce(function (partial, value) {
+			return partial + value;
+		}) == 0;
 	};
 	var path = '/idock/jobs/' + location.search.substr(1) + '/';
 	$('#results a').each(function () {
@@ -1016,6 +1067,7 @@ void main()\n\
 					refreshMolecule(protein);
 				},
 				hbda: {},
+				hydrophobic: {},
 			}, atoms = protein.atoms, patoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
@@ -1026,7 +1078,7 @@ void main()\n\
 					var atom = {
 						serial: parseInt(line.substr(6, 5)),
 						name: line.substr(12, 4).replace(/ /g, ''),
-						resn: line.substr(17, 3),
+						resn: line.substr(17, 3).replace(/ /g, ''),
 						chain: line.substr(21, 1),
 						resi: parseInt(line.substr(22, 4)),
 						insc: line.substr(26, 1),
@@ -1125,6 +1177,7 @@ void main()\n\
 			for (var i in atoms) {
 				var atom = atoms[i];
 				var coord = atom.coord;
+				atom.bdist = coord.clone().clamp(b000, b111).distanceToSquared(coord);
 				psum.add(coord);
 				pmin.min(coord);
 				pmax.max(coord);
@@ -1146,12 +1199,23 @@ void main()\n\
 					curResAtoms.length = 0;
 				}
 				curResAtoms.push(atom);
-				atom.hbda = isHBondDonorAcceptor(atom.elqt);
-				if (atom.hbda == 0) continue;
-				if (coord.clone().clamp(b000, b111).distanceToSquared(coord) >= hbondCutoffSquared) continue;
-				protein.hbda[i] = atom;
 			}
 			refreshBonds();
+			for (var i in atoms) {
+				var atom = atoms[i];
+				if (atom.bdist < hbondCutoffSquared) {
+					assignHBondDonorAcceptor(atom);
+					if (atom.hbda != 0) {
+						protein.hbda[i] = atom;
+					}
+				}
+				if (atom.bdist < hydrophobicCutoffSquared) {
+					assignHydrophobicCarbon(atom);
+					if (atom.hydrophobic) {
+						protein.hydrophobic[i] = atom;
+					}
+				}
+			}
 			surface.min = pmin;
 			surface.max = pmax;
 			var maxD = pmax.distanceTo(pmin);
@@ -1263,6 +1327,7 @@ void main()\n\
 					$('> .btn', ids).click(function(e) {
 						var ligand = entities.ligand;
 						mdl.remove(ligand.representations.hbond);
+						mdl.remove(ligand.representations.hcontact);
 						mdl.remove(ligand.representations.label);
 						mdl.remove(ligand.representations[ligand.active]);
 						ligands.forEach(function(l) {
