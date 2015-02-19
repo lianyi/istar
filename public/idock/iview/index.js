@@ -369,6 +369,7 @@ $(function () {
 	var defaultBondColor  = new THREE.Color(0x2194D6);
 	var defaultHBondColor = new THREE.Color(0x94FFFF);
 	var defaultHContactColor = new THREE.Color(0x74E277);
+	var defaultSaltBridgeColor = new THREE.Color(0xA162B7);
 	var defaultBackgroundColor = new THREE.Color(0x000000);
 	var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
 	var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
@@ -379,6 +380,7 @@ $(function () {
 	var hbondCutoffSquared = 3.5 * 3.5;
 	var hbondAngleCutoff = (1 - 40/180) * Math.PI;
 	var hydrophobicCutoffSquared = 3.5 * 3.5;
+	var saltBridgeCutoffSquared = 5.5 * 5.5;
 	var pdbqt2pdb = {
 		HD: 'H',
 		A : 'C',
@@ -858,12 +860,13 @@ void main()\n\
 		mdl.add(r);
 	};
 	var refreshLigand = function(ligand) {
-		if (ligand.representations === undefined) {
+		if (ligand.representations === undefined) { // First click, do some initializations.
 			var protein = entities.protein;
 			var patoms = protein.atoms;
 			var atoms = ligand.atoms;
 			var hbonds = ligand.hbonds = [], ds;
 			var hcontacts = ligand.hcontacts = [];
+			var saltbridges = ligand.saltbridges = [];
 			var labels = ligand.labels = {};
 			var refreshLabels = function (pa, la) {
 				labels['p' + pa.serial] = pa;
@@ -920,8 +923,84 @@ void main()\n\
 					}
 				}
 			}
+			for (var li in atoms) {
+				var la = atoms[li];
+				if ($.inArray(la.elem, [ 'MG', 'MN', 'RH', 'ZN', 'FE', 'BI', 'AS', 'AG' ]) >= 0) {
+					la.charge = 1;
+				} else if (la.elem === 'N') {
+					if ((la.bonds.length == 4) || (la.bonds.length == 3 && [
+							la.bonds[0].coord.clone().sub(la.coord).angleTo(la.bonds[1].coord.clone().sub(la.coord)),
+							la.bonds[0].coord.clone().sub(la.coord).angleTo(la.bonds[2].coord.clone().sub(la.coord)),
+							la.bonds[1].coord.clone().sub(la.coord).angleTo(la.bonds[2].coord.clone().sub(la.coord)),
+						].every(function (angle) {
+							return Math.abs(angle * r2d - 109) < 5;
+						}))) {
+						la.charge = 1;
+					}
+				} else if (la.elem === 'C' && la.bonds.length == 3) { // H2N-C-NH2
+					var nitrogens = la.bonds.filter(function (cb) {
+						return cb.elem === 'N' && cb.bonds.every(function (nb) {
+							return nb === la || nb.elem === 'H';
+						});
+					});
+					if (nitrogens.length == 2) {
+						var cb = la.bonds.filter(function (cb) {
+							return $.inArray(cb, nitrogens) == -1;
+						})[0];
+						if ((cb.elem === 'C' && cb.bonds.length == 4) || (cb.elem === 'O' && cb.bonds.length == 2) || ($.inArray(cb.elem, [ 'N', 'S', 'P' ]) >= 0)) {
+							la.charge = 1;
+						}
+					}
+					var oxygens = la.bonds.filter(function (cb) {
+						return cb.elem === 'O';
+					});
+					if (oxygens.length == 2 && oxygens.every(function (oxygen) {
+						return oxygen.bonds.every(function (ob) {
+							return ob === la || ob.elem === 'H';
+						});
+					})) {
+						la.charge = -1;
+					}
+				} else if (la.elem === 'P') {
+					var oxygens = la.bonds.filter(function (cb) {
+						return cb.elem === 'O';
+					});
+					if (oxygens.length >= 2 && oxygens.filter(function (oxygen) {
+						return oxygen.bonds.every(function (ob) {
+							return ob === la || ob.elem === 'H';
+						});
+					}).length >= 2) {
+						la.charge = -1;
+					}
+				} else if (la.elem === 'S') {
+					var oxygens = la.bonds.filter(function (cb) {
+						return cb.elem === 'O';
+					});
+					if (oxygens.length >= 3 && oxygens.filter(function (oxygen) {
+						return oxygen.bonds.every(function (ob) {
+							return ob === la || ob.elem === 'H';
+						});
+					}).length >= 3) {
+						la.charge = -1;
+					}
+				}
+				if (la.charge !== undefined) {
+					for (var pi in protein.cgroups) {
+						var pa = protein.cgroups[pi];
+						if (la.charge * pa.charge < 0 && (ds = la.coord.distanceToSquared(pa.coord)) < saltBridgeCutoffSquared) {
+							saltbridges.push({
+								p: pa,
+								l: la,
+								d: Math.sqrt(ds),
+							});
+							refreshLabels(pa, la);
+						}
+					}
+				}
+			}
 			ligand.nhbonds = hbonds.length;
 			ligand.nhcontacts = hcontacts.length;
+			ligand.nsaltbridges = saltbridges.length;
 			ligand.representations = {
 				hbond: createCustomLineRepresentation(hbonds.map(function(hbond) {
 					return [ hbond.p.coord, hbond.l.coord ];
@@ -929,11 +1008,15 @@ void main()\n\
 				hcontact: createCustomLineRepresentation(hcontacts.map(function(hcontact) {
 					return [ hcontact.p.coord, hcontact.l.coord ];
 				}), defaultHContactColor),
+				saltbridge: createCustomLineRepresentation(saltbridges.map(function(saltbridge) {
+					return [ saltbridge.p.coord, saltbridge.l.coord ];
+				}), defaultSaltBridgeColor),
 				label: createLabelRepresentation(labels),
 			};
 		}
 		mdl.add(ligand.representations.hbond);
 		mdl.add(ligand.representations.hcontact);
+		mdl.add(ligand.representations.saltbridge);
 		mdl.add(ligand.representations.label);
 		var data = $('#data');
 		$('span', data).each(function() {
@@ -956,6 +1039,12 @@ void main()\n\
 			var p = hcontact.p;
 			var l = hcontact.l;
 			var d = hcontact.d;
+			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;</li>';
+		}).join(''));
+		$('#saltbridges', data).html(ligand.saltbridges.map(function(saltbridge) {
+			var p = saltbridge.p;
+			var l = saltbridge.l;
+			var d = saltbridge.d;
 			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;</li>';
 		}).join(''));
 	}
@@ -1008,11 +1097,9 @@ void main()\n\
 		}
 	};
 	var assignHydrophobicCarbon = function (atom) {
-		atom.hydrophobic = atom.elem === 'C' && atom.bonds.map(function (a) {
-			return a.elem !== 'C';
-		}).reduce(function (partial, value) {
-			return partial + value;
-		}) == 0;
+		atom.hydrophobic = atom.elem === 'C' && atom.bonds.every(function (a) {
+			return a.elem === 'C'; // Nonpolar hydrogens are already filtered out.
+		});
 	};
 	var path = '/idock/jobs/' + location.search.substr(1) + '/';
 	$('#results a').each(function () {
@@ -1068,6 +1155,7 @@ void main()\n\
 				},
 				hbda: {},
 				hydrophobic: {},
+				cgroups: {},
 			}, atoms = protein.atoms, patoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
@@ -1215,6 +1303,15 @@ void main()\n\
 						protein.hydrophobic[i] = atom;
 					}
 				}
+				if (atom.bdist < saltBridgeCutoffSquared) {
+					if ((atom.resn === 'ARG' && atom.name === 'CZ') || ($.inArray(atom.resn, [ 'LYS', 'LYN' ]) >= 0 && atom.name === 'NZ') || ($.inArray(atom.resn, [ 'HIS', 'HID', 'HIE', 'HIP' ]) >= 0 && atom.name === 'CE1')) {
+						atom.charge = 1;
+						protein.cgroups[atom.serial] = atom;
+					} else if (($.inArray(atom.resn, [ 'ASP', 'ASH', 'ASX' ]) >= 0 && atom.name === 'CG') || ($.inArray(atom.resn, [ 'GLU', 'GLH', 'GLX' ]) >= 0 && atom.name === 'CD')) {
+						atom.charge = -1;
+						protein.cgroups[atom.serial] = atom;
+					}
+				}
 			}
 			surface.min = pmin;
 			surface.max = pmax;
@@ -1328,6 +1425,7 @@ void main()\n\
 						var ligand = entities.ligand;
 						mdl.remove(ligand.representations.hbond);
 						mdl.remove(ligand.representations.hcontact);
+						mdl.remove(ligand.representations.saltbridge);
 						mdl.remove(ligand.representations.label);
 						mdl.remove(ligand.representations[ligand.active]);
 						ligands.forEach(function(l) {
