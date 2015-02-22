@@ -1,7 +1,7 @@
 /*!
  * iview is an interactive WebGL visualizer for protein-ligand complex. iview is based on GLmol, three.js, zlib.js and jQuery.
  * http://github.com/HongjianLi/istar
- * Copyright (c) 2012-2014 Chinese University of Hong Kong
+ * Copyright (c) 2012-2015 Chinese University of Hong Kong
  * License: Apache License 2.0
  * Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong.
  * iview: an interactive WebGL visualizer for protein-ligand complex.
@@ -62,7 +62,7 @@
  */
 
 $(function () {
-	var vdwRadii = { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
+	var vdwRadii = { // Sheng-Zhi Hu, Zhao-Hui Zhou, and Khi-Rui Tsai. Average van der Waals Radii of Atoms in Crystals. Acta Physico-Chimica Sinica, 19(11): 1073-1077, 2003.
 		 H: 1.08,
 		HE: 1.34,
 		LI: 1.75,
@@ -364,23 +364,28 @@ $(function () {
 		ES: new THREE.Color(0xB31FD4),
 		FM: new THREE.Color(0xB31FBA),
 	};
-	var defaultAtomColor  = new THREE.Color(0xCCCCCC);
-	var defaultBoxColor   = new THREE.Color(0x1FF01F);
-	var defaultBondColor  = new THREE.Color(0x2194D6);
-	var defaultHBondColor = new THREE.Color(0x94FFFF);
-	var defaultHContactColor = new THREE.Color(0x74E277);
-	var defaultSaltBridgeColor = new THREE.Color(0xA162B7);
-	var defaultBackgroundColor = new THREE.Color(0x000000);
+	var defaultColor = {
+		        background: new THREE.Color(0x000000),
+		              atom: new THREE.Color(0xCCCCCC),
+		              bond: new THREE.Color(0x2194D6),
+		               box: new THREE.Color(0x1FF01F),
+		      hydrogenBond: new THREE.Color(0x94FFFF),
+		hydrophobicContact: new THREE.Color(0x74E277),
+		        saltBridge: new THREE.Color(0xA162B7),
+		     piInteraction: new THREE.Color(0xE2746D),
+	};
 	var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
 	var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
 	var sphereRadius = 1.5;
 	var cylinderRadius = 0.3;
-	var linewidth = 2;
 	var r2d = 180 / Math.PI;
-	var hbondCutoffSquared = 3.5 * 3.5;
-	var hbondAngleCutoff = (1 - 40/180) * Math.PI;
-	var hydrophobicCutoffSquared = 3.5 * 3.5;
-	var saltBridgeCutoffSquared = 5.5 * 5.5;
+	var cutoffSquared = {
+		      hydrogenBond: 3.5 * 3.5,
+		hydrophobicContact: 3.5 * 3.5,
+		        saltBridge: 5.5 * 5.5,
+		          piCation: 6.0 * 6.0,
+		              piPi: 7.5 * 7.5,
+	};
 	var pdbqt2pdb = {
 		HD: 'H',
 		A : 'C',
@@ -652,7 +657,7 @@ $(function () {
 		antialias: true,
 	});
 	renderer.setSize(canvas.width(), canvas.height());
-	renderer.setClearColor(defaultBackgroundColor);
+	renderer.setClearColor(defaultColor.background);
 	var scene = new THREE.Scene();
 	var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
 	directionalLight.position.set(0.2, 0.2, -1).normalize();
@@ -663,7 +668,7 @@ $(function () {
 	scene.add(directionalLight);
 	scene.add(ambientLight);
 	scene.add(rot);
-	scene.fog = new THREE.Fog(defaultBackgroundColor, 100, 200);
+	scene.fog = new THREE.Fog(defaultColor.background, 100, 200);
 	var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800), sn, sf;
 	camera.position.set(0, 0, -150);
 	camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -750,7 +755,7 @@ void main()\n\
 		}));
 	};
 	var createRepresentationSub = function (atoms, f0, f01) {
-		var ged = new THREE.Geometry();
+		var geo = new THREE.Geometry();
 		for (var i in atoms) {
 			var atom0 = atoms[i];
 			f0 && f0(atom0);
@@ -760,13 +765,13 @@ void main()\n\
 				if (atom1.chain === atom0.chain && ((atom1.resi === atom0.resi) || (atom0.name === 'C' && atom1.name === 'N') || (atom0.name === 'O3\'' && atom1.name === 'P'))) {
 					f01 && f01(atom0, atom1);
 				} else {
-					ged.vertices.push(atom0.coord);
-					ged.vertices.push(atom1.coord);
+					geo.vertices.push(atom0.coord);
+					geo.vertices.push(atom1.coord);
 				}
 			}
 		}
-		ged.computeLineDistances();
-		return new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		geo.computeLineDistances();
+		return new THREE.Line(geo, new THREE.LineDashedMaterial({ color: defaultColor.bond, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
 	};
 	var createSphereRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
@@ -793,7 +798,7 @@ void main()\n\
 	var createLineRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
 		var geo = new THREE.Geometry();
-		obj.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: linewidth, vertexColors: true }), THREE.LinePieces));
+		obj.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ vertexColors: true }), THREE.LinePieces));
 		obj.add(createRepresentationSub(atoms, function (atom0) {
 			if (atom0.solvent) {
 				obj.add(createSphere(atom0, sphereRadius, false, 0.2));
@@ -820,25 +825,24 @@ void main()\n\
 	};
 	var createCustomLineRepresentation = function (interactions, color) {
 		var geo = new THREE.Geometry();
-		for (var i in interactions) {
-			var interaction = interactions[i];
-			geo.vertices.push(interaction[0]);
-			geo.vertices.push(interaction[1]);
-		}
+		interactions.forEach(function (interaction) {
+			geo.vertices.push(interaction.p.coord);
+			geo.vertices.push(interaction.l.coord);
+		});
 		geo.computeLineDistances();
-		return new THREE.Line(geo, new THREE.LineDashedMaterial({ linewidth: 4, color: color, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		return new THREE.Line(geo, new THREE.LineDashedMaterial({ color: color, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
 	};
 	var createLabelRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
 		for (var i in atoms) {
 			var atom = atoms[i];
-			var bb = createLabel(atom.name === 'CA' ? atom.chain + ':' + atom.resn + ':' + atom.resi : atom.name, 24, '#dddddd');
-			bb.position.copy(atom.coord);
-			obj.add(bb);
+			var mesh = createLabel(atom.name === 'CA' ? atom.chain + ':' + atom.resn + atom.resi : atom.name, 24, '#dddddd');
+			mesh.position.copy(atom.coord);
+			obj.add(mesh);
 		}
 		return obj;
 	};
-	var refreshMolecule = function (entity) {
+	var refreshRepresentation = function (entity) {
 		var r = entity.representations[entity.active];
 		if (r === undefined) {
 			switch (entity.active) {
@@ -860,83 +864,83 @@ void main()\n\
 		mdl.add(r);
 	};
 	var refreshLigand = function(ligand) {
-		if (ligand.representations === undefined) { // First click, do some initializations.
+		// First click, do some initializations.
+		if (ligand.representations === undefined) {
 			var protein = entities.protein;
-			var patoms = protein.atoms;
-			var atoms = ligand.atoms;
-			var hbonds = ligand.hbonds = [], ds;
-			var hcontacts = ligand.hcontacts = [];
-			var saltbridges = ligand.saltbridges = [];
-			var labels = ligand.labels = {};
+			var atoms = ligand.atoms, ds;
+			var interactions = ligand.interactions = {
+				hydrogenBond: [],
+				hydrophobicContact: [],
+				saltBridge: [],
+				piInteraction: [],
+			};
+			var labels = {};
 			var refreshLabels = function (pa, la) {
-				labels['p' + pa.serial] = pa;
-				labels['l' + la.serial] = la;
+				// Add the one-letter prefix to discriminate serial numbers from protein and ligand.
+				labels[pa.chain + ':' + pa.resn + pa.resi + ':' + pa.name] = pa;
+				labels[la.name] = la;
 				// Find the CA atom of the interacting residue.
-				for (var s = pa.serial, ps; (ps = patoms[--s]) && ps.resi == pa.resi;) {
+				for (var s = pa.serial, ps; (ps = protein.atoms[s++]) && ps.resi == pa.resi && ps.insc == pa.insc && ps.chain == pa.chain;) {
 					if (ps.name === 'CA') {
-						labels['p' + ps.serial] = ps;
+						labels[ps.chain + ':' + ps.resn + ps.resi + ':' + ps.name] = ps;
 						break;
 					}
 				}
-				for (var s = pa.serial, ps; (ps = patoms[++s]) && ps.resi == pa.resi;) {
+				for (var s = pa.serial, ps; (ps = protein.atoms[--s]) && ps.resi == pa.resi && ps.insc == pa.insc && ps.chain == pa.chain;) {
 					if (ps.name === 'CA') {
-						labels['p' + ps.serial] = ps;
+						labels[ps.chain + ':' + ps.resn + ps.resi + ':' + ps.name] = ps;
 						break;
 					}
 				}
 			};
-			for (var pi in protein.hbda) {
-				var pa = protein.hbda[pi];
-				for (var li in atoms) {
-					var la = atoms[li];
-					assignHBondDonorAcceptor(la);
-					if (((pa.hbda > 0 && la.hbda < 0) || (pa.hbda < 0 && la.hbda > 0)) && (ds = la.coord.distanceToSquared(pa.coord)) < hbondCutoffSquared) {
-						var angle = Math.PI;
-						if (pa.hbda === 1) {
-							angle = pa.bonds[0].coord.clone().sub(pa.coord).angleTo(la.coord.clone().sub(pa.coord));
-						} else if (la.hbda === 1) {
-							angle = la.bonds[0].coord.clone().sub(la.coord).angleTo(pa.coord.clone().sub(la.coord));
-						}
-						if (angle < hbondAngleCutoff) continue;
-						hbonds.push({
-							p: pa,
-							l: la,
-							d: Math.sqrt(ds),
-							a: angle * r2d,
-						});
-						refreshLabels(pa, la);
-					}
-				}
-			}
-			for (var pi in protein.hydrophobic) {
-				var pa = protein.hydrophobic[pi];
-				for (var li in atoms) {
-					var la = atoms[li];
-					assignHydrophobicCarbon(la);
-					if (la.hydrophobic && (ds = la.coord.distanceToSquared(pa.coord)) < hydrophobicCutoffSquared) {
-						hcontacts.push({
-							p: pa,
-							l: la,
-							d: Math.sqrt(ds),
-						});
-						refreshLabels(pa, la);
-					}
-				}
-			}
+			rings = [];
 			for (var li in atoms) {
 				var la = atoms[li];
-				if ($.inArray(la.elem, [ 'MG', 'MN', 'RH', 'ZN', 'FE', 'BI', 'AS', 'AG' ]) >= 0) {
+				// Find hydrogen bonds.
+				assignHBondDonorAcceptor(la);
+				if (la.hbda) {
+					protein.hbda.forEach(function (pa) {
+						if (((pa.hbda > 0 && la.hbda < 0) || (pa.hbda < 0 && la.hbda > 0)) && (ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.hydrogenBond) {
+							var angle = undefined;
+							if (pa.hbda === 1) {
+								angle = pa.bonds[0].coord.clone().sub(pa.coord).angleTo(la.coord.clone().sub(pa.coord)) * r2d;
+							} else if (la.hbda === 1) {
+								angle = la.bonds[0].coord.clone().sub(la.coord).angleTo(pa.coord.clone().sub(la.coord)) * r2d;
+							}
+							if (angle < 140) return;
+							interactions.hydrogenBond.push({
+								p: pa,
+								l: la,
+								d: Math.sqrt(ds),
+								a: angle,
+							});
+							refreshLabels(pa, la);
+						}
+					});
+				}
+				// Find hydrophobic contacts.
+				assignHydrophobicCarbon(la);
+				if (la.hydrophobic) {
+					protein.hcarbons.forEach(function (pa) {
+						if ((ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.hydrophobicContact) {
+							interactions.hydrophobicContact.push({
+								p: pa,
+								l: la,
+								d: Math.sqrt(ds),
+							});
+							refreshLabels(pa, la);
+						}
+					});
+				}
+				// Find positively and negatively charged groups.
+				if (($.inArray(la.elem, [ 'MG', 'MN', 'RH', 'ZN', 'FE', 'BI', 'AS', 'AG' ]) >= 0) || ((la.elem === 'N') && ((la.bonds.length == 4) || (la.bonds.length == 3 && [
+					la.bonds[0].coord.clone().sub(la.coord).angleTo(la.bonds[1].coord.clone().sub(la.coord)),
+					la.bonds[0].coord.clone().sub(la.coord).angleTo(la.bonds[2].coord.clone().sub(la.coord)),
+					la.bonds[1].coord.clone().sub(la.coord).angleTo(la.bonds[2].coord.clone().sub(la.coord)),
+				].every(function (angle) {
+					return Math.abs(angle * r2d - 109) < 5;
+				}))))) {
 					la.charge = 1;
-				} else if (la.elem === 'N') {
-					if ((la.bonds.length == 4) || (la.bonds.length == 3 && [
-							la.bonds[0].coord.clone().sub(la.coord).angleTo(la.bonds[1].coord.clone().sub(la.coord)),
-							la.bonds[0].coord.clone().sub(la.coord).angleTo(la.bonds[2].coord.clone().sub(la.coord)),
-							la.bonds[1].coord.clone().sub(la.coord).angleTo(la.bonds[2].coord.clone().sub(la.coord)),
-						].every(function (angle) {
-							return Math.abs(angle * r2d - 109) < 5;
-						}))) {
-						la.charge = 1;
-					}
 				} else if (la.elem === 'C' && la.bonds.length == 3) { // H2N-C-NH2
 					var nitrogens = la.bonds.filter(function (cb) {
 						return cb.elem === 'N' && cb.bonds.every(function (nb) {
@@ -984,11 +988,114 @@ void main()\n\
 						la.charge = -1;
 					}
 				}
-				if (la.charge !== undefined) {
-					for (var pi in protein.cgroups) {
-						var pa = protein.cgroups[pi];
-						if (la.charge * pa.charge < 0 && (ds = la.coord.distanceToSquared(pa.coord)) < saltBridgeCutoffSquared) {
-							saltbridges.push({
+				if (la.charge) {
+					// Find salt bridges, whose two sides are of opposite charge.
+					protein.cgroups.forEach(function (pa) {
+						if (la.charge * pa.charge < 0 && (ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.saltBridge) {
+							interactions.saltBridge.push({
+								p: pa,
+								l: la,
+								d: Math.sqrt(ds),
+							});
+							refreshLabels(pa, la);
+						}
+					});
+					// Find pi-cation interactions.
+					if (la.charge > 0) {
+						protein.psystems.forEach(function (pa) {
+							if ((ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.piCation) {
+								var cc = la.coord.clone().sub(pa.coord);
+								var pj = cc.dot(pa.normal);
+								if (cc.lengthSq() - pj * pj < pa.radius + 1.5) {
+									interactions.piInteraction.push({
+										p: pa,
+										l: la,
+										d: Math.sqrt(ds),
+									});
+									refreshLabels(pa, la);
+								}
+							}
+						});
+					}
+				}
+				// Find all 5- or 6-member rings that contain the current atom.
+				var findRings = function (curAtom, visited) {
+					var putative = visited.concat([curAtom]);
+					for (var b in curAtom.bonds) {
+						var nextAtom = curAtom.bonds[b];
+						if (putative.length < 6 && $.inArray(nextAtom, visited) == -1) {
+							findRings(nextAtom, putative, rings);
+						} else if (putative.length >= 5 && nextAtom === la && nextAtom !== visited[visited.length - 1]) {
+							rings.push(putative);
+						}
+					}
+				};
+				findRings(la, []);
+			}
+			rings.filter(function (ring) {
+				// Check if the current ring is a superset of any other ring.
+				for (var ri in rings) {
+					var r = rings[ri];
+					if (r === ring || r.superset) continue;
+					if (r.every(function (atom) {
+						return $.inArray(atom, ring) >= 0;
+					})) {
+						ring.superset = true;
+						return false;
+					}
+				}
+				// Check if the current ring is planar.
+				for (var i = 0; i < ring.length; ++i) {
+					var o = i + 4 - ring.length;
+					var atoms = o <= 0 ? ring.slice(i, i + 4) : ring.slice(i, i + 4).concat(ring.slice(0, o));
+					if (atoms[0].elem === 'C' && atoms[0].bonds.length == 4) return false;
+					var angle = dihedral(atoms.map(function (atom) {
+						return atom.coord;
+					})) * r2d;
+					if ((-165 < angle && angle < -15) || (15 < angle && angle < 165)) return false;
+					if (atoms[0].bonds.filter(function (atom) {
+						return $.inArray(atom, ring) == -1;
+					}).some(function (atom) {
+						var angle = dihedral([atom].concat(atoms.slice(0, 3)).map(function (atom) {
+							return atom.coord;
+						})) * r2d;
+						return (-165 < angle && angle < -15) || (15 < angle && angle < 165);
+					})) {
+						return false;
+					}
+				}
+				return true;
+			}).forEach(function (ring, ri) {
+				var la = computePiSystem(ring.map(function (atom) {
+					return atom.coord;
+				}));
+				la.name = 'PI' + (ri + 1);
+				// Find pi-pi interactions.
+				protein.psystems.forEach(function (pa) {
+					if ((ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.piPi) {
+						var angle = la.normal.angleTo(pa.normal) * r2d;
+						if (angle < 30 || angle > 150 || (60 < angle && angle < 120)) {
+							var cc = pa.coord.clone().sub(la.coord);
+							var pj = cc.dot(la.normal);
+							if (cc.lengthSq() - pj * pj < la.radius + 1.5) {
+								interactions.piInteraction.push({
+									p: pa,
+									l: la,
+									d: Math.sqrt(ds),
+									a: angle <= 90 ? angle : 180 - angle,
+								});
+								refreshLabels(pa, la);
+							}
+						}
+					}
+				});
+				// Find pi-cation interactions.
+				protein.cgroups.forEach(function (pa) {
+					if (pa.charge > 0 && (ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.piCation) {
+						var cc = pa.coord.clone().sub(la.coord);
+						var pj = cc.dot(la.normal);
+						if (cc.lengthSq() - pj * pj < la.radius + 1.5) {
+							interactions.piInteraction.push({
 								p: pa,
 								l: la,
 								d: Math.sqrt(ds),
@@ -996,28 +1103,29 @@ void main()\n\
 							refreshLabels(pa, la);
 						}
 					}
-				}
-			}
-			ligand.nhbonds = hbonds.length;
-			ligand.nhcontacts = hcontacts.length;
-			ligand.nsaltbridges = saltbridges.length;
+				});
+			});
 			ligand.representations = {
-				hbond: createCustomLineRepresentation(hbonds.map(function(hbond) {
-					return [ hbond.p.coord, hbond.l.coord ];
-				}), defaultHBondColor),
-				hcontact: createCustomLineRepresentation(hcontacts.map(function(hcontact) {
-					return [ hcontact.p.coord, hcontact.l.coord ];
-				}), defaultHContactColor),
-				saltbridge: createCustomLineRepresentation(saltbridges.map(function(saltbridge) {
-					return [ saltbridge.p.coord, saltbridge.l.coord ];
-				}), defaultSaltBridgeColor),
 				label: createLabelRepresentation(labels),
 			};
+			for (var key in interactions) {
+				ligand['n' + key[0].toUpperCase() + key.substr(1) + 's'] = interactions[key].length;
+				ligand.representations[key] = createCustomLineRepresentation(interactions[key], defaultColor[key]);
+			}
 		}
-		mdl.add(ligand.representations.hbond);
-		mdl.add(ligand.representations.hcontact);
-		mdl.add(ligand.representations.saltbridge);
 		mdl.add(ligand.representations.label);
+		for (var key in ligand.interactions) {
+			mdl.add(ligand.representations[key]);
+			$('#' + key + 's', data).html(ligand.interactions[key].sort(function (interaction0, interaction1) {
+				return interaction0.p.resi - interaction1.p.resi;
+			}).map(function(interaction) {
+				var p = interaction.p;
+				var l = interaction.l;
+				var d = interaction.d;
+				var a = interaction.a;
+				return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(1) + '&Aring;' + (a === undefined ? '' : ', ' + a.toFixed(0) + '&deg;') + '</li>';
+			}).join(''));
+		}
 		var data = $('#data');
 		$('span', data).each(function() {
 			var $this = $(this);
@@ -1027,25 +1135,6 @@ void main()\n\
 		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
 			var link = catalogs[supplier];
 			return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
-		}).join(''));
-		$('#hbonds', data).html(ligand.hbonds.map(function(hbond) {
-			var p = hbond.p;
-			var l = hbond.l;
-			var d = hbond.d;
-			var a = hbond.a;
-			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;' + (p.hbda === 1 || l.hbda === 1 ? ', ' + a.toFixed(0) + '&deg;' : '') + '</li>';
-		}).join(''));
-		$('#hcontacts', data).html(ligand.hcontacts.map(function(hcontact) {
-			var p = hcontact.p;
-			var l = hcontact.l;
-			var d = hcontact.d;
-			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;</li>';
-		}).join(''));
-		$('#saltbridges', data).html(ligand.saltbridges.map(function(saltbridge) {
-			var p = saltbridge.p;
-			var l = saltbridge.l;
-			var d = saltbridge.d;
-			return '<li>' + p.chain + ':' + p.resn + p.resi + ':' + p.name + ' - ' + l.name  + ', ' + d.toFixed(2) + '&Aring;</li>';
 		}).join(''));
 	}
 	var render = function () {
@@ -1091,15 +1180,39 @@ void main()\n\
 			case 'U ':
 				atom.hbda = 2;
 				break;
-			default:
-				atom.hbda = 0;
-				break;
 		}
 	};
 	var assignHydrophobicCarbon = function (atom) {
 		atom.hydrophobic = atom.elem === 'C' && atom.bonds.every(function (a) {
 			return a.elem === 'C'; // Nonpolar hydrogens are already filtered out.
 		});
+	};
+	var computePiSystem = function (coords) {
+		var center = coords.reduce(function (partial, coord) {
+			return partial.add(coord);
+		}, new THREE.Vector3()).multiplyScalar(1 / coords.length);
+		var vectors = coords.map(function (coord) {
+			return coord.clone().sub(center);
+		});
+		var radius = vectors.reduce(function (partial, vector) {
+			var r = vector.lengthSq();
+			return partial < r ? r : partial;
+		}, 0);
+		var normal = vectors[0].clone().cross(vectors[1]).normalize();
+		return {
+			 coord: center,
+			normal: normal,
+			radius: radius,
+		};
+	};
+	var dihedral = function (coords) { // http://en.wikipedia.org/wiki/Dihedral_angle
+		var b1 = coords[1].clone().sub(coords[0]);
+		var b2 = coords[2].clone().sub(coords[1]);
+		var b3 = coords[3].clone().sub(coords[2]);
+		var b2Xb3 = b2.clone().cross(b3);
+		var b1Xb2 = b1.clone().cross(b2);
+		var b1xb2 = b1.clone().multiplyScalar(b2.length());
+		return Math.atan2(b1xb2.dot(b2Xb3), b1Xb2.dot(b2Xb3)); // atan2 returns a radian in [-pi, pi].
 	};
 	var path = '/idock/jobs/' + location.search.substr(1) + '/';
 	$('#results a').each(function () {
@@ -1144,19 +1257,20 @@ void main()\n\
 		bgeo.vertices.push(b110);
 		bgeo.vertices.push(b111);
 		bgeo.computeLineDistances();
-		mdl.add(new THREE.Line(bgeo, new THREE.LineDashedMaterial({ linewidth: 4, color: defaultBoxColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
+		mdl.add(new THREE.Line(bgeo, new THREE.LineDashedMaterial({ color: defaultColor.box, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
 		mdl.position.copy(bctr).multiplyScalar(-1);
 		$.get(path + 'receptor.pdbqt', function (psrc) {
 			var protein = entities.protein = {
 				atoms: {},
 				representations: {},
 				refresh: function () {
-					refreshMolecule(protein);
+					refreshRepresentation(protein);
 				},
-				hbda: {},
-				hydrophobic: {},
-				cgroups: {},
-			}, atoms = protein.atoms, patoms = protein.atoms;
+				hbda: [],
+				hcarbons: [],
+				cgroups: [],
+				psystems: [],
+			}, atoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
 				var line = lines[i];
@@ -1178,7 +1292,7 @@ void main()\n\
 					if (atom.elem === 'H') continue;
 					var elem = pdbqt2pdb[atom.elem];
 					if (elem) atom.elem = elem;
-					atom.color = atomColors[atom.elem] || defaultAtomColor;
+					atom.color = atomColors[atom.elem] || defaultColor.atom;
 					atoms[atom.serial] = atom;
 				}
 			}
@@ -1233,9 +1347,9 @@ void main()\n\
 						mdl.add(r);
 					}
 				}
-			}, satoms = surface.atoms;
+			};
 			var curChain, curResi, curInsc, curResAtoms = [];
-			var refreshBonds = function (f) {
+			var processResidue = function (f) {
 				var n = curResAtoms.length;
 				for (var j = 0; j < n; ++j) {
 					var atom0 = curResAtoms[j];
@@ -1258,6 +1372,75 @@ void main()\n\
 						}
 					}
 				}
+				if (n < 5) return;
+				var atom2 = curResAtoms[2]; // The CA atom.
+				if (curResAtoms.some(function (atom) {
+					return atom.bdist < cutoffSquared.saltBridge;
+				})) {
+					[{
+						residueNames: [ 'ARG' ],
+						atomNames: [ 'CZ', 'NH1', 'NH2' ],
+						groupName: 'NCN',
+					}, {
+						residueNames: [ 'LYS', 'LYN' ],
+						atomNames: [ 'NZ', 'HZ1', 'HZ2', 'HZ3' ],
+						groupName: 'NH3',
+					}, {
+						residueNames: [ 'HIS', 'HID', 'HIE', 'HIP' ],
+						atomNames: [ 'CE1', 'ND1', 'NE2' ],
+						groupName: 'NCN',
+					}, {
+						residueNames: [ 'ASP', 'ASH', 'ASX' ],
+						atomNames: [ 'CG', 'OD1', 'OD2' ],
+						groupName: 'OCO',
+					}, {
+						residueNames: [ 'GLU', 'GLH', 'GLX' ],
+						atomNames: [ 'CD', 'OE1', 'OE2' ],
+						groupName: 'OCO',
+					}].forEach(function (cgroup) {
+						if ($.inArray(atom2.resn, cgroup.residueNames) == -1) return;
+						protein.cgroups.push({
+							coord: curResAtoms.filter(function (atom) {
+								return $.inArray(atom.name, cgroup.atomNames) >= 0;
+							}).map(function (atom) {
+								return atom.coord;
+							}).reduce(function (partial, coord) {
+								return partial.add(coord);
+							}, new THREE.Vector3()).multiplyScalar(1 / cgroup.atomNames.length),
+							serial: atom2.serial,
+							 chain: atom2.chain,
+							  resi: atom2.resi,
+							  resn: atom2.resn,
+							  insc: atom2.insc,
+							  name: cgroup.groupName,
+							charge: cgroup.groupName[0] === 'O' ? -1 : 1,
+						});
+					});
+				}
+				if (curResAtoms.some(function (atom) {
+					return atom.bdist < cutoffSquared.piPi;
+				})) {
+					[['PHE', 'TYR'], ['HIS', 'HID', 'HIE', 'HIP'], ['TRP']].forEach(function (residueNames) {
+						if ($.inArray(atom2.resn, residueNames) == -1) return;
+						({
+							'PHE': [['CG', 'CD1', 'CE1', 'CZ' , 'CE2', 'CD2']],
+							'HIS': [['CG', 'ND1', 'CE1', 'NE2', 'CD2']],
+							'TRP': [['CG', 'CD1', 'NE1', 'CE2', 'CD2'], ['CE2', 'CD2', 'CE3', 'CZ3', 'CH2', 'CZ2']],
+						})[residueNames[0]].forEach(function (atomNames, ri) {
+							var pa = computePiSystem(curResAtoms.filter(function (atom) {
+								return $.inArray(atom.name, atomNames) >= 0;
+							}).map(function (atom) {
+								return atom.coord;
+							}));
+							pa.serial = atom2.serial;
+							pa.chain = atom2.chain;
+							pa.resi = atom2.resi;
+							pa.resn = atom2.resn;
+							pa.name = 'PI' + (ri + 1);
+							protein.psystems.push(pa);
+						});
+					});
+				}
 			};
 			var pmin = new THREE.Vector3( 9999, 9999, 9999);
 			var pmax = new THREE.Vector3(-9999,-9999,-9999);
@@ -1272,10 +1455,10 @@ void main()\n\
 				if ((atoms[atom.serial - 1] === undefined || atoms[atom.serial - 1].resi !== atom.resi) && (atoms[atom.serial + 1] === undefined || atoms[atom.serial + 1].resi !== atom.resi)) {
 					atom.solvent = true;
 				} else if (atom.elem !== 'H') {
-					satoms[atom.serial] = atom;
+					surface.atoms[atom.serial] = atom;
 				}
 				if (!(curChain == atom.chain && curResi == atom.resi && curInsc == atom.insc)) {
-					refreshBonds(function (atom0) {
+					processResidue(function (atom0) {
 						if (atom0.name === 'C' && atom.name === 'N' && hasCovalentBond(atom0, atom)) {
 							atom0.bonds.push(atom);
 							atom.bonds.push(atom0);
@@ -1288,28 +1471,19 @@ void main()\n\
 				}
 				curResAtoms.push(atom);
 			}
-			refreshBonds();
+			processResidue();
 			for (var i in atoms) {
 				var atom = atoms[i];
-				if (atom.bdist < hbondCutoffSquared) {
+				if (atom.bdist < cutoffSquared.hydrogenBond) {
 					assignHBondDonorAcceptor(atom);
-					if (atom.hbda != 0) {
-						protein.hbda[i] = atom;
+					if (atom.hbda) {
+						protein.hbda.push(atom);
 					}
 				}
-				if (atom.bdist < hydrophobicCutoffSquared) {
+				if (atom.bdist < cutoffSquared.hydrophobicContact) {
 					assignHydrophobicCarbon(atom);
 					if (atom.hydrophobic) {
-						protein.hydrophobic[i] = atom;
-					}
-				}
-				if (atom.bdist < saltBridgeCutoffSquared) {
-					if ((atom.resn === 'ARG' && atom.name === 'CZ') || ($.inArray(atom.resn, [ 'LYS', 'LYN' ]) >= 0 && atom.name === 'NZ') || ($.inArray(atom.resn, [ 'HIS', 'HID', 'HIE', 'HIP' ]) >= 0 && atom.name === 'CE1')) {
-						atom.charge = 1;
-						protein.cgroups[atom.serial] = atom;
-					} else if (($.inArray(atom.resn, [ 'ASP', 'ASH', 'ASX' ]) >= 0 && atom.name === 'CG') || ($.inArray(atom.resn, [ 'GLU', 'GLH', 'GLX' ]) >= 0 && atom.name === 'CD')) {
-						atom.charge = -1;
-						protein.cgroups[atom.serial] = atom;
+						protein.hcarbons.push(atom);
 					}
 				}
 			}
@@ -1353,7 +1527,7 @@ void main()\n\
 							var ligand = {
 								atoms: {},
 								refresh: function() {
-									refreshMolecule(entities.ligand);
+									refreshRepresentation(entities.ligand);
 								},
 								id: id,
 								mwt: parseFloat(line.substr(20, 8)),
@@ -1389,7 +1563,7 @@ void main()\n\
 							if (atom.elem === 'H') continue;
 							var elem = pdbqt2pdb[atom.elem];
 							if (elem) atom.elem = elem;
-							atom.color = atomColors[atom.elem] || defaultAtomColor;
+							atom.color = atomColors[atom.elem] || defaultColor.atom;
 							atoms[atom.serial] = atom;
 							if (start_frame === undefined) start_frame = atom.serial;
 							for (var j = start_frame; j < atom.serial; ++j) {
@@ -1423,9 +1597,9 @@ void main()\n\
 					$(':first', ids).addClass('active');
 					$('> .btn', ids).click(function(e) {
 						var ligand = entities.ligand;
-						mdl.remove(ligand.representations.hbond);
-						mdl.remove(ligand.representations.hcontact);
-						mdl.remove(ligand.representations.saltbridge);
+						for (var key in ligand.interactions) {
+							mdl.remove(ligand.representations[key]);
+						}
 						mdl.remove(ligand.representations.label);
 						mdl.remove(ligand.representations[ligand.active]);
 						ligands.forEach(function(l) {
@@ -1451,6 +1625,7 @@ void main()\n\
 			});
 		});
 	});
+	// Handle mouse events.
 	var dg, wh, cx, cy, cq, cz, cp, cn, cf;
 	canvas.bind('contextmenu', function (e) {
 		e.preventDefault();
