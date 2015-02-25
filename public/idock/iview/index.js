@@ -1427,9 +1427,11 @@ void main()\n\
 							'HIS': [['CG', 'ND1', 'CE1', 'NE2', 'CD2']],
 							'TRP': [['CG', 'CD1', 'NE1', 'CE2', 'CD2'], ['CE2', 'CD2', 'CE3', 'CZ3', 'CH2', 'CZ2']],
 						})[residueNames[0]].forEach(function (atomNames, ri) {
-							var pa = computePiSystem(curResAtoms.filter(function (atom) {
+							var atoms = curResAtoms.filter(function (atom) {
 								return $.inArray(atom.name, atomNames) >= 0;
-							}).map(function (atom) {
+							});
+							if (atoms.length != atomNames.length) return;
+							var pa = computePiSystem(atoms.map(function (atom) {
 								return atom.coord;
 							}));
 							pa.serial = atom2.serial;
