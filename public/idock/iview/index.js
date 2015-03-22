@@ -842,6 +842,27 @@ void main()\n\
 		}
 		return obj;
 	};
+	var createBoxLineRepresentation = function (points) {
+		var geo = new THREE.Geometry();
+		[0, 4, 2, 6, 1, 5, 3, 7, 0, 2, 4, 6, 1, 3, 5, 7, 0, 1, 4, 5, 2, 3, 6, 7].forEach(function (elem) {
+			geo.vertices.push(points[elem]);
+		});
+		geo.computeLineDistances();
+		return new THREE.Line(geo, new THREE.LineDashedMaterial({ color: defaultColor.box, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+	};
+	var refreshBoxRepresentation = function (box) {
+		var r = box.representations[box.active];
+		if (r === undefined) {
+			switch (box.active) {
+				case 'line':
+					r = createBoxLineRepresentation(box.points);
+					break;
+			}
+			if (r === undefined) return;
+			box.representations[box.active] = r;
+		}
+		mdl.add(r);
+	};
 	var refreshRepresentation = function (entity) {
 		var r = entity.representations[entity.active];
 		if (r === undefined) {
@@ -1223,41 +1244,20 @@ void main()\n\
 		var bctr = new THREE.Vector3(parseFloat(lines[0].substr(9)), parseFloat(lines[1].substr(9)), parseFloat(lines[2].substr(9)));
 		var bsiz = new THREE.Vector3(parseFloat(lines[3].substr(7)), parseFloat(lines[4].substr(7)), parseFloat(lines[5].substr(7)));
 		var bhlf = bsiz.multiplyScalar(0.5);
-		var b000 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3(-1, -1, -1)));
-		var b100 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3( 1, -1, -1)));
-		var b010 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3(-1,  1, -1)));
-		var b110 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3( 1,  1, -1)));
-		var b001 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3(-1, -1,  1)));
-		var b101 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3( 1, -1,  1)));
-		var b011 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3(-1,  1,  1)));
-		var b111 = bctr.clone().add(bhlf.clone().multiply(new THREE.Vector3( 1,  1,  1)));
-		var bgeo = new THREE.Geometry();
-		bgeo.vertices.push(b000);
-		bgeo.vertices.push(b100);
-		bgeo.vertices.push(b010);
-		bgeo.vertices.push(b110);
-		bgeo.vertices.push(b001);
-		bgeo.vertices.push(b101);
-		bgeo.vertices.push(b011);
-		bgeo.vertices.push(b111);
-		bgeo.vertices.push(b000);
-		bgeo.vertices.push(b010);
-		bgeo.vertices.push(b100);
-		bgeo.vertices.push(b110);
-		bgeo.vertices.push(b001);
-		bgeo.vertices.push(b011);
-		bgeo.vertices.push(b101);
-		bgeo.vertices.push(b111);
-		bgeo.vertices.push(b000);
-		bgeo.vertices.push(b001);
-		bgeo.vertices.push(b100);
-		bgeo.vertices.push(b101);
-		bgeo.vertices.push(b010);
-		bgeo.vertices.push(b011);
-		bgeo.vertices.push(b110);
-		bgeo.vertices.push(b111);
-		bgeo.computeLineDistances();
-		mdl.add(new THREE.Line(bgeo, new THREE.LineDashedMaterial({ color: defaultColor.box, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
+		var bpnt = [0, 1, 2, 3, 4, 5, 6, 7].map(function (key) {
+			bdir = new THREE.Vector3();
+			[0, 1, 2].forEach(function (i) {
+				bdir.setComponent(i, key & (1 << i) ? 1 : -1);
+			});
+			return bctr.clone().add(bhlf.clone().multiply(bdir));
+		});
+		entities.box = {
+			points: bpnt,
+			representations: {},
+			refresh: function () {
+				refreshBoxRepresentation(entities.box);
+			},
+		};
 		mdl.position.copy(bctr).multiplyScalar(-1);
 		$.get(path + 'receptor.pdbqt', function (psrc) {
 			var protein = entities.protein = {
@@ -1450,7 +1450,7 @@ void main()\n\
 			for (var i in atoms) {
 				var atom = atoms[i];
 				var coord = atom.coord;
-				atom.bdist = coord.clone().clamp(b000, b111).distanceToSquared(coord);
+				atom.bdist = coord.clone().clamp(bpnt[0], bpnt[7]).distanceToSquared(coord);
 				psum.add(coord);
 				pmin.min(coord);
 				pmax.max(coord);
@@ -1504,8 +1504,10 @@ void main()\n\
 					if (e.currentTarget.innerHTML.indexOf('disabled') > 0) return;
 					var key = e.currentTarget.id;
 					var entity = entities[key];
+					var active = $(e.target).text().trim();
+					if (entity.active === active) return;
 					mdl.remove(entity.representations[entity.active]);
-					entity.active = $(e.target).text().trim();
+					entity.active = active;
 					entity.refresh();
 					render();
 				});
