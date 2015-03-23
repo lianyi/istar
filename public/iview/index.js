@@ -30,7 +30,7 @@ $(function () {
 			options[opt] = $(e.target).text().trim();
 			iv.rebuildScene(options);
 			iv.render();
-		})
+		});
 	});
 
 	$('#exportCanvas').click(function (e) {
