@@ -587,7 +587,7 @@ $(function() {
 			description: $('#description').val(),
 			email: $('#email').val(),
 			format: format,
-		}
+		};
 		var v = new validator(job);
 		if (v
 			.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()

@@ -506,7 +506,7 @@ $(function() {
 					if (resi[key] === undefined) {
 						resi[key] = {
 							beg: atom.serial,
-						}
+						};
 					} else {
 						resi[key].end = atom.serial;
 					}

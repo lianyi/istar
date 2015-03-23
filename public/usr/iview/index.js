@@ -840,7 +840,7 @@ void main()\n\
 			var link = catalogs[supplier];
 			return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
 		}).join(''));
-	}
+	};
 	var render = function () {
 		var center = rot.position.z - camera.position.z;
 		if (center < 1) center = 1;
@@ -869,7 +869,7 @@ void main()\n\
 		var gunzipWorker = new Worker('/gunzip.js');
 		gunzipWorker.addEventListener('message', function (e) {
 			var ligands = [], atoms, start_frame, rotors;
-			var lines = e.data.split('\n')
+			var lines = e.data.split('\n');
 			for (var i = 0, l = lines.length; i < l; ++i) {
 				var line = lines[i];
 				var record = line.substr(0, 6);

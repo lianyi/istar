@@ -30,7 +30,7 @@ var ProteinSurface = function (data) {
 	//             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
 	var depty = new Array(13), widxz = new Array(13);
 	var fixsf = 2;
-	var faces, verts
+	var faces, verts;
 	var nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1], [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1], [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
 
 	var Vector3 = function (x, y, z) {
@@ -116,7 +116,7 @@ var ProteinSurface = function (data) {
 				}
 			}
 		}
-	}
+	};
 
 	this.fillvoxels = function (atoms) { //(int seqinit,int seqterm,bool atomtype,atom* proseq,bool bcolor)
 		for (var i = 0, lim = vp.length; i < lim; ++i) {

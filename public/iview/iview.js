@@ -56,7 +56,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-if (typeof jQuery === 'undefined') { throw new Error('iview requires jQuery') }
+if (typeof jQuery === 'undefined') { throw new Error('iview requires jQuery'); }
 
 var iview = function (id) {
 	this.container = $('#' + id);
@@ -998,7 +998,7 @@ void main()\n\
 		for (var i = 0; i < 4; ++i) {
 			vs.push(vs[i * 2]);
 			vs.push(vs[vsize + i * 2]);
-		};
+		}
 		vsize += 8;
 		fs.push(new THREE.Face3(vsize, vsize + 2, vsize + 6, undefined, fs[0].color));
 		fs.push(new THREE.Face3(vsize + 4, vsize, vsize + 6, undefined, fs[0].color));
