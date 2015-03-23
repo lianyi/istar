@@ -6,7 +6,7 @@
     } else {
         this[name] = definition();
     }
-})('validator', function (validator) {
+})('validator', function () {
     'use strict';
 	var validator = function(obj) {
 		this.obj = obj;
@@ -48,7 +48,9 @@
 			return this.regex(/^[0-9a-fA-F]{24}$/);
 		},
 		xss: function() {
-			typeof this.val === 'string' && this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			if (typeof this.val === 'string') {
+                this.val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
 			return this;
 		},
 		int: function(def) {
@@ -74,7 +76,7 @@
 			return this;
 		},
 		range: function(key0, key1) {
-			if (!(this.res[key0] <= this.res[key1])) {
+			if (this.res[key0] > this.res[key1]) {
 				this.msg = key0 + ' must be less than or equal to ' + key1;
 				this.key = key0;
 				this.error();
