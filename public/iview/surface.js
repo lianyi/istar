@@ -546,7 +546,7 @@ var ProteinSurface = function (data) {
 
 	this.marchingcube = function (stype) {
 		for (var i = 0, lim = vp.length; i < lim; ++i) {
-			if (stype == 3) {// vdw
+			if (stype == 1) {// vdw
 				vp[i].isbound = false;
 			} else if (stype == 4) { // ses
 				vp[i].isdone = false;
