@@ -164,7 +164,7 @@ var ProteinSurface = function (data) {
 										var vpSISJSK = vp[si * pWidth * pHeight + sj * pHeight + sk];
 										if (false) { // !bcolor
 											vpSISJSK.inout = true;
-										} else { // color 
+										} else { // color
 											if (vpSISJSK.inout == false) {
 												vpSISJSK.inout = true;
 												vpSISJSK.atomid = atom.serial;
@@ -179,9 +179,9 @@ var ProteinSurface = function (data) {
 										}
 									}//k
 								}//if
-							}//kk	
+							}//kk
 						}//jj
-					}//ii	    
+					}//ii
 				}//if
 				nind++;
 			}//j
@@ -239,7 +239,7 @@ var ProteinSurface = function (data) {
 										}//else
 									}//k
 								}//if
-							}//kk	
+							}//kk
 						}//jj
 					}//ii
 				}//if
@@ -2238,7 +2238,7 @@ var ProteinSurface = function (data) {
 							facenumber++;
 							faces.push(new Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
 							facenumber++;
-						}//no.2 12	
+						}//no.2 12
 
 						else if ((!vp000 && !vp111)
 								|| (!vp100 && !vp011)
