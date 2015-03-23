@@ -9,7 +9,7 @@ $(function() {
 			progress = 0;
 		} else if (!job.done) {
 			status = 'Execution in progress';
-			progress = 0//job.generation / job.num_generations;
+			progress = 0; // job.generation / job.num_generations
 		} else {
 			status = 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
@@ -176,7 +176,7 @@ $(function() {
 		.failed()) {
 		submit.prop('disabled', true);
 		return;
-	};
+	}
 	$.get('/idock/job', {
 		id: idockJobId,
 	}, function(res) {
