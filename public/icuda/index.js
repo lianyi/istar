@@ -13,7 +13,7 @@ $(function() {
 			var lang = pre.id.match(/.(cu|h)$/) ? 'cpp' : pre.id.match(/Makefile$/) ? 'makefile' : 'sh';
 			$(pre).append($('<div/>').text(src).html()).snippet(lang, style(lang));
 		});
-	});;
+	});
 	$('pre[class]').each(function () {
 		var me = $(this);
 		var lang = me.attr('class');
