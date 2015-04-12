@@ -1,5 +1,6 @@
+#include "kernel.hpp"
+
 // About nucleotide.
-#define CHARACTER_CARDINALITY 4	/**< One character is either A, C, G, or T. */
 __constant__ unsigned int *scodon;	/**< The special codon array. */
 __constant__ unsigned int character_count;	/**< Number of characters. */
 __constant__ unsigned int overlapping_character_count;	/**< Number of overlapping characters between two consecutive threads. */
@@ -15,12 +16,6 @@ __constant__ unsigned long long test_bit_64;	/**< The test bit for determining m
 __constant__ unsigned int max_match_count;	/**< Maximum number of matches of one single query. */
 __constant__ unsigned int *match;	/**< The match array. */
 __device__ volatile unsigned int match_count;	/**< Number of matches. */
-
-// About CUDA implementation.
-#define MAX_UNSIGNED_INT	0xffffffffUL	/**< The maximum value of an unsigned int. */
-#define MAX_UNSIGNED_LONG_LONG	0xffffffffffffffffULL	/**< The maximum value of an unsigned long long. */
-#define B 7	/**< Each thread block consists of 2^B (=1<<B) threads. */
-#define L 8	/**< Each thread processes 2^L (=1<<L) special codons plus those in the overlapping zone of two consecutive threads. */
 
 /**
  * The CUDA agrep kernel for matching tables of 32 bits.
@@ -908,7 +903,7 @@ __global__ void agrepKernel64()
  * @param[in] match_arg The match array.
  * @param[in] max_match_count_arg Maximum number of matches of one single query.
  */
-extern "C" void initAgrepKernel(const unsigned int *scodon_arg, const unsigned int character_count_arg, const unsigned int *match_arg, const unsigned int max_match_count_arg)
+void initAgrepKernel(const unsigned int *scodon_arg, const unsigned int character_count_arg, const unsigned int *match_arg, const unsigned int max_match_count_arg)
 {
 	cudaMemcpyToSymbol(scodon, &scodon_arg, sizeof(unsigned int *));
 	cudaMemcpyToSymbol(character_count, &character_count_arg, sizeof(unsigned int));
@@ -921,7 +916,7 @@ extern "C" void initAgrepKernel(const unsigned int *scodon_arg, const unsigned i
  * @param[in] mask_array_arg The mask array of a pattern.
  * @param[in] test_bit_arg The test bit.
  */
-extern "C" void transferMaskArray32(const unsigned int *mask_array_arg, const unsigned int test_bit_arg)
+void transferMaskArray32(const unsigned int *mask_array_arg, const unsigned int test_bit_arg)
 {
 	cudaMemcpyToSymbol(mask_array_32, mask_array_arg, sizeof(unsigned int) * CHARACTER_CARDINALITY);
 	cudaMemcpyToSymbol(test_bit_32, &test_bit_arg, sizeof(unsigned int));
@@ -932,7 +927,7 @@ extern "C" void transferMaskArray32(const unsigned int *mask_array_arg, const un
  * @param[in] mask_array_arg The mask array of a pattern.
  * @param[in] test_bit_arg The test bit.
  */
-extern "C" void transferMaskArray64(const unsigned long long *mask_array_arg, const unsigned long long test_bit_arg)
+void transferMaskArray64(const unsigned long long *mask_array_arg, const unsigned long long test_bit_arg)
 {
 	cudaMemcpyToSymbol(mask_array_64, mask_array_arg, sizeof(unsigned long long) * CHARACTER_CARDINALITY);
 	cudaMemcpyToSymbol(test_bit_64, &test_bit_arg, sizeof(unsigned long long));
@@ -944,7 +939,7 @@ extern "C" void transferMaskArray64(const unsigned long long *mask_array_arg, co
  * @param[in] k Edit distance.
  * @param[in] block_count Number of thread blocks.
  */
-extern "C" void invokeAgrepKernel(const unsigned int m, const unsigned int k, const unsigned int block_count)
+void invokeAgrepKernel(const unsigned int m, const unsigned int k, const unsigned int block_count)
 {
 	unsigned int overlapping_character_count_init = m + k - 1;
 	unsigned int overlapping_scodon_count_init = (overlapping_character_count_init + 16 - 1) >> 4;
@@ -1033,7 +1028,7 @@ extern "C" void invokeAgrepKernel(const unsigned int m, const unsigned int k, co
  * Get the number of matches from CUDA constant memory.
  * @param[out] match_count_arg Number of matches.
  */
-extern "C" void getMatchCount(unsigned int *match_count_arg)
+void getMatchCount(unsigned int *match_count_arg)
 {
 	cudaMemcpyFromSymbol(match_count_arg, match_count, sizeof(unsigned int));
 }
