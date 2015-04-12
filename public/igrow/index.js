@@ -2,7 +2,7 @@ $(function() {
 
 	// Initialize pager
 	var pager = $('#pager');
-	pager.pager('init', [ 'Description', 'idock Job', 'Submitted on', 'Status', 'Progress', 'Result' ], function(job) {
+	pager.pager('init', [ 'Description', 'idock Job', 'Submitted', 'Status', 'Progress', 'Result' ], function(job) {
 		var status, progress, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
 		if (!job.scheduled) {
 			status = 'Queued for execution';
@@ -11,7 +11,7 @@ $(function() {
 			status = 'Execution in progress';
 			progress = 0; // job.generation / job.num_generations
 		} else {
-			status = 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
+			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
 			result += '<a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
 		}

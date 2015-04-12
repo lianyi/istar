@@ -2564,11 +2564,11 @@ $(function() {
 		}
 	}
 	var pager = $('#pager');
-	pager.pager('init', [ 'Genome', 'Submitted on', 'Status', 'Log', 'Pos' ], function(job) {
+	pager.pager('init', [ 'Genome', 'Submitted', 'Status', 'Log', 'Pos' ], function(job) {
 		return [
 			getGenome(job.taxid).name,
 			$.format.date(new Date(job.submitted), 'yyyy/MM/dd HH:mm:ss'),
-			job.done ? 'Done on ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss') : 'Queued for execution',
+			job.done ? 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss') : 'Queued for execution',
 			job.done ? '<a href="jobs/' + job._id + '/log.csv"><img src="/excel.png" alt="log.csv"></a>' : null,
 			job.done ? '<a href="jobs/' + job._id + '/pos.csv"><img src="/excel.png" alt="pos.csv"></a>' : null
 		];
