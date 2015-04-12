@@ -73,18 +73,18 @@ int main(int argc, char* argv[])
 //	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 	const auto epoch = date(1970, 1, 1);
 	const size_t num_usrs = 2;
-	constexpr array<size_t, num_usrs> qn = { 12, 60 };
-	constexpr array<double, num_usrs> qv = { 1.0 / qn[0], 1.0 / qn[1] };
+	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
+	constexpr array<double, num_usrs> qv{{ 1.0 / qn[0], 1.0 / qn[1] }};
 	const size_t num_references = 4;
 	const size_t num_subsets = 5;
 	const array<string, num_subsets> SubsetSMARTS
-	{
+	{{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
 		"[a]", // aromatic
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
-	};
+	}};
 
 	// Read the header bin file.
 	vector<size_t> headers;
@@ -100,10 +100,10 @@ int main(int argc, char* argv[])
 	// Search the features for records similar to the query.
 //	vector<array<double, qn.back()>> features;
 	array<array<double, qn.back()>, 2> qlw;
-	array<array<double, 4>, 1> aw;
+//	array<array<double, 4>, 1> aw;
 	auto l = qlw[1];
-	auto a = aw.front();
-	array<vector<double>, 2> scores{ vector<double>(num_ligands), vector<double>(num_ligands) };
+//	auto a = aw.front();
+	array<vector<double>, 2> scores{{ vector<double>(num_ligands), vector<double>(num_ligands) }};
 	vector<size_t> scase(num_ligands);
 	string line;
 	std::ifstream usrcat_bin("16_usrcat.bin", ios::binary);
