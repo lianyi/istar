@@ -354,7 +354,7 @@ int main(int argc, char** argv)
 				checkCudaErrors(cudaGetLastError());
 				// Don't waste the CPU time before waiting for the CUDA agrep kernel to exit.
 				const unsigned int m_minus_k = m - k;	// Used to determine whether a match is across two consecutive sequences.
-				const unsigned int m_plus_k = m + k;	// Used to determine whether a match is across two consecutive sequences.
+//				const unsigned int m_plus_k = m + k;	// Used to determine whether a match is across two consecutive sequences.
 				checkCudaErrors(cudaDeviceSynchronize());	// Block until the CUDA agrep kernel completes.
 
 				// Retrieve matches from device.
