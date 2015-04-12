@@ -23,7 +23,7 @@ __device__ volatile unsigned int match_count;	/**< Number of matches. */
 #define L 8	/**< Each thread processes 2^L (=1<<L) special codons plus those in the overlapping zone of two consecutive threads. */
 
 /**
- * The CUDA agrep kernel with matching tables of 32 bits and edit distance of 0.
+ * The CUDA agrep kernel for matching tables of 32 bits.
  * All the necessary parameters are stored in constant memory.
  */
 template<unsigned int KI>
@@ -462,7 +462,7 @@ __global__ void agrepKernel32()
 }
 
 /**
- * The CUDA agrep kernel with matching tables of 64 bits and edit distance of 0.
+ * The CUDA agrep kernel for matching tables of 64 bits.
  * All the necessary parameters are stored in constant memory.
  */
 template<unsigned int KI>
