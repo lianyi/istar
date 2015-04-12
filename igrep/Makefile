@@ -1,7 +1,7 @@
 CC=clang++
 
 bin/igrep: obj/kernel.o obj/main.o
-	${CC} -o $@ $^ -pthread -L${BOOST_ROOT}/lib -lboost_system -lboost_filesystem -lboost_iostreams -lboost_date_time -L${CUDA_ROOT}/lib64 -lcudart -L${POCO_ROOT}/lib/Linux/x86_64 -lPocoFoundation -lPocoNet -L${MONGODBCXXDRIVER_ROOT}/build/linux2/64/release/use-system-all -lmongoclient
+	${CC} -o $@ $^ -pthread -L${BOOST_ROOT}/lib -lboost_thread -lboost_system -lboost_filesystem -lboost_iostreams -lboost_date_time -L${CUDA_ROOT}/lib64 -lcudart -L${POCO_ROOT}/lib/Linux/x86_64 -lPocoFoundation -lPocoNet -L${MONGODBCXXDRIVER_ROOT}/build/linux2/64/release/use-system-all -lmongoclient
 
 obj/%.o: src/%.cu
 	nvcc -o $@ $< -c -gencode arch=compute_35,code=sm_35 -I${CUDA_ROOT}/samples/common/inc #-maxrregcount=N -Xptxas=-v
