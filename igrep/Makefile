@@ -7,7 +7,7 @@ bin/igrep: obj/kernel.o obj/main.o
 obj/kernel.o: src/kernel.cu
 	${NVCC} -o $@ $< -c -I${CUDA_ROOT}/samples/common/inc
 
-obj/main.o: src/main.cpp 
+obj/main.o: src/main.cpp
 	${CC} -o $@ $< -c -I${BOOST_ROOT} -I${MONGODBCXXDRIVER_ROOT}/src -I${POCO_ROOT}/Foundation/include -I${POCO_ROOT}/Net/include -I${CUDA_ROOT}/include -I${CUDA_ROOT}/samples/common/inc -Wno-deprecated-declarations
 
 clean:
