@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
 	const path headers_path = "16_hdr.bin";
 	const size_t seed = system_clock::now().time_since_epoch().count();
 	const size_t num_threads = thread::hardware_concurrency();
-	const size_t num_mc_tasks = 32;
 	const fl grid_granularity = 0.08;
 	const auto epoch = boost::gregorian::date(1970, 1, 1);
 
@@ -156,10 +155,6 @@ int main(int argc, char* argv[])
 
 	// Reserve space for containers.
 	vector<size_t> atom_types_to_populate; atom_types_to_populate.reserve(XS_TYPE_SIZE);
-	ptr_vector<ptr_vector<result>> result_containers;
-	result_containers.resize(num_mc_tasks);
-	for (auto& rc : result_containers) rc.reserve(1);
-	ptr_vector<result> results(1);
 
 	// Open files for reading.
 	boost::filesystem::ifstream headers(headers_path);
