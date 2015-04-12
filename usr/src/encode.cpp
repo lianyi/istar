@@ -29,13 +29,13 @@ int main(int argc, char* argv[])
 	const size_t num_references = 4;
 	const size_t num_subsets = 5;
 	const array<string, num_subsets> SubsetSMARTS
-	{
+	{{
 		"[!#1]", // heavy
 		"[#6+0!$(*~[#7,#8,F]),SH0+0v2,s+0,S^3,Cl+0,Br+0,I+0]", // hydrophobic
 		"[a]", // aromatic
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
-	};
+	}};
 	OBConversion conv;
 	conv.SetInFormat(argv[1] + string(argv[1]).find_last_of('.') + 1);
 	for (ifstream ifs(argv[1]); true;)
