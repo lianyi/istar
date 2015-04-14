@@ -1436,6 +1436,7 @@ void main()\n\
 							}));
 							pa.serial = atom2.serial;
 							pa.chain = atom2.chain;
+							pa.insc = atom2.insc;
 							pa.resi = atom2.resi;
 							pa.resn = atom2.resn;
 							pa.name = 'PI' + (ri + 1);
