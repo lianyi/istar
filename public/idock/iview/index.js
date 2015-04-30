@@ -1027,7 +1027,7 @@ void main()\n\
 							if ((ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.piCation) {
 								var cc = la.coord.clone().sub(pa.coord);
 								var pj = cc.dot(pa.normal);
-								if (cc.lengthSq() - pj * pj < pa.radius + 1.5) {
+								if (cc.lengthSq() - pj * pj < pa.radius + 3.2) {
 									interactions.piInteraction.push({
 										p: pa,
 										l: la,
@@ -1098,7 +1098,7 @@ void main()\n\
 						if (angle < 30 || angle > 150 || (60 < angle && angle < 120)) {
 							var cc = pa.coord.clone().sub(la.coord);
 							var pj = cc.dot(la.normal);
-							if (cc.lengthSq() - pj * pj < la.radius + 1.5) {
+							if (cc.lengthSq() - pj * pj < la.radius + 3.2) {
 								interactions.piInteraction.push({
 									p: pa,
 									l: la,
@@ -1115,7 +1115,7 @@ void main()\n\
 					if (pa.charge > 0 && (ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.piCation) {
 						var cc = pa.coord.clone().sub(la.coord);
 						var pj = cc.dot(la.normal);
-						if (cc.lengthSq() - pj * pj < la.radius + 1.5) {
+						if (cc.lengthSq() - pj * pj < la.radius + 3.2) {
 							interactions.piInteraction.push({
 								p: pa,
 								l: la,
