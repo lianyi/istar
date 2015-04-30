@@ -928,7 +928,7 @@ void main()\n\
 							} else if (la.hbda === 1) {
 								angle = la.bonds[0].coord.clone().sub(la.coord).angleTo(pa.coord.clone().sub(la.coord)) * r2d;
 							}
-							if (angle < 140) return;
+							if (angle < 120) return;
 							interactions.hydrogenBond.push({
 								p: pa,
 								l: la,
