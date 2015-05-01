@@ -1152,7 +1152,7 @@ void main()\n\
 			var $this = $(this);
 			$this.text(ligand[$this.attr('id')]);
 		});
-		$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.id);
+		$('#zid', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
 		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
 			var link = catalogs[supplier];
 			return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
@@ -1520,21 +1520,24 @@ void main()\n\
 				if (lsrcz.length == 2) return;
 				var gunzipWorker = new Worker('/gunzip.js');
 				gunzipWorker.addEventListener('message', function (e) {
-					var ligands = [], ligand, atoms, start_frame, rotors;
+					var ligands = [], ligand, atoms, start_frame, rotors, model;
 					var lines = e.data.split('\n');
 					for (var i = 0, l = lines.length; i < l; ++i) {
 						var line = lines[i];
 						var record = line.substr(0, 6);
-						if (record === 'REMARK') {
-							var id = line.substr(11, 8);
-							if (isNaN(parseInt(id))) continue;
+						if (record === 'MODEL ') {
+							model = parseInt(line.substr(10, 4));
+						} else if (record === 'REMARK') {
+							var zid = line.substr(11, 8);
+							if (isNaN(parseInt(zid))) continue;
 							rotors = [];
 							var ligand = {
 								atoms: {},
 								refresh: function() {
 									refreshRepresentation(entities.ligand);
 								},
-								id: id,
+								zid: zid,
+								 id: model > 0 ? zid.concat('-', model) : zid,
 								mwt: parseFloat(line.substr(20, 8)),
 								lgp: parseFloat(line.substr(29, 8)),
 								ads: parseFloat(line.substr(38, 8)),
@@ -1592,6 +1595,8 @@ void main()\n\
 							}
 							ligands.push(ligand);
 							start_frame = undefined;
+						} else if (record === 'ENDMDL') {
+							model = undefined;
 						}
 					}
 					$('#nligands').text(ligands.length);
