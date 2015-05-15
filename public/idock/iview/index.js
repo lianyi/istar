@@ -373,6 +373,7 @@ $(function () {
 		hydrophobicContact: new THREE.Color(0x74E277),
 		        saltBridge: new THREE.Color(0xA162B7),
 		     piInteraction: new THREE.Color(0xE2746D),
+		       halogenBond: new THREE.Color(0xEEBB33),
 	};
 	var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
 	var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
@@ -381,6 +382,7 @@ $(function () {
 	var r2d = 180 / Math.PI;
 	var cutoffSquared = {
 		      hydrogenBond: 3.5 * 3.5,
+		       halogenBond: 5.0 * 5.0,
 		hydrophobicContact: 3.5 * 3.5,
 		        saltBridge: 5.5 * 5.5,
 		          piCation: 6.0 * 6.0,
@@ -894,6 +896,7 @@ void main()\n\
 				hydrophobicContact: [],
 				saltBridge: [],
 				piInteraction: [],
+				halogenBond: [],
 			};
 			var labels = {};
 			var refreshLabels = function (pa, la) {
@@ -914,9 +917,13 @@ void main()\n\
 					}
 				}
 			};
-			rings = [];
+			var halogens = [], rings = [];
 			for (var li in atoms) {
 				var la = atoms[li];
+				// Find halogens.
+				if ($.inArray(la.elem, ['F', 'CL', 'BR', 'I']) >= 0) {
+					halogens.push(la);
+				}
 				// Find hydrogen bonds.
 				assignHBondDonorAcceptor(la);
 				if (la.hbda) {
@@ -1053,7 +1060,7 @@ void main()\n\
 				};
 				findRings(la, []);
 			}
-			rings.filter(function (ring) {
+			rings = rings.filter(function (ring) {
 				// Check if the current ring is a superset of any other ring.
 				for (var ri in rings) {
 					var r = rings[ri];
@@ -1086,7 +1093,8 @@ void main()\n\
 					}
 				}
 				return true;
-			}).forEach(function (ring, ri) {
+			});
+			rings.forEach(function (ring, ri) {
 				var la = computePiSystem(ring.map(function (atom) {
 					return atom.coord;
 				}));
@@ -1125,6 +1133,29 @@ void main()\n\
 						}
 					}
 				});
+			});
+			halogens.forEach(function (la) {
+				// Find halogens connected to an aromatic carbon.
+				var carbon = la.bonds[0];
+				if (carbon.elem === 'C' && rings.some(function (ring) {
+					return $.inArray(carbon, ring) >= 0;
+				})) {
+					// Find halogen bonds.
+					protein.xba.forEach(function (pa) {
+						if ((ds = la.coord.distanceToSquared(pa.coord)) < cutoffSquared.halogenBond) {
+							var angle = carbon.coord.clone().sub(la.coord).angleTo(pa.coord.clone().sub(la.coord)) * r2d;
+							if (angle > 150) {
+								interactions.halogenBond.push({
+									p: pa,
+									l: la,
+									d: Math.sqrt(ds),
+									a: angle,
+								});
+								refreshLabels(pa, la);
+							}
+						}
+					});
+				}
 			});
 			ligand.representations = {
 				label: createLabelRepresentation(labels),
@@ -1270,6 +1301,7 @@ void main()\n\
 				hcarbons: [],
 				cgroups: [],
 				psystems: [],
+				xba: [],
 			}, atoms = protein.atoms;
 			var lines = psrc.split('\n');
 			for (var i in lines) {
@@ -1373,7 +1405,10 @@ void main()\n\
 					}
 				}
 				if (n < 5) return;
-				var atom2 = curResAtoms[2]; // The CA atom.
+				var atom2 = curResAtoms.filter(function (atom) {
+					return atom.name === 'CA';
+				})[0];
+				// Find charged groups.
 				if (curResAtoms.some(function (atom) {
 					return atom.bdist < cutoffSquared.saltBridge;
 				})) {
@@ -1417,6 +1452,7 @@ void main()\n\
 						});
 					});
 				}
+				// Find pi systems.
 				if (curResAtoms.some(function (atom) {
 					return atom.bdist < cutoffSquared.piPi;
 				})) {
@@ -1443,6 +1479,23 @@ void main()\n\
 							protein.psystems.push(pa);
 						});
 					});
+				}
+				// Find halogen bond acceptors.
+				if (curResAtoms.some(function (atom) {
+					return atom.bdist < cutoffSquared.halogenBond;
+				})) {
+					protein.xba = protein.xba.concat(curResAtoms.filter(function (atom) {
+						return atom.name === 'O';
+					}));
+					var carbonylOxygens = ({
+						'ASP': ['OD1', 'OD2'],
+						'GLU': ['OE1', 'OE2'],
+						'ASN': ['OD1'],
+						'GLN': ['OE1'],
+					})[atom2.resn];
+					protein.xba = protein.xba.concat(curResAtoms.filter(function (atom) {
+						return $.inArray(atom.name, carbonylOxygens) >= 0;
+					}));
 				}
 			};
 			var pmin = new THREE.Vector3( 9999, 9999, 9999);
