@@ -1,4 +1,4 @@
-CC=clang++ -std=c++11 -O3
+CC=clang++ -std=c++14 -O3
 
 all: bin/idock bin/idock2
 
