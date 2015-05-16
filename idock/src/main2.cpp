@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	// Check the required number of comand line arguments.
 	if (argc != 6)
 	{
-		cout << "idock host user pwd jobs_path jobid" << endl;
+		cout << "idock2 host user pwd jobs_path jobid" << endl;
 		return 0;
 	}
 
