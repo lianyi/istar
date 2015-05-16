@@ -206,7 +206,6 @@ int main(int argc, char* argv[])
 		// Combine multiple slice csv's.
 		cout << now() << "Executing job " << _id << " phase 2" << endl;
 		ptr_vector<summary> summaries(num_ligands);
-		bool token_error = false;
 		for (size_t s = 0; s < num_slices; ++s)
 		{
 			// Parse slice csv.
@@ -227,14 +226,8 @@ int main(int argc, char* argv[])
 					tokens.push_back(line.substr(comma0, comma1 - comma0));
 					comma0 = comma1 + 1;
 				}
-				// Validate the correctness of the current csv line.
-//				BOOST_ASSERT(tokens.size() >= 12);
-				if (tokens.size() < 12)
-				{
-					token_error = true;
-					cerr << now() << "tokens.size() < 12 at line " << line << " in " << slice_csv_path << endl;
-					continue;
-				}
+				// Ignore incorrect lines.
+				if (tokens.size() < 12) continue;
 				conformation conf(tokens.size() - 12);
 				conf.position = vec3(lexical_cast<fl>(tokens[5]), lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]));
 				conf.orientation = qtn4(lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]), lexical_cast<fl>(tokens[10]), lexical_cast<fl>(tokens[11]));
@@ -246,8 +239,8 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		// Delete multiple slice csv's in case of no parsing errors.
-		if (!token_error)
+		// Delete multiple slice csv's.
+		if (summaries.size())
 		{
 			for (size_t s = 0; s < num_slices; ++s)
 			{
@@ -258,12 +251,13 @@ int main(int argc, char* argv[])
 
 		// Sort summaries.
 		summaries.sort();
-		const auto num_summaries = summaries.size();
+		const auto num_summaries = min<size_t>(summaries.size(), num_ligands);
 		BOOST_ASSERT(num_summaries <= num_ligands);
 		const auto num_hits = min<size_t>(num_summaries, 1000);
 		BOOST_ASSERT(num_hits <= num_ligands);
 
 		// Perform phase 2.
+		cout << now() << "Performing phase 2 for " << num_summaries << " ligands" << endl;
 		{
 			boost::filesystem::ofstream log_csv(job_path / "log.csv.gz");
 			boost::filesystem::ofstream ligands_pdbqt(job_path / "ligands.pdbqt.gz");
@@ -356,6 +350,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Set done time.
+		cout << now() << "Setting done time" << endl;
 		const auto millis_since_epoch = duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 
