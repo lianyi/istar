@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
 			for (boost::filesystem::ifstream slice_csv(slice_csv_path); getline(slice_csv, line);)
 			{
 				vector<string> tokens;
-				tokens.reserve(12);
+				tokens.reserve(10);
 				for (size_t comma0 = 0; true;)
 				{
 					const size_t comma1 = line.find(',', comma0 + 1);
@@ -227,15 +227,15 @@ int main(int argc, char* argv[])
 					comma0 = comma1 + 1;
 				}
 				// Ignore incorrect lines.
-				if (tokens.size() < 12) continue;
-				conformation conf(tokens.size() - 12);
-				conf.position = vec3(lexical_cast<fl>(tokens[5]), lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]));
-				conf.orientation = qtn4(lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]), lexical_cast<fl>(tokens[10]), lexical_cast<fl>(tokens[11]));
+				if (tokens.size() < 10) continue;
+				conformation conf(tokens.size() - 10);
+				conf.position = vec3(lexical_cast<fl>(tokens[3]), lexical_cast<fl>(tokens[4]), lexical_cast<fl>(tokens[5]));
+				conf.orientation = qtn4(lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]), lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]));
 				for (size_t i = 0; i < conf.torsions.size(); ++i)
 				{
-					conf.torsions[i] = lexical_cast<fl>(tokens[12 + i]);
+					conf.torsions[i] = lexical_cast<fl>(tokens[10 + i]);
 				}
-				summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), lexical_cast<fl>(tokens[3]), static_cast<string&&>(tokens[4]), conf));
+				summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), conf));
 			}
 		}
 
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz.push(ligands_pdbqt);
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,Free energy (kcal/mol),Ligand efficiency (kcal/mol),RF-Score (pK),Consensus score (pK),Hydrogen bonds,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
+			log_csv_gz << "ZINC ID,Free energy (kcal/mol),RF-Score (pKd),Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
 			ligands_pdbqt_gz << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
@@ -297,7 +297,7 @@ int main(int argc, char* argv[])
 				const auto nrb = right_cast<int>(property, 73, 75);
 
 				// Write to summary.csv.
-				log_csv_gz << lig_id << ',' << s.energy << ',' << s.efficiency << ',' << s.rfscore << ',' << s.consensus() << ',' << s.hbonds << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << smiles.substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << supplier.substr(11) << '\n';
+				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << smiles.substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << supplier.substr(11) << '\n';
 
 				if (idx >= num_hits) continue;
 
@@ -305,10 +305,9 @@ int main(int argc, char* argv[])
 				ligand lig(ligands);
 
 				// Validate the correctness of the current summary.
-//				BOOST_ASSERT(s.conf.torsions.size() == lig.num_active_torsions);
 				if (s.conf.torsions.size() != lig.num_active_torsions)
 				{
-					cerr << now() << "Inequal numbers of torsions of ligand " << s.index << " with s.conf.torsions.size() = " << s.conf.torsions.size() << " and lig.num_active_torsions = " << lig.num_active_torsions << endl;
+					cerr << now() << "Inequal numbers of torsions: ligand index = " << s.index << ", ZIND ID = " << lig_id << ", lig.num_active_torsions = " << lig.num_active_torsions << ", s.conf.torsions.size() = " << s.conf.torsions.size() << endl;
 					continue;
 				}
 
@@ -361,8 +360,8 @@ int main(int argc, char* argv[])
 		cout << now() << "Sending a completion notification email to " << email << endl;
 		MailMessage message;
 		message.setSender("idock <noreply@cse.cuhk.edu.hk>");
-		message.setSubject("Your idock job has completed");
-		message.setContent("Your idock job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC docking " + lexical_cast<string>(num_ligands) + " ligands with description as \"" + compt["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. " + lexical_cast<string>(num_summaries) + " ligands were successfully docked and the top " + lexical_cast<string>(num_hits) + " ligands were written to output. View result at http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str());
+		message.setSubject("Your idock job " + compt["description"].String() + " has completed");
+		message.setContent("Description: " + compt["description"].String() + "\nLigands selected to dock: " + lexical_cast<string>(num_ligands) + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nLigands successfully docked: " + lexical_cast<string>(num_summaries) + "\nLigands written to output: " + lexical_cast<string>(num_hits) + "\nResult: http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str());
 		message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 		SMTPClientSession session("137.189.91.190");
 		session.login();

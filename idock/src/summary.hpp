@@ -10,17 +10,10 @@ class summary
 public:
 	size_t index;
 	fl energy;
-	fl efficiency;
 	fl rfscore;
-	string hbonds;
 	conformation conf;
-	explicit summary(const size_t index, const fl energy, const fl efficiency, const fl rfscore, string&& hbonds_, const conformation& conf) : index(index), energy(energy), efficiency(efficiency), rfscore(rfscore), hbonds(static_cast<string&&>(hbonds_)), conf(conf)
+	explicit summary(const size_t index, const fl energy, const fl rfscore, const conformation& conf) : index(index), energy(energy), rfscore(rfscore), conf(conf)
 	{
-	}
-
-	fl consensus() const
-	{
-		return (rfscore + energy2pK * energy) * 0.5;
 	}
 
 	summary(const summary&) = default;

@@ -192,12 +192,11 @@ ligand::ligand(boost::filesystem::ifstream& ifs) : num_active_torsions(0)
 	BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
 	BOOST_ASSERT(f == &frames.front()); // The frame pointer should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
 
-	// Determine num_heavy_atoms, num_hydrogens, and num_heavy_atoms_inverse.
+	// Determine num_heavy_atoms and num_hydrogens.
 	num_heavy_atoms = heavy_atoms.size();
 	num_hydrogens = hydrogens.size();
 	frames.back().haend = num_heavy_atoms;
 	frames.back().hyend = num_hydrogens;
-	num_heavy_atoms_inverse = static_cast<fl>(1) / num_heavy_atoms;
 
 	// Determine num_frames, num_torsions, flexibility_penalty_factor.
 	num_frames = frames.size();
@@ -208,13 +207,6 @@ ligand::ligand(boost::filesystem::ifstream& ifs) : num_active_torsions(0)
 	BOOST_ASSERT(num_heavy_atoms + num_hydrogens + (num_torsions << 1) + 3 == lines.size()); // ATOM/HETATM lines + BRANCH/ENDBRANCH lines + ROOT/ENDROOT/TORSDOF lines == lines.size()
 	flexibility_penalty_factor = 1 / (1 + 0.05846 * (num_active_torsions + 0.5 * (num_torsions - num_active_torsions)));
 	BOOST_ASSERT(flexibility_penalty_factor <= 1);
-
-	// Find hydrogen bond donors and acceptors.
-	hbda.reserve(num_heavy_atoms);
-	for (size_t i = 0; i < num_heavy_atoms; ++i)
-	{
-		if (xs_is_donor_acceptor(heavy_atoms[i].xs)) hbda.push_back(i);
-	}
 
 	// Update heavy_atoms[].coordinate and hydrogens[].coordinate relative to frame origin.
 	for (size_t k = 0; k < num_frames; ++k)
@@ -551,14 +543,12 @@ void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, 
 		<< property << '\n'
 		<< smiles << '\n'
 		<< supplier << '\n'
-		<< "REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f * flexibility_penalty_factor << " KCAL/MOL\n"
-		<< "REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.e       << " KCAL/MOL\n"
-		<< "REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f       << " KCAL/MOL\n"
-		<< "REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << (r.e - r.f) << " KCAL/MOL\n"
-		<< "REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:" << setw(8) << r.f * num_heavy_atoms_inverse << " KCAL/MOL\n"
-		<< "REMARK               HYDROGEN BONDS PREDICTED BY IDOCK:" << string(4 - (s.hbonds.size() == 1 ? 1 : s.hbonds.find(' ', 1)), ' ') << s.hbonds << '\n'
-		<< "REMARK          BINDING AFFINITY PREDICTED BY RF-SCORE:" << setw(8) << s.rfscore << " pK\n"
-		<< "REMARK                                 CONSENSUS SCORE:" << setw(8) << s.consensus() << " pK\n";
+		<< "REMARK 921   NORMALIZED FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f * flexibility_penalty_factor << " KCAL/MOL\n"
+		<< "REMARK 922        TOTAL FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.e       << " KCAL/MOL\n"
+		<< "REMARK 923 INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f       << " KCAL/MOL\n"
+		<< "REMARK 924 INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << (r.e - r.f) << " KCAL/MOL\n"
+		<< "REMARK 927      BINDING AFFINITY PREDICTED BY RF-SCORE:" << setw(8) << s.rfscore << " pKd\n"
+	;
 	const size_t num_lines = lines.size();
 	for (size_t j = 0, heavy_atom = 0, hydrogen = 0; j < num_lines; ++j)
 	{

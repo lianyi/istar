@@ -1268,7 +1268,8 @@ void main()\n\
 	};
 	var path = '/idock/jobs/' + location.search.substr(1) + '/';
 	$('#results a').each(function () {
-		$(this).attr('href', path + this.innerText);
+		var t = $(this);
+		t.attr('href', path + t.text());
 	});
 	$.get(path + 'box.conf', function (bsrc) {
 		var lines = bsrc.split('\n');
@@ -1604,14 +1605,19 @@ void main()\n\
 							ligand.smiles = lines[++i].substr(11);
 							ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
 							ligand.nsuppliers = ligand.suppliers.length;
-							ligand.idock_score = parseFloat(lines[++i].substr(55, 8));
+							ligand.idock_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
 							ligand.e_total = parseFloat(lines[++i].substr(55, 8));
 							ligand.e_inter = parseFloat(lines[++i].substr(55, 8));
 							ligand.e_intra = parseFloat(lines[++i].substr(55, 8));
-							ligand.efficiency = parseFloat(lines[++i].substr(55, 8));
-							++i;
-							ligand.rf_score = parseFloat(lines[++i].substr(55, 8));
-							ligand.consensus_score = parseFloat(lines[++i].substr(55, 8));
+							line = lines[++i];
+							if (line.substr(8, 1) === ' ') {
+								ligand.efficiency = parseFloat(line.substr(55, 8));
+								ligand.hbonds = parseFloat(lines[++i].substr(55, 8));
+								ligand.rf_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
+								ligand.consensus_score = parseFloat(lines[++i].substr(55, 8));
+							} else {
+								ligand.rf_score = parseFloat(line.substr(55, 8)).toFixed(3);
+							}
 						} else if (record === 'ATOM  ' || record === 'HETATM') {
 							var atom = {
 								serial: parseInt(line.substr(6, 5)),

@@ -56,14 +56,12 @@ public:
 	vector<frame> frames; ///< ROOT and BRANCH frames.
 	vector<atom> heavy_atoms; ///< Heavy atoms. Coordinates are relative to frame origin, which is the first atom by default.
 	vector<atom> hydrogens; ///< Hydrogen atoms. Coordinates are relative to frame origin, which is the first atom by default.
-	vector<size_t> hbda; // Hydrogen bond donors and acceptors.
 	size_t num_heavy_atoms; ///< Number of heavy atoms.
 	size_t num_hydrogens; ///< Number of hydrogens.
 	size_t num_frames; ///< Number of frames.
 	size_t num_torsions; ///< Number of torsions.
 	size_t num_active_torsions; ///< Number of active torsions.
 	fl flexibility_penalty_factor; ///< A value in (0, 1] to penalize ligand flexibility.
-	fl num_heavy_atoms_inverse; ///< 1 / num_heavy_atoms.
 
 	/// Constructs a ligand by parsing a ligand file stream in pdbqt format.
 	/// @exception parsing_error Thrown when an atom type is not recognized or an empty branch is detected.

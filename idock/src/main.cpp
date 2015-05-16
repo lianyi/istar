@@ -354,38 +354,8 @@ int main(int argc, char* argv[])
 				v.back() = lig.flexibility_penalty_factor;
 				const auto rfscore = f(v);
 
-				// Find hydrogen bonds.
-				const size_t num_lig_hbda = lig.hbda.size();
-				string hbonds;
-				size_t num_hbonds = 0;
-				for (size_t i = 0; i < num_lig_hbda; ++i)
-				{
-					const atom& lig_atom = lig.heavy_atoms[lig.hbda[i]];
-					BOOST_ASSERT(xs_is_donor_acceptor(lig_atom.xs));
-
-					// Find the possibly interacting receptor atoms via partitions.
-					const vec3 lig_coords = r.heavy_atoms[lig.hbda[i]];
-					const vector<size_t>& rec_hbda = rec.hbda_3d(b.partition_index(lig_coords));
-
-					// Accumulate individual free energies for each atom types to populate.
-					const size_t num_rec_hbda = rec_hbda.size();
-					for (size_t l = 0; l < num_rec_hbda; ++l)
-					{
-						const atom& rec_atom = rec.atoms[rec_hbda[l]];
-						BOOST_ASSERT(xs_is_donor_acceptor(rec_atom.xs));
-						if (!xs_hbond(lig_atom.xs, rec_atom.xs)) continue;
-						const fl r2 = distance_sqr(lig_coords, rec_atom.coordinate);
-						if (r2 <= hbond_dist_sqr)
-						{
-							++num_hbonds;
-							hbonds += " | " + rec_atom.name + " - " + lig_atom.name;
-						}
-					}
-				}
-				hbonds = lexical_cast<string>(num_hbonds) + hbonds;
-
 				// Dump ligand result to the slice csv file.
-				slice_csv << idx << ',' << (r.f * lig.flexibility_penalty_factor) << ',' << (r.f * lig.num_heavy_atoms_inverse) << ',' << rfscore << ',' << hbonds;
+				slice_csv << idx << ',' << (r.f * lig.flexibility_penalty_factor) << ',' << rfscore;
 				const auto& p = r.conf.position;
 				const auto& q = r.conf.orientation;
 				slice_csv << ',' << p[0] << ',' << p[1] << ',' << p[2] << ',' << q.a << ',' << q.b << ',' << q.c << ',' << q.d;
@@ -413,7 +383,6 @@ int main(int argc, char* argv[])
 		// Combine multiple slice csv's.
 		cout << now() << "Executing job " << _id << " phase 2" << endl;
 		ptr_vector<summary> summaries(num_ligands);
-		bool token_error = false;
 		for (size_t s = 0; s < num_slices; ++s)
 		{
 			// Parse slice csv.
@@ -422,7 +391,7 @@ int main(int argc, char* argv[])
 			for (boost::filesystem::ifstream slice_csv(slice_csv_path); getline(slice_csv, line);)
 			{
 				vector<string> tokens;
-				tokens.reserve(12);
+				tokens.reserve(10);
 				for (size_t comma0 = 0; true;)
 				{
 					const size_t comma1 = line.find(',', comma0 + 1);
@@ -434,27 +403,21 @@ int main(int argc, char* argv[])
 					tokens.push_back(line.substr(comma0, comma1 - comma0));
 					comma0 = comma1 + 1;
 				}
-				// Validate the correctness of the current csv line.
-//				BOOST_ASSERT(tokens.size() >= 12);
-				if (tokens.size() < 12)
-				{
-					token_error = true;
-					cerr << now() << "tokens.size() < 12 at line " << line << " in " << slice_csv_path << endl;
-					continue;
-				}
-				conformation conf(tokens.size() - 12);
-				conf.position = vec3(lexical_cast<fl>(tokens[5]), lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]));
-				conf.orientation = qtn4(lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]), lexical_cast<fl>(tokens[10]), lexical_cast<fl>(tokens[11]));
+				// Ignore incorrect lines.
+				if (tokens.size() < 10) continue;
+				conformation conf(tokens.size() - 10);
+				conf.position = vec3(lexical_cast<fl>(tokens[3]), lexical_cast<fl>(tokens[4]), lexical_cast<fl>(tokens[5]));
+				conf.orientation = qtn4(lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]), lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]));
 				for (size_t i = 0; i < conf.torsions.size(); ++i)
 				{
-					conf.torsions[i] = lexical_cast<fl>(tokens[12 + i]);
+					conf.torsions[i] = lexical_cast<fl>(tokens[10 + i]);
 				}
-				summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), lexical_cast<fl>(tokens[3]), static_cast<string&&>(tokens[4]), conf));
+				summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), conf));
 			}
 		}
 
-		// Delete multiple slice csv's in case of no parsing errors.
-		if (!token_error)
+		// Delete multiple slice csv's.
+		if (summaries.size())
 		{
 			for (size_t s = 0; s < num_slices; ++s)
 			{
@@ -465,12 +428,13 @@ int main(int argc, char* argv[])
 
 		// Sort summaries.
 		summaries.sort();
-		const auto num_summaries = summaries.size();
+		const auto num_summaries = min<size_t>(summaries.size(), num_ligands);
 		BOOST_ASSERT(num_summaries <= num_ligands);
 		const auto num_hits = min<size_t>(num_summaries, 1000);
 		BOOST_ASSERT(num_hits <= num_ligands);
 
 		// Perform phase 2.
+		cout << now() << "Performing phase 2 for " << num_summaries << " ligands" << endl;
 		{
 			boost::filesystem::ofstream log_csv(job_path / "log.csv.gz");
 			boost::filesystem::ofstream ligands_pdbqt(job_path / "ligands.pdbqt.gz");
@@ -482,7 +446,7 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz.push(ligands_pdbqt);
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,Free energy (kcal/mol),Ligand efficiency (kcal/mol),RF-Score (pK),Consensus score (pK),Hydrogen bonds,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
+			log_csv_gz << "ZINC ID,Free energy (kcal/mol),RF-Score (pKd),Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
 			ligands_pdbqt_gz << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
@@ -510,7 +474,7 @@ int main(int argc, char* argv[])
 				const auto nrb = right_cast<int>(property, 73, 75);
 
 				// Write to summary.csv.
-				log_csv_gz << lig_id << ',' << s.energy << ',' << s.efficiency << ',' << s.rfscore << ',' << s.consensus() << ',' << s.hbonds << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << smiles.substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << supplier.substr(11) << '\n';
+				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << smiles.substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << supplier.substr(11) << '\n';
 
 				if (idx >= num_hits) continue;
 
@@ -518,10 +482,9 @@ int main(int argc, char* argv[])
 				ligand lig(ligands);
 
 				// Validate the correctness of the current summary.
-//				BOOST_ASSERT(s.conf.torsions.size() == lig.num_active_torsions);
 				if (s.conf.torsions.size() != lig.num_active_torsions)
 				{
-					cerr << now() << "Inequal numbers of torsions of ligand " << s.index << " with s.conf.torsions.size() = " << s.conf.torsions.size() << " and lig.num_active_torsions = " << lig.num_active_torsions << endl;
+					cerr << now() << "Inequal numbers of torsions: ligand index = " << s.index << ", ZIND ID = " << lig_id << ", lig.num_active_torsions = " << lig.num_active_torsions << ", s.conf.torsions.size() = " << s.conf.torsions.size() << endl;
 					continue;
 				}
 
@@ -563,6 +526,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Set done time.
+		cout << now() << "Setting done time" << endl;
 		const auto millis_since_epoch = duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 
@@ -573,8 +537,8 @@ int main(int argc, char* argv[])
 		cout << now() << "Sending a completion notification email to " << email << endl;
 		MailMessage message;
 		message.setSender("idock <noreply@cse.cuhk.edu.hk>");
-		message.setSubject("Your idock job has completed");
-		message.setContent("Your idock job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC docking " + lexical_cast<string>(num_ligands) + " ligands with description as \"" + compt["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. " + lexical_cast<string>(num_summaries) + " ligands were successfully docked and the top " + lexical_cast<string>(num_hits) + " ligands were written to output. View result at http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str());
+		message.setSubject("Your idock job " + compt["description"].String() + " has completed");
+		message.setContent("Description: " + compt["description"].String() + "\nLigands selected to dock: " + lexical_cast<string>(num_ligands) + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nLigands successfully docked: " + lexical_cast<string>(num_summaries) + "\nLigands written to output: " + lexical_cast<string>(num_hits) + "\nResult: http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str());
 		message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 		SMTPClientSession session("137.189.91.190");
 		session.login();
