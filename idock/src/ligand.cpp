@@ -376,22 +376,22 @@ bool ligand::evaluate(const conformation& conf, const scoring_function& sf, cons
 	}
 
 	// Check steric clash between atoms of different frames except for (rotorX, rotorY) pair.
-	//for (size_t k1 = num_frames - 1; k1 > 0; --k1)
-	//{
-	//	const frame& f1 = frames[k1];
-	//	for (size_t i1 = f1.habegin; i1 < f1.haend; ++i1)
-	//	{
-	//		for (size_t k2 = 0; k2 < k1; ++k2)
-	//		{
-	//			const frame& f2 = frames[k2];
-	//			for (size_t i2 = f2.habegin; i2 < f2.haend; ++i2)
-	//			{
-	//				if ((distance_sqr(coordinates[i1], coordinates[i2]) < sqr(heavy_atoms[i1].covalent_radius() + heavy_atoms[i2].covalent_radius())) && (!((k2 == f1.parent) && (i1 == f1.rotorYidx) && (i2 == f1.rotorXidx))))
-	//					return false;
-	//			}
-	//		}
-	//	}
-	//}
+/*	for (size_t k1 = num_frames - 1; k1 > 0; --k1)
+	{
+		const frame& f1 = frames[k1];
+		for (size_t i1 = f1.habegin; i1 < f1.haend; ++i1)
+		{
+			for (size_t k2 = 0; k2 < k1; ++k2)
+			{
+				const frame& f2 = frames[k2];
+				for (size_t i2 = f2.habegin; i2 < f2.haend; ++i2)
+				{
+					if ((distance_sqr(coordinates[i1], coordinates[i2]) < sqr(heavy_atoms[i1].covalent_radius() + heavy_atoms[i2].covalent_radius())) && (!((k2 == f1.parent) && (i1 == f1.rotorYidx) && (i2 == f1.rotorXidx))))
+						return false;
+				}
+			}
+		}
+	}*/
 
 	e = 0;
 	for (size_t i = 0; i < num_heavy_atoms; ++i)
