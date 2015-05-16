@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 	const path headers_path = "16_hdr.bin";
 	const size_t seed = system_clock::now().time_since_epoch().count();
 	const size_t num_threads = thread::hardware_concurrency();
-	const size_t num_mc_tasks = 32;
+	const size_t num_mc_tasks = 64;
 	const fl grid_granularity = 0.08;
 	const fl max_ligands_per_job = 1e+6;
 	const auto epoch = boost::gregorian::date(1970, 1, 1);
