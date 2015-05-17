@@ -35,9 +35,9 @@ using namespace mongo;
 using namespace bson;
 using namespace Poco::Net;
 
-inline static string now()
+inline static string local_time()
 {
-	return to_simple_string(second_clock::local_time()) + " ";
+	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
 int main(int argc, char* argv[])
@@ -58,17 +58,17 @@ int main(int argc, char* argv[])
 	DBClientConnection conn;
 	{
 		// Connect to host and authenticate user.
-		cout << now() << "Connecting to " << host << " and authenticating " << user << endl;
+		cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
 		string errmsg;
 		if ((!conn.connect(host, errmsg)) || (!conn.auth("istar", user, pwd, errmsg)))
 		{
-			cerr << now() << errmsg << endl;
+			cerr << local_time() << errmsg << endl;
 			return 1;
 		}
 	}
 
 	// Initialize constants.
-	cout << now() << "Initializing" << endl;
+	cout << local_time() << "Initializing" << endl;
 	const auto collection = "istar.usr";
 //	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 	const auto epoch = date(1970, 1, 1);
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
 	string line;
 	std::ifstream usrcat_bin("16_usrcat.bin", ios::binary);
 	std::ifstream lig_pdbqt("16_lig.pdbqt");
-	cout << now() << "Entering event loop" << endl;
+	cout << local_time() << "Entering event loop" << endl;
 	while (true)
 	{
 		// Fetch jobs.
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 			// Obtain job properties.
 			const auto job = cursor->next();
 			const auto _id = job["_id"].OID();
-			cout << now() << "Executing job " << _id.str() << endl;
+			cout << local_time() << "Executing job " << _id.str() << endl;
 			const auto job_path = jobs_path / _id.str();
 			const auto format = job["format"].String();
 			const auto email = job["email"].String();
@@ -154,11 +154,11 @@ int main(int argc, char* argv[])
 				conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 
 				// Send error notification email.
-				cout << now() << "Sending an error notification email to " << email << endl;
+				cout << local_time() << "Sending an error notification email to " << email << endl;
 				MailMessage message;
-				message.setSender("istar <noreply@cse.cuhk.edu.hk>");
-				message.setSubject("Your usr job has failed to complete");
-				message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" failed on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC because your provided ligand failed to be parsed.");
+				message.setSender("usr <noreply@cse.cuhk.edu.hk>");
+				message.setSubject("Your usr job has failed");
+				message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nFailed: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nReason: failed to parse the provided ligand.");
 				message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 				SMTPClientSession session("137.189.91.190");
 				session.login();
@@ -337,15 +337,16 @@ int main(int argc, char* argv[])
 			}
 
 			// Update progress.
+			cout << local_time() << "Setting done time" << endl;
 			const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 
 			// Send completion notification email.
-			cout << now() << "Sending a completion notification email to " << email << endl;
+			cout << local_time() << "Sending a completion notification email to " << email << endl;
 			MailMessage message;
 			message.setSender("istar <noreply@cse.cuhk.edu.hk>");
 			message.setSubject("Your usr job has completed");
-			message.setContent("Your usr job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC with description \"" + job["description"].String() + "\" was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. View result at http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
+			message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nResult: http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
 			message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 			SMTPClientSession session("137.189.91.190");
 			session.login();

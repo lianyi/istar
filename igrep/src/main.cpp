@@ -25,9 +25,9 @@ using namespace mongo;
 using namespace bson;
 using namespace Poco::Net;
 
-inline static string now()
+inline static string local_time()
 {
-	return to_simple_string(second_clock::local_time()) + " ";
+	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
 /**
@@ -89,7 +89,7 @@ public:
 	{
 		sequence_cumulative_length[0] = 0;
 
-		cout << now() << "Loading the genome of " << name << endl;
+		cout << local_time() << "Loading the genome of " << name << endl;
 		unsigned int scodon_buffer = 0;	// 16 consecutive characters will be accommodated into one 32-bit unsigned int.
 		unsigned int scodon_index;	// scodon[scodon_index] = scodon_buffer; In CUDA implementation, special codons need to be properly shuffled in order to satisfy coalesced global memory access.
 		int sequence_index = -1;	// Index of the current sequence.
@@ -200,11 +200,11 @@ int main(int argc, char** argv)
 	DBClientConnection conn;
 	{
 		// Connect to host and authenticate user.
-		cout << now() << "Connecting to " << host << " and authenticating " << user << endl;
+		cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
 		string errmsg;
 		if ((!conn.connect(host, errmsg)) || (!conn.auth("istar", user, pwd, errmsg)))
 		{
-			cerr << now() << errmsg << endl;
+			cerr << local_time() << errmsg << endl;
 			return 1;
 		}
 	}
@@ -262,7 +262,7 @@ int main(int argc, char** argv)
 		{
 			const auto job = cursor->next();
 			const auto _id = job["_id"].OID();
-			cout << now() << "Executing job " << _id.str() << endl;
+			cout << local_time() << "Executing job " << _id.str() << endl;
 
 			// Obtain the target genome via taxid.
 			const auto taxid = job["taxid"].Int();
@@ -273,7 +273,7 @@ int main(int argc, char** argv)
 			}
 			BOOST_ASSERT(i < genomes.size());
 			const auto& g = genomes[i];
-			cout << now() << "Searching the genome of " << g.name << endl;
+			cout << local_time() << "Searching the genome of " << g.name << endl;
 
 			// Set up CUDA kernel.
 			checkCudaErrors(cudaMalloc((void**)&scodon_device, sizeof(unsigned int) * g.scodon.size()));
@@ -400,16 +400,16 @@ int main(int argc, char** argv)
 			const auto err = conn.getLastError();
 			if (!err.empty())
 			{
-				cerr << now() << err << endl;
+				cerr << local_time() << err << endl;
 			}
 
 			// Send completion notification email.
 			const auto email = job["email"].String();
-			cout << now() << "Sending a completion notification email to " << email << endl;
+			cout << local_time() << "Sending a completion notification email to " << email << endl;
 			MailMessage message;
 			message.setSender("igrep <noreply@cse.cuhk.edu.hk>");
 			message.setSubject("Your igrep job has completed");
-			message.setContent("Your igrep job submitted on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC searching the genome of " + g.name + " for " + to_string(qi) + " patterns was done on " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC. View result at http://istar.cse.cuhk.edu.hk/igrep");
+			message.setContent("Genome to search: " + g.name + "\nPatterns to search for: " + to_string(qi) + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nResult: http://istar.cse.cuhk.edu.hk/igrep");
 			message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 			SMTPClientSession session("137.189.91.190");
 			session.login();
