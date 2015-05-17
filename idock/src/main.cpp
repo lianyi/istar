@@ -35,9 +35,9 @@ inline static string now()
 int main(int argc, char* argv[])
 {
 	// Check the required number of comand line arguments.
-	if (argc != 5)
+	if (argc < 5)
 	{
-		cout << "idock host user pwd jobs_path" << endl;
+		cout << "idock host user pwd jobs_path [jobid]" << endl;
 		return 0;
 	}
 
@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
 	const auto user = argv[2];
 	const auto pwd = argv[3];
 	const path jobs_path = argv[4];
+	const bool phase2only = argc > 5;
 
 	DBClientConnection conn;
 	{
@@ -170,23 +171,39 @@ int main(int argc, char* argv[])
 	cout << now() << "Entering event loop" << endl;
 	while (true)
 	{
-		// Fetch a job in a first-come-first-served manner.
-		BSONObj info;
-		conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info);
-		const auto value = info["value"];
-		if (value.isNull())
+		int slice;
+		bool refresh = false;
+		if (phase2only)
 		{
-			// Sleep for a while.
-			this_thread::sleep_for(chrono::seconds(10));
-			continue;
+			_id.init(argv[5]);
+			refresh = true;
 		}
-		const auto job = value.Obj();
+		else
+		{
+			// Fetch a job in a first-come-first-served manner.
+			BSONObj info;
+			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info);
+			const auto value = info["value"];
+			if (value.isNull())
+			{
+				// Sleep for a while.
+				this_thread::sleep_for(chrono::seconds(10));
+				continue;
+			}
+			const auto job = value.Obj();
+			slice = job["scheduled"].Int();
 
-		// Refresh cache if it is a new job.
-		if (_id != job["_id"].OID())
+			// Determine whether the current job id needs to be refreshed.
+			if (_id != job["_id"].OID())
+			{
+				_id = job["_id"].OID();
+				refresh = true;
+			}
+		}
+
+		if (refresh)
 		{
 			// Load job parameters from MongoDB.
-			_id = job["_id"].OID();
 			const auto param = conn.query(collection, QUERY("_id" << _id), 1, 0, &param_fields)->next();
 			num_ligands = param["ligands"].Int();
 			mwt_lb = param["mwt_lb"].Number();
@@ -230,155 +247,157 @@ int main(int argc, char* argv[])
 			grid_maps.resize(XS_TYPE_SIZE);
 		}
 
-		// Perform phase 1.
-		const auto slice = job["scheduled"].Int();
-		cout << now() << "Executing job " << _id << " slice " << slice << endl;
-		const auto slice_key = lexical_cast<string>(slice);
-		const auto beg_lig = slices[slice];
-		const auto end_lig = slices[slice + 1];
-		headers.seekg(sizeof(size_t) * beg_lig);
-		boost::filesystem::ofstream slice_csv(job_path / (slice_key + ".csv"));
-		slice_csv.setf(ios::fixed, ios::floatfield);
-		slice_csv << setprecision(12); // Dump as many digits as possible in order to recover accurate conformations in summaries.
-		for (auto idx = beg_lig; idx < end_lig; ++idx)
+		if (!phase2only)
 		{
-			// Locate a ligand.
-			size_t header;
-			headers.read((char*)&header, sizeof(size_t));
-			ligands.seekg(header);
-
-			// Check if the ligand satisfies the filtering conditions.
-			string property;
-			getline(ligands, property); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
-			const auto mwt = right_cast<fl>(property, 21, 28);
-			const auto lgp = right_cast<fl>(property, 30, 37);
-			const auto ads = right_cast<fl>(property, 39, 46);
-			const auto pds = right_cast<fl>(property, 48, 55);
-			const auto hbd = right_cast<int>(property, 57, 59);
-			const auto hba = right_cast<int>(property, 61, 63);
-			const auto psa = right_cast<int>(property, 65, 67);
-			const auto chg = right_cast<int>(property, 69, 71);
-			const auto nrb = right_cast<int>(property, 73, 75);
-			if (!((mwt_lb <= mwt) && (mwt <= mwt_ub) && (lgp_lb <= lgp) && (lgp <= lgp_ub) && (ads_lb <= ads) && (ads <= ads_ub) && (pds_lb <= pds) && (pds <= pds_ub) && (hbd_lb <= hbd) && (hbd <= hbd_ub) && (hba_lb <= hba) && (hba <= hba_ub) && (psa_lb <= psa) && (psa <= psa_ub) && (chg_lb <= chg) && (chg <= chg_ub) && (nrb_lb <= nrb) && (nrb <= nrb_ub))) continue;
-
-			// Filtering out the ligand randomly according to the maximum number of ligands per job.
-			if (u01(rng) > filtering_probability) continue;
-
-			// Obtain ligand ID. ZINC IDs are 8-character long.
-			const auto lig_id = property.substr(11, 8);
-
-			// Parse the ligand.
-			ligand lig(ligands);
-
-			// Create grid maps on the fly if necessary.
-			BOOST_ASSERT(atom_types_to_populate.empty());
-			const vector<size_t> ligand_atom_types = lig.get_atom_types();
-			for (const auto t : ligand_atom_types)
+			// Perform phase 1.
+			cout << now() << "Executing job " << _id << " slice " << slice << endl;
+			const auto slice_key = lexical_cast<string>(slice);
+			const auto beg_lig = slices[slice];
+			const auto end_lig = slices[slice + 1];
+			headers.seekg(sizeof(size_t) * beg_lig);
+			boost::filesystem::ofstream slice_csv(job_path / (slice_key + ".csv"));
+			slice_csv.setf(ios::fixed, ios::floatfield);
+			slice_csv << setprecision(12); // Dump as many digits as possible in order to recover accurate conformations in summaries.
+			for (auto idx = beg_lig; idx < end_lig; ++idx)
 			{
-				BOOST_ASSERT(t < XS_TYPE_SIZE);
-				array3d<fl>& grid_map = grid_maps[t];
-				if (grid_map.initialized()) continue; // The grid map of XScore atom type t has already been populated.
-				grid_map.resize(b.num_probes); // An exception may be thrown in case memory is exhausted.
-				atom_types_to_populate.push_back(t);  // The grid map of XScore atom type t has not been populated and should be populated now.
-			}
-			if (atom_types_to_populate.size())
-			{
-				cnt.init(num_gm_tasks);
-				for (size_t x = 0; x < num_gm_tasks; ++x)
+				// Locate a ligand.
+				size_t header;
+				headers.read((char*)&header, sizeof(size_t));
+				ligands.seekg(header);
+
+				// Check if the ligand satisfies the filtering conditions.
+				string property;
+				getline(ligands, property); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
+				const auto mwt = right_cast<fl>(property, 21, 28);
+				const auto lgp = right_cast<fl>(property, 30, 37);
+				const auto ads = right_cast<fl>(property, 39, 46);
+				const auto pds = right_cast<fl>(property, 48, 55);
+				const auto hbd = right_cast<int>(property, 57, 59);
+				const auto hba = right_cast<int>(property, 61, 63);
+				const auto psa = right_cast<int>(property, 65, 67);
+				const auto chg = right_cast<int>(property, 69, 71);
+				const auto nrb = right_cast<int>(property, 73, 75);
+				if (!((mwt_lb <= mwt) && (mwt <= mwt_ub) && (lgp_lb <= lgp) && (lgp <= lgp_ub) && (ads_lb <= ads) && (ads <= ads_ub) && (pds_lb <= pds) && (pds <= pds_ub) && (hbd_lb <= hbd) && (hbd <= hbd_ub) && (hba_lb <= hba) && (hba <= hba_ub) && (psa_lb <= psa) && (psa <= psa_ub) && (chg_lb <= chg) && (chg <= chg_ub) && (nrb_lb <= nrb) && (nrb <= nrb_ub))) continue;
+
+				// Filtering out the ligand randomly according to the maximum number of ligands per job.
+				if (u01(rng) > filtering_probability) continue;
+
+				// Obtain ligand ID. ZINC IDs are 8-character long.
+				const auto lig_id = property.substr(11, 8);
+
+				// Parse the ligand.
+				ligand lig(ligands);
+
+				// Create grid maps on the fly if necessary.
+				BOOST_ASSERT(atom_types_to_populate.empty());
+				const vector<size_t> ligand_atom_types = lig.get_atom_types();
+				for (const auto t : ligand_atom_types)
 				{
-					io.post([&,x]()
+					BOOST_ASSERT(t < XS_TYPE_SIZE);
+					array3d<fl>& grid_map = grid_maps[t];
+					if (grid_map.initialized()) continue; // The grid map of XScore atom type t has already been populated.
+					grid_map.resize(b.num_probes); // An exception may be thrown in case memory is exhausted.
+					atom_types_to_populate.push_back(t);  // The grid map of XScore atom type t has not been populated and should be populated now.
+				}
+				if (atom_types_to_populate.size())
+				{
+					cnt.init(num_gm_tasks);
+					for (size_t x = 0; x < num_gm_tasks; ++x)
 					{
-						grid_map_task(grid_maps, atom_types_to_populate, x, sf, b, rec);
+						io.post([&,x]()
+						{
+							grid_map_task(grid_maps, atom_types_to_populate, x, sf, b, rec);
+							cnt.increment();
+						});
+					}
+					cnt.wait();
+					atom_types_to_populate.clear();
+				}
+
+				// Run Monte Carlo tasks in parallel.
+				cnt.init(num_mc_tasks);
+				for (size_t i = 0; i < num_mc_tasks; ++i)
+				{
+					BOOST_ASSERT(result_containers[i].empty());
+					BOOST_ASSERT(result_containers[i].capacity() == 1);
+					const size_t s = rng();
+					io.post([&,i,s]()
+					{
+						monte_carlo_task(result_containers[i], lig, s, alphas, sf, b, grid_maps);
 						cnt.increment();
 					});
 				}
 				cnt.wait();
-				atom_types_to_populate.clear();
-			}
 
-			// Run Monte Carlo tasks in parallel.
-			cnt.init(num_mc_tasks);
-			for (size_t i = 0; i < num_mc_tasks; ++i)
-			{
-				BOOST_ASSERT(result_containers[i].empty());
-				BOOST_ASSERT(result_containers[i].capacity() == 1);
-				const size_t s = rng();
-				io.post([&,i,s]()
+				// Merge results from all the tasks into one single result container.
+				BOOST_ASSERT(results.empty());
+				BOOST_ASSERT(results.capacity() == 1);
+				const fl required_square_error = static_cast<fl>(4 * lig.num_heavy_atoms); // Ligands with RMSD < 2.0 will be clustered into the same cluster.
+				for (size_t i = 0; i < num_mc_tasks; ++i)
 				{
-					monte_carlo_task(result_containers[i], lig, s, alphas, sf, b, grid_maps);
-					cnt.increment();
-				});
-			}
-			cnt.wait();
-
-			// Merge results from all the tasks into one single result container.
-			BOOST_ASSERT(results.empty());
-			BOOST_ASSERT(results.capacity() == 1);
-			const fl required_square_error = static_cast<fl>(4 * lig.num_heavy_atoms); // Ligands with RMSD < 2.0 will be clustered into the same cluster.
-			for (size_t i = 0; i < num_mc_tasks; ++i)
-			{
-				ptr_vector<result>& task_results = result_containers[i];
-				BOOST_ASSERT(task_results.capacity() == 1);
-				for (auto& task_result : task_results)
-				{
-					add_to_result_container(results, static_cast<result&&>(task_result), required_square_error);
-				}
-				task_results.clear();
-			}
-
-			// No conformation can be found if the search space is too small.
-			if (results.size())
-			{
-				BOOST_ASSERT(results.size() == 1);
-				const result& r = results.front();
-
-				// Rescore conformations with random forest.
-				vector<float> v(42);
-				for (size_t i = 0; i < lig.num_heavy_atoms; ++i)
-				{
-					const auto& la = lig.heavy_atoms[i];
-					if (la.rf == RF_TYPE_SIZE) continue;
-					for (const auto& ra : rec.atoms)
+					ptr_vector<result>& task_results = result_containers[i];
+					BOOST_ASSERT(task_results.capacity() == 1);
+					for (auto& task_result : task_results)
 					{
-						if (ra.rf == RF_TYPE_SIZE) continue;
-						const auto dist_sqr = distance_sqr(r.heavy_atoms[i], ra.coordinate);
-						if (dist_sqr >= 144) continue; // RF-Score cutoff 12A
-						++v[(la.rf << 2) + ra.rf];
-						if (dist_sqr >= 64) continue; // Vina score cutoff 8A
-						if (la.xs != XS_TYPE_SIZE && ra.xs != XS_TYPE_SIZE)
+						add_to_result_container(results, static_cast<result&&>(task_result), required_square_error);
+					}
+					task_results.clear();
+				}
+
+				// No conformation can be found if the search space is too small.
+				if (results.size())
+				{
+					BOOST_ASSERT(results.size() == 1);
+					const result& r = results.front();
+
+					// Rescore conformations with random forest.
+					vector<float> v(42);
+					for (size_t i = 0; i < lig.num_heavy_atoms; ++i)
+					{
+						const auto& la = lig.heavy_atoms[i];
+						if (la.rf == RF_TYPE_SIZE) continue;
+						for (const auto& ra : rec.atoms)
 						{
-							sf.score(v.data() + 36, la.xs, ra.xs, dist_sqr);
+							if (ra.rf == RF_TYPE_SIZE) continue;
+							const auto dist_sqr = distance_sqr(r.heavy_atoms[i], ra.coordinate);
+							if (dist_sqr >= 144) continue; // RF-Score cutoff 12A
+							++v[(la.rf << 2) + ra.rf];
+							if (dist_sqr >= 64) continue; // Vina score cutoff 8A
+							if (la.xs != XS_TYPE_SIZE && ra.xs != XS_TYPE_SIZE)
+							{
+								sf.score(v.data() + 36, la.xs, ra.xs, dist_sqr);
+							}
 						}
 					}
-				}
-				v.back() = lig.flexibility_penalty_factor;
-				const auto rfscore = f(v);
+					v.back() = lig.flexibility_penalty_factor;
+					const auto rfscore = f(v);
 
-				// Dump ligand result to the slice csv file.
-				slice_csv << idx << ',' << (r.f * lig.flexibility_penalty_factor) << ',' << rfscore;
-				const auto& p = r.conf.position;
-				const auto& q = r.conf.orientation;
-				slice_csv << ',' << p[0] << ',' << p[1] << ',' << p[2] << ',' << q.a << ',' << q.b << ',' << q.c << ',' << q.d;
-				for (const auto t : r.conf.torsions)
-				{
-					slice_csv << ',' << t;
-				}
-				slice_csv << '\n';
+					// Dump ligand result to the slice csv file.
+					slice_csv << idx << ',' << (r.f * lig.flexibility_penalty_factor) << ',' << rfscore;
+					const auto& p = r.conf.position;
+					const auto& q = r.conf.orientation;
+					slice_csv << ',' << p[0] << ',' << p[1] << ',' << p[2] << ',' << q.a << ',' << q.b << ',' << q.c << ',' << q.d;
+					for (const auto t : r.conf.torsions)
+					{
+						slice_csv << ',' << t;
+					}
+					slice_csv << '\n';
 
-				// Clear the results of the current ligand.
-				results.clear();
+					// Clear the results of the current ligand.
+					results.clear();
+				}
+
+				// Report progress.
+				conn.update(collection, BSON("_id" << _id), BSON("$inc" << BSON(slice_key << 1)));
 			}
+			slice_csv.close();
 
-			// Report progress.
-			conn.update(collection, BSON("_id" << _id), BSON("$inc" << BSON(slice_key << 1)));
+			// Increment the completed counter.
+			conn.update(collection, BSON("_id" << _id << "$atomic" << 1), BSON("$inc" << BSON("completed" << 1)));
+
+			// If the number of completed slices is not equal to the number of total slices, loop again to fetch another slice.
+			if (!conn.query(collection, QUERY("_id" << _id << "completed" << static_cast<unsigned int>(num_slices)))->more()) continue;
 		}
-		slice_csv.close();
-
-		// Increment the completed counter.
-		conn.update(collection, BSON("_id" << _id << "$atomic" << 1), BSON("$inc" << BSON("completed" << 1)));
-
-		// If the number of completed slices is not equal to the number of total slices, loop again to fetch another slice.
-		if (!conn.query(collection, QUERY("_id" << _id << "completed" << static_cast<unsigned int>(num_slices)))->more()) continue;
 
 		// Combine multiple slice csv's.
 		cout << now() << "Executing job " << _id << " phase 2" << endl;
@@ -544,5 +563,7 @@ int main(int argc, char* argv[])
 		session.login();
 		session.sendMessage(message);
 		session.close();
+
+		if (phase2only) break;
 	}
 }
