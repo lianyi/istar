@@ -27,7 +27,7 @@ using namespace mongo;
 using namespace bson;
 using namespace Poco::Net;
 
-inline static string now()
+inline static string local_time()
 {
 	return to_simple_string(microsec_clock::local_time()) + " ";
 }
@@ -51,17 +51,17 @@ int main(int argc, char* argv[])
 	DBClientConnection conn;
 	{
 		// Connect to host and authenticate user.
-		cout << now() << "Connecting to " << host << " and authenticating " << user << endl;
+		cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
 		string errmsg;
 		if ((!conn.connect(host, errmsg)) || (!conn.auth("istar", user, pwd, errmsg)))
 		{
-			cerr << now() << errmsg << endl;
+			cerr << local_time() << errmsg << endl;
 			return 1;
 		}
 	}
 
 	// Initialize default values of constant arguments.
-	cout << now() << "Initializing" << endl;
+	cout << local_time() << "Initializing constants and variables" << endl;
 	const auto collection = "istar.idock";
 	const auto jobid_fields = BSON("_id" << 1 << "scheduled" << 1);
 	const auto param_fields = BSON("_id" << 0 << "ligands" << 1 << "mwt_lb" << 1 << "mwt_ub" << 1 << "lgp_lb" << 1 << "lgp_ub" << 1 << "ads_lb" << 1 << "ads_ub" << 1 << "pds_lb" << 1 << "pds_ub" << 1 << "hbd_lb" << 1 << "hbd_ub" << 1 << "hba_lb" << 1 << "hba_ub" << 1 << "psa_lb" << 1 << "psa_ub" << 1 << "chg_lb" << 1 << "chg_ub" << 1 << "nrb_lb" << 1 << "nrb_ub" << 1);
@@ -101,8 +101,8 @@ int main(int argc, char* argv[])
 	// Initialize program options.
 	std::array<double, 3> center, size;
 	using namespace boost::program_options;
-	options_description input_options("input (required)");
-	input_options.add_options()
+	options_description box_options("input (required)");
+	box_options.add_options()
 		("center_x", value<double>(&center[0])->required())
 		("center_y", value<double>(&center[1])->required())
 		("center_z", value<double>(&center[2])->required())
@@ -112,10 +112,12 @@ int main(int argc, char* argv[])
 		;
 
 	// Initialize an io service pool and create worker threads for later use.
+	cout << local_time() << "Creating an io service pool of " << num_threads << " worker threads" << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
 	// Precalculate the scoring function in parallel.
+	cout << local_time() << "Precalculating scoring function in parallel" << endl;
 	scoring_function sf;
 	{
 		// Precalculate reciprocal square root values.
@@ -142,10 +144,12 @@ int main(int argc, char* argv[])
 	}
 
 	// Load a random forest from file.
+	cout << local_time() << "Loading a random forest from file" << endl;
 	forest f;
 	f.load("pdbbind-latest-refined-x42.rf");
 
 	// Initialize a MT19937 random number generator.
+	cout << local_time() << "Seeding a MT19937 RNG with " << seed << endl;
 	mt19937eng rng(seed);
 	boost::random::uniform_real_distribution<fl> u01(0, 1);
 
@@ -158,6 +162,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Reserve space for containers.
+	cout << local_time() << "Reserving space for containers" << endl;
 	vector<size_t> atom_types_to_populate; atom_types_to_populate.reserve(XS_TYPE_SIZE);
 	ptr_vector<ptr_vector<result>> result_containers;
 	result_containers.resize(num_mc_tasks);
@@ -168,42 +173,50 @@ int main(int argc, char* argv[])
 	boost::filesystem::ifstream headers(headers_path);
 	boost::filesystem::ifstream ligands(ligands_path);
 
-	cout << now() << "Entering event loop" << endl;
+	cout << local_time() << "Entering event loop" << endl;
+	bool sleeping = false;
 	while (true)
 	{
 		int slice;
-		bool refresh = false;
+		bool reload_params = false;
 		if (phase2only)
 		{
+			cout << local_time() << "Running in phase 2 only mode" << endl;
 			_id.init(argv[5]);
-			refresh = true;
+			reload_params = true;
 		}
 		else
 		{
-			// Fetch a job in a first-come-first-served manner.
+			// Fetch an incompleted job in a first-come-first-served manner.
+			if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 			BSONObj info;
 			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info);
 			const auto value = info["value"];
 			if (value.isNull())
 			{
-				// Sleep for a while.
+				// No incompleted jobs. Sleep for a while.
+				if (!sleeping) cout << local_time() << "Sleeping" << endl;
+				sleeping = true;
 				this_thread::sleep_for(chrono::seconds(10));
 				continue;
 			}
+			sleeping = false;
 			const auto job = value.Obj();
 			slice = job["scheduled"].Int();
 
-			// Determine whether the current job id needs to be refreshed.
+			// Determine whether the current job id and parameters need to be refreshed.
 			if (_id != job["_id"].OID())
 			{
 				_id = job["_id"].OID();
-				refresh = true;
+				reload_params = true;
 			}
 		}
+		cout << local_time() << "Executing job " << _id << endl;
 
-		if (refresh)
+		if (reload_params)
 		{
 			// Load job parameters from MongoDB.
+			cout << local_time() << "Reloading job parameters from database" << endl;
 			const auto param = conn.query(collection, QUERY("_id" << _id), 1, 0, &param_fields)->next();
 			num_ligands = param["ligands"].Int();
 			mwt_lb = param["mwt_lb"].Number();
@@ -225,18 +238,24 @@ int main(int argc, char* argv[])
 			nrb_lb = param["nrb_lb"].Int();
 			nrb_ub = param["nrb_ub"].Int();
 
-			// Refresh filtering_probability.
+			// Recalculate filtering_probability.
 			filtering_probability = max_ligands_per_job / num_ligands;
 
-			// Load box and receptor from hard disk.
+			// Initialize paths for box and receptor files.
 			job_path = jobs_path / _id.str();
-			receptor_path = job_path / "receptor.pdbqt";
 			box_path = job_path / "box.conf";
+			receptor_path = job_path / "receptor.pdbqt";
+
+			// Parse the box file.
+			cout << local_time() << "Parsing the box file" << endl;
 			variables_map vm;
 			boost::filesystem::ifstream box_ifs(box_path);
-			store(parse_config_file(box_ifs, input_options), vm);
+			store(parse_config_file(box_ifs, box_options), vm);
 			vm.notify();
 			b = box(vec3(center[0], center[1], center[2]), vec3(size[0], size[1], size[2]), grid_granularity);
+
+			// Parse the receptor file.
+			cout << local_time() << "Parsing the receptor file" << endl;
 			rec = receptor(receptor_path, b);
 
 			// Reserve storage for grid map task container.
@@ -250,7 +269,7 @@ int main(int argc, char* argv[])
 		if (!phase2only)
 		{
 			// Perform phase 1.
-			cout << now() << "Executing job " << _id << " slice " << slice << endl;
+			cout << local_time() << "Executing slice " << slice << endl;
 			const auto slice_key = lexical_cast<string>(slice);
 			const auto beg_lig = slices[slice];
 			const auto end_lig = slices[slice + 1];
@@ -390,17 +409,21 @@ int main(int argc, char* argv[])
 				// Report progress.
 				conn.update(collection, BSON("_id" << _id), BSON("$inc" << BSON(slice_key << 1)));
 			}
+
+			cout << local_time() << "Closing slice csv" << endl;
 			slice_csv.close();
 
 			// Increment the completed counter.
+			cout << local_time() << "Incrementing the completed slice counter" << endl;
 			conn.update(collection, BSON("_id" << _id << "$atomic" << 1), BSON("$inc" << BSON("completed" << 1)));
 
 			// If the number of completed slices is not equal to the number of total slices, loop again to fetch another slice.
+			cout << local_time() << "Querying the completed slice counter" << endl;
 			if (!conn.query(collection, QUERY("_id" << _id << "completed" << static_cast<unsigned int>(num_slices)))->more()) continue;
 		}
 
-		// Combine multiple slice csv's.
-		cout << now() << "Executing job " << _id << " phase 2" << endl;
+		// Combine multiple slice csv's. Phase 2 starts here.
+		cout << local_time() << "Combining multiple slice csv's" << endl;
 		ptr_vector<summary> summaries(num_ligands);
 		for (size_t s = 0; s < num_slices; ++s)
 		{
@@ -435,25 +458,22 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		// Delete multiple slice csv's.
-		if (summaries.size())
-		{
-			for (size_t s = 0; s < num_slices; ++s)
-			{
-				const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
-				remove(slice_csv_path);
-			}
-		}
-
 		// Sort summaries.
+		cout << local_time() << "Sorting " << summaries.size() << " ligands" << endl;
 		summaries.sort();
-		const auto num_summaries = min<size_t>(summaries.size(), num_ligands);
+
+		// Determine the number of ligands to write to output files.
+		const auto num_summaries = min<size_t>(summaries.size(), num_ligands); // Number of ligands to be written to log.csv.gz
 		BOOST_ASSERT(num_summaries <= num_ligands);
-		const auto num_hits = min<size_t>(num_summaries, 1000);
+		if (summaries.size() > num_ligands)
+		{
+			cout << local_time() << "[warning] Invalid number of rows in multiple slice csv's: num_ligands = " << num_ligands << ", summaries.size() = " << summaries.size() << endl;
+		}
+		const auto num_hits = min<size_t>(num_summaries, 1000); // Number of ligands to be written to ligands.pdbqt.gz
 		BOOST_ASSERT(num_hits <= num_ligands);
 
-		// Perform phase 2.
-		cout << now() << "Performing phase 2 for " << num_summaries << " ligands" << endl;
+		// Write results for successfully docked ligands.
+		cout << local_time() << "Writing results for " << num_summaries << " ligands" << endl;
 		{
 			boost::filesystem::ofstream log_csv(job_path / "log.csv.gz");
 			boost::filesystem::ofstream ligands_pdbqt(job_path / "ligands.pdbqt.gz");
@@ -465,11 +485,11 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz.push(ligands_pdbqt);
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,Free energy (kcal/mol),RF-Score (pKd),Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers\n" << setprecision(3);
+			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
 			ligands_pdbqt_gz << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
-				// Locate a ligand.
+				// Locate the ligand.
 				const auto& s = summaries[idx];
 				headers.seekg(sizeof(size_t) * s.index);
 				size_t header;
@@ -492,9 +512,10 @@ int main(int argc, char* argv[])
 				const auto chg = right_cast<int>(property, 69, 71);
 				const auto nrb = right_cast<int>(property, 73, 75);
 
-				// Write to summary.csv.
+				// Write to log.csv.gz.
 				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << smiles.substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << supplier.substr(11) << '\n';
 
+				// Only write conformations of the top ligands to ligands.pdbqt.gz.
 				if (idx >= num_hits) continue;
 
 				// Parse the ligand.
@@ -503,7 +524,7 @@ int main(int argc, char* argv[])
 				// Validate the correctness of the current summary.
 				if (s.conf.torsions.size() != lig.num_active_torsions)
 				{
-					cerr << now() << "Inequal numbers of torsions: ligand index = " << s.index << ", ZIND ID = " << lig_id << ", lig.num_active_torsions = " << lig.num_active_torsions << ", s.conf.torsions.size() = " << s.conf.torsions.size() << endl;
+					cerr << local_time() << "[warning] Inequal numbers of torsions: ligand index = " << s.index << ", ZIND ID = " << lig_id << ", lig.num_active_torsions = " << lig.num_active_torsions << ", s.conf.torsions.size() = " << s.conf.torsions.size() << endl;
 					continue;
 				}
 
@@ -545,15 +566,15 @@ int main(int argc, char* argv[])
 		}
 
 		// Set done time.
-		cout << now() << "Setting done time" << endl;
+		cout << local_time() << "Setting done time" << endl;
 		const auto millis_since_epoch = duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 
-		// Send completion notification email.
+		// Send a completion notification email.
 		const auto compt_cursor = conn.query(collection, QUERY("_id" << _id), 1, 0, &compt_fields);
 		const auto compt = compt_cursor->next();
 		const auto email = compt["email"].String();
-		cout << now() << "Sending a completion notification email to " << email << endl;
+		cout << local_time() << "Sending an email to " << email << endl;
 		MailMessage message;
 		message.setSender("idock <noreply@cse.cuhk.edu.hk>");
 		message.setSubject("Your idock job " + compt["description"].String() + " has completed");
@@ -563,6 +584,17 @@ int main(int argc, char* argv[])
 		session.login();
 		session.sendMessage(message);
 		session.close();
+
+		// Remove multiple slice csv's.
+		if (summaries.size())
+		{
+			cout << local_time() << "Removing multiple slice csv's" << endl;
+			for (size_t s = 0; s < num_slices; ++s)
+			{
+				const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
+				remove(slice_csv_path);
+			}
+		}
 
 		if (phase2only) break;
 	}
