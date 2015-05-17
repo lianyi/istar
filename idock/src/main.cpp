@@ -576,7 +576,7 @@ int main(int argc, char* argv[])
 		cout << local_time() << "Sending an email to " << email << endl;
 		MailMessage message;
 		message.setSender("idock <noreply@cse.cuhk.edu.hk>");
-		message.setSubject("Your idock job " + compt["description"].String() + " has completed");
+		message.setSubject("Your idock job has completed");
 		message.setContent("Description: " + compt["description"].String() + "\nLigands selected to dock: " + lexical_cast<string>(num_ligands) + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nLigands successfully docked: " + lexical_cast<string>(num_summaries) + "\nLigands written to output: " + lexical_cast<string>(num_hits) + "\nResult: http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str());
 		message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 		SMTPClientSession session("137.189.91.190");
