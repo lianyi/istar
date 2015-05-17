@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
 	const auto collection = "istar.idock";
 	const auto jobid_fields = BSON("_id" << 1 << "scheduled" << 1);
 	const auto param_fields = BSON("_id" << 0 << "ligands" << 1 << "mwt_lb" << 1 << "mwt_ub" << 1 << "lgp_lb" << 1 << "lgp_ub" << 1 << "ads_lb" << 1 << "ads_ub" << 1 << "pds_lb" << 1 << "pds_ub" << 1 << "hbd_lb" << 1 << "hbd_ub" << 1 << "hba_lb" << 1 << "hba_ub" << 1 << "psa_lb" << 1 << "psa_ub" << 1 << "chg_lb" << 1 << "chg_ub" << 1 << "nrb_lb" << 1 << "nrb_ub" << 1);
+	const auto compl_fields = BSON("_id" << 0 << "completed" << 1);
 	const auto compt_fields = BSON("_id" << 0 << "email" << 1 << "submitted" << 1 << "description" << 1);
 	const path ligands_path = "16_lig.pdbqt";
 	const path headers_path = "16_hdr.bin";
@@ -178,19 +179,19 @@ int main(int argc, char* argv[])
 	while (true)
 	{
 		int slice;
-		bool reload_params = false;
+		bool reload = false;
 		if (phase2only)
 		{
 			cout << local_time() << "Running in phase 2 only mode" << endl;
 			_id.init(argv[5]);
-			reload_params = true;
+			reload = true;
 		}
 		else
 		{
 			// Fetch an incompleted job in a first-come-first-served manner.
 			if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 			BSONObj info;
-			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info);
+			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 			const auto value = info["value"];
 			if (value.isNull())
 			{
@@ -208,12 +209,12 @@ int main(int argc, char* argv[])
 			if (_id != job["_id"].OID())
 			{
 				_id = job["_id"].OID();
-				reload_params = true;
+				reload = true;
 			}
 		}
 		cout << local_time() << "Executing job " << _id << endl;
 
-		if (reload_params)
+		if (reload)
 		{
 			// Load job parameters from MongoDB.
 			cout << local_time() << "Reloading job parameters from database" << endl;
@@ -247,7 +248,7 @@ int main(int argc, char* argv[])
 			receptor_path = job_path / "receptor.pdbqt";
 
 			// Parse the box file.
-			cout << local_time() << "Parsing the box file" << endl;
+			cout << local_time() << "Reloading the box file" << endl;
 			variables_map vm;
 			boost::filesystem::ifstream box_ifs(box_path);
 			store(parse_config_file(box_ifs, box_options), vm);
@@ -255,7 +256,7 @@ int main(int argc, char* argv[])
 			b = box(vec3(center[0], center[1], center[2]), vec3(size[0], size[1], size[2]), grid_granularity);
 
 			// Parse the receptor file.
-			cout << local_time() << "Parsing the receptor file" << endl;
+			cout << local_time() << "Reloading the receptor file" << endl;
 			rec = receptor(receptor_path, b);
 
 			// Reserve storage for grid map task container.
@@ -413,13 +414,11 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Closing slice csv" << endl;
 			slice_csv.close();
 
-			// Increment the completed counter.
+			// Increment the completed slice counter.
 			cout << local_time() << "Incrementing the completed slice counter" << endl;
-			conn.update(collection, BSON("_id" << _id << "$atomic" << 1), BSON("$inc" << BSON("completed" << 1)));
-
-			// If the number of completed slices is not equal to the number of total slices, loop again to fetch another slice.
-			cout << local_time() << "Querying the completed slice counter" << endl;
-			if (!conn.query(collection, QUERY("_id" << _id << "completed" << static_cast<unsigned int>(num_slices)))->more()) continue;
+			BSONObj compl_obj;
+			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("_id" << _id) << "update" << BSON("$inc" << BSON("completed" << 1)) << "fields" << compl_fields), compl_obj);
+			if (compl_obj["value"].Obj()["completed"].Int() + 1 < num_slices) continue;
 		}
 
 		// Combine multiple slice csv's. Phase 2 starts here.
