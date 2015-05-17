@@ -466,7 +466,7 @@ int main(int argc, char* argv[])
 		BOOST_ASSERT(num_summaries <= num_ligands);
 		if (summaries.size() > num_ligands)
 		{
-			cout << local_time() << "[warning] Invalid number of rows in multiple slice csv's: num_ligands = " << num_ligands << ", summaries.size() = " << summaries.size() << endl;
+			cerr << local_time() << "[warning] Invalid number of rows in multiple slice csv's: num_ligands = " << num_ligands << ", summaries.size() = " << summaries.size() << endl;
 		}
 		const auto num_hits = min<size_t>(num_summaries, 1000); // Number of ligands to be written to ligands.pdbqt.gz
 		BOOST_ASSERT(num_hits <= num_ligands);
