@@ -29,7 +29,7 @@ using namespace Poco::Net;
 
 inline static string now()
 {
-	return to_simple_string(second_clock::local_time()) + " ";
+	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
 int main(int argc, char* argv[])
