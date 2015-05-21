@@ -496,10 +496,12 @@ int main(int argc, char* argv[])
 				ligands.seekg(header);
 
 				// Parse the REMARK lines.
-				string property, smiles, supplier;
-				getline(ligands, property); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
-				getline(ligands, smiles);   // REMARK     CCN(CC)C(=O)COc1ccc(cc1OC)CC=C
-				getline(ligands, supplier); // REMARK     8 | ChEMBL12 | ChEMBL13 | ChEMBL14 | ChEMBL15 | ChemDB | Enamine (Depleted) | PubChem | UORSY
+				vector<string> remarks(3);
+				for (auto& line : remarks)
+				{
+					getline(ligands, line);
+				}
+				const string& property = remarks[0];
 				const auto lig_id = property.substr(11, 8);
 				const auto mwt = right_cast<fl>(property, 21, 28);
 				const auto lgp = right_cast<fl>(property, 30, 37);
@@ -512,7 +514,7 @@ int main(int argc, char* argv[])
 				const auto nrb = right_cast<int>(property, 73, 75);
 
 				// Write to log.csv.gz.
-				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << smiles.substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << supplier.substr(11) << '\n';
+				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << remarks[1].substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << remarks[2].substr(11) << '\n';
 
 				// Only write conformations of the top ligands to ligands.pdbqt.gz.
 				if (idx >= num_hits) continue;
@@ -560,7 +562,7 @@ int main(int argc, char* argv[])
 				const auto r = lig.compose_result(e, f, s.conf);
 
 				// Write models to file.
-				lig.write_model(ligands_pdbqt_gz, property, smiles, supplier, s, r, b, grid_maps);
+				lig.write_model(ligands_pdbqt_gz, remarks, s, r, b, grid_maps);
 			}
 		}
 

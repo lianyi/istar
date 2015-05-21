@@ -77,7 +77,7 @@ public:
 	result compose_result(const fl e, const fl f, const conformation& conf) const;
 
 	/// Writes a given number of conformations from a result container into a output ligand file in PDBQT format.
-	void write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, const string& property, const string& smiles, const string& supplier, const summary& s, const result& r, const box& b, const vector<array3d<fl>>& grid_maps);
+	void write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, const vector<string>& remarks, const summary& s, const result& r, const box& b, const vector<array3d<fl>>& grid_maps);
 
 private:
 	/// Represents a pair of interacting atoms that are separated by 3 consecutive covalent bonds.

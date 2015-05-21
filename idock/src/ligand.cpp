@@ -534,15 +534,16 @@ result ligand::compose_result(const fl e, const fl f, const conformation& conf) 
 	return result(conf, e, f, static_cast<vector<vec3>&&>(heavy_atoms), static_cast<vector<vec3>&&>(hydrogens));
 }
 
-void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, const string& property, const string& smiles, const string& supplier, const summary& s, const result& r, const box& b, const vector<array3d<fl>>& grid_maps)
+void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, const vector<string>& remarks, const summary& s, const result& r, const box& b, const vector<array3d<fl>>& grid_maps)
 {
 	// Dump binding conformations to the output ligand file.
 	using namespace std;
+	ligands_pdbqt_gz << "MODEL \n";
+	for (const auto& line : remarks)
+	{
+		ligands_pdbqt_gz << line << '\n';
+	}
 	ligands_pdbqt_gz
-		<< "MODEL \n"
-		<< property << '\n'
-		<< smiles << '\n'
-		<< supplier << '\n'
 		<< "REMARK 921   NORMALIZED FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f * flexibility_penalty_factor << " KCAL/MOL\n"
 		<< "REMARK 922        TOTAL FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.e       << " KCAL/MOL\n"
 		<< "REMARK 923 INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f       << " KCAL/MOL\n"
