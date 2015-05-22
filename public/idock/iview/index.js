@@ -1574,7 +1574,7 @@ void main()\n\
 				if (lsrcz.length == 2) return;
 				var gunzipWorker = new Worker('/gunzip.js');
 				gunzipWorker.addEventListener('message', function (e) {
-					var ligands = [], ligand, atoms, start_frame, rotors, model;
+					var version, ligands = [], ligand, atoms, start_frame, rotors, model;
 					var lines = e.data.split('\n');
 					for (var i = 0, l = lines.length; i < l; ++i) {
 						var line = lines[i];
@@ -1582,6 +1582,10 @@ void main()\n\
 						if (record === 'MODEL ') {
 							model = parseInt(line.substr(10, 4));
 						} else if (record === 'REMARK') {
+							if (line.substr(7, 3) === '901') {
+								version = line.substr(11);
+								continue;
+							}
 							var zid = line.substr(11, 8);
 							if (isNaN(parseInt(zid))) continue;
 							rotors = [];
@@ -1605,18 +1609,18 @@ void main()\n\
 							ligand.smiles = lines[++i].substr(11);
 							ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
 							ligand.nsuppliers = ligand.suppliers.length;
+							if (version) i += 4;
 							ligand.idock_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
 							ligand.e_total = parseFloat(lines[++i].substr(55, 8));
 							ligand.e_inter = parseFloat(lines[++i].substr(55, 8));
 							ligand.e_intra = parseFloat(lines[++i].substr(55, 8));
-							line = lines[++i];
-							if (line.substr(8, 1) === ' ') {
-								ligand.efficiency = parseFloat(line.substr(55, 8));
+							if (!version) {
+								ligand.efficiency = parseFloat(lines[++i].substr(55, 8));
 								ligand.hbonds = parseFloat(lines[++i].substr(55, 8));
 								ligand.rf_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
 								ligand.consensus_score = parseFloat(lines[++i].substr(55, 8));
 							} else {
-								ligand.rf_score = parseFloat(line.substr(55, 8)).toFixed(3);
+								ligand.rf_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
 							}
 						} else if (record === 'ATOM  ' || record === 'HETATM') {
 							var atom = {
