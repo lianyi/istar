@@ -486,7 +486,7 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
 			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
 			ligands_pdbqt_gz << "REMARK 901 1\n" << setprecision(3);
-			for (auto idx = 0; idx < num_summaries; ++idx)
+			for (auto idx = 0; idx < num_summaries;)
 			{
 				// Locate the ligand.
 				const auto& s = summaries[idx];
@@ -563,7 +563,9 @@ int main(int argc, char* argv[])
 				const auto r = lig.compose_result(e, f, s.conf);
 
 				// Write models to file.
+				ligands_pdbqt_gz << "MODEL     " << setw(4) << ++idx << '\n';
 				lig.write_model(ligands_pdbqt_gz, remarks, s, r, b, grid_maps);
+				ligands_pdbqt_gz << "ENDMDL\n";
 			}
 		}
 

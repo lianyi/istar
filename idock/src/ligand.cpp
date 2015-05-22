@@ -538,7 +538,6 @@ void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, 
 {
 	// Dump binding conformations to the output ligand file.
 	using namespace std;
-	ligands_pdbqt_gz << "MODEL \n";
 	for (const auto& line : remarks)
 	{
 		ligands_pdbqt_gz << line << '\n';
@@ -573,5 +572,4 @@ void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, 
 		}
 		ligands_pdbqt_gz << '\n';
 	}
-	ligands_pdbqt_gz << "ENDMDL\n";
 }
