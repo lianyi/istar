@@ -171,7 +171,15 @@ int main(int argc, char* argv[])
 	ptr_vector<result> results(1);
 
 	// Open files for reading.
-	boost::filesystem::ifstream headers(headers_path);
+	cout << "Reading header file" << endl;
+	vector<size_t> headers;
+	{
+		boost::filesystem::ifstream ifs(headers_path, ios::binary | ios::ate);
+		const size_t num_bytes = ifs.tellg();
+		headers.resize(num_bytes / sizeof(size_t));
+		ifs.seekg(0);
+		ifs.read(reinterpret_cast<char*>(headers.data()), num_bytes);
+	}
 	boost::filesystem::ifstream ligands(ligands_path);
 
 	cout << local_time() << "Entering event loop" << endl;
@@ -274,16 +282,13 @@ int main(int argc, char* argv[])
 			const auto slice_key = lexical_cast<string>(slice);
 			const auto beg_lig = slices[slice];
 			const auto end_lig = slices[slice + 1];
-			headers.seekg(sizeof(size_t) * beg_lig);
 			boost::filesystem::ofstream slice_csv(job_path / (slice_key + ".csv"));
 			slice_csv.setf(ios::fixed, ios::floatfield);
 			slice_csv << setprecision(12); // Dump as many digits as possible in order to recover accurate conformations in summaries.
 			for (auto idx = beg_lig; idx < end_lig; ++idx)
 			{
 				// Locate a ligand.
-				size_t header;
-				headers.read((char*)&header, sizeof(size_t));
-				ligands.seekg(header);
+				ligands.seekg(headers[idx]);
 
 				// Check if the ligand satisfies the filtering conditions.
 				string property;
@@ -490,10 +495,7 @@ int main(int argc, char* argv[])
 			{
 				// Locate the ligand.
 				const auto& s = summaries[idx];
-				headers.seekg(sizeof(size_t) * s.index);
-				size_t header;
-				headers.read((char*)&header, sizeof(size_t));
-				ligands.seekg(header);
+				ligands.seekg(headers[s.index]);
 
 				// Parse the REMARK lines.
 				vector<string> remarks(7);
