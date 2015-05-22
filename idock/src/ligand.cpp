@@ -547,7 +547,7 @@ void ligand::write_model(boost::iostreams::filtering_ostream& ligands_pdbqt_gz, 
 		<< "REMARK 922        TOTAL FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.e       << " KCAL/MOL\n"
 		<< "REMARK 923 INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << r.f       << " KCAL/MOL\n"
 		<< "REMARK 924 INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:" << setw(8) << (r.e - r.f) << " KCAL/MOL\n"
-		<< "REMARK 927      BINDING AFFINITY PREDICTED BY RF-SCORE:" << setw(8) << s.rfscore << " pKd\n"
+		<< "REMARK 927      BINDING AFFINITY PREDICTED BY RF-SCORE:" << setw(8) << s.rfscore << " PKD\n"
 	;
 	const size_t num_lines = lines.size();
 	for (size_t j = 0, heavy_atom = 0, hydrogen = 0; j < num_lines; ++j)
