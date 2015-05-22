@@ -421,8 +421,8 @@ int main(int argc, char* argv[])
 			if (compl_obj["value"].Obj()["completed"].Int() + 1 < num_slices) continue;
 		}
 
-		// Combine multiple slice csv's. Phase 2 starts here.
-		cout << local_time() << "Combining multiple slice csv's" << endl;
+		// Combine slice csv files. Phase 2 starts here.
+		cout << local_time() << "Combining slice csv files" << endl;
 		ptr_vector<summary> summaries(num_ligands);
 		for (size_t s = 0; s < num_slices; ++s)
 		{
@@ -472,7 +472,7 @@ int main(int argc, char* argv[])
 		BOOST_ASSERT(num_hits <= num_ligands);
 
 		// Write results for successfully docked ligands.
-		cout << local_time() << "Writing results for " << num_summaries << " ligands" << endl;
+		cout << local_time() << "Writing output files" << endl;
 		{
 			boost::filesystem::ofstream log_csv(job_path / "log.csv.gz");
 			boost::filesystem::ofstream ligands_pdbqt(job_path / "ligands.pdbqt.gz");
@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
 			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
-			ligands_pdbqt_gz << setprecision(3);
+			ligands_pdbqt_gz << "REMARK 901 1\n" << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
 				// Locate the ligand.
@@ -587,10 +587,10 @@ int main(int argc, char* argv[])
 		session.sendMessage(message);
 		session.close();
 
-		// Remove multiple slice csv's.
+		// Remove slice csv files.
 		if (summaries.size())
 		{
-			cout << local_time() << "Removing multiple slice csv's" << endl;
+			cout << local_time() << "Removing slice csv files" << endl;
 			for (size_t s = 0; s < num_slices; ++s)
 			{
 				const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
