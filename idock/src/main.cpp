@@ -484,7 +484,7 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz.push(ligands_pdbqt);
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
+			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
 			ligands_pdbqt_gz << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
@@ -496,7 +496,7 @@ int main(int argc, char* argv[])
 				ligands.seekg(header);
 
 				// Parse the REMARK lines.
-				vector<string> remarks(3);
+				vector<string> remarks(7);
 				for (auto& line : remarks)
 				{
 					getline(ligands, line);
@@ -512,9 +512,10 @@ int main(int argc, char* argv[])
 				const auto psa = right_cast<int>(property, 65, 67);
 				const auto chg = right_cast<int>(property, 69, 71);
 				const auto nrb = right_cast<int>(property, 73, 75);
+				const auto hac = right_cast<int>(remarks[4], 12, 14);
 
 				// Write to log.csv.gz.
-				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << remarks[1].substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << remarks[2].substr(11) << '\n';
+				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << hac << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << remarks[1].substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << remarks[2].substr(11) << '\n';
 
 				// Only write conformations of the top ligands to ligands.pdbqt.gz.
 				if (idx >= num_hits) continue;
