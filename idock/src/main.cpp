@@ -40,7 +40,7 @@ struct zproperty
 
 struct iproperty
 {
-	array<int16_t, 20> counts;
+	std::array<int16_t, 20> counts;
 	float mwt;
 };
 
