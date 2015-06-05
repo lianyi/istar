@@ -82,21 +82,24 @@
       </div>
       <div class="row" id="data">
         <div class="col-md-3">
-          <p>Results</p>
-          <ul id="results">
+          <p>Downloads</p>
+          <ul id="downloads">
             <li><a><img src="/excel.png" alt="log.csv.gz">log.csv.gz</a></li>
             <li><a><img src="/molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz</a></li>
           </ul>
-          <p>Summary</p>
+          <p>Results</p>
           <ul>
             <li>ZINC ID: <a><span id="zid"></span></a></li>
             <li>idock score (kcal/mol): <span id="idock_score"></span></li>
-            <li>RF-Score score (pKd): <span id="rf_score"></span></li>
+            <li>idock score LE (kcal/mol): <span id="idock_score_le"></span></li>
+            <li>RF-Score (pKd): <span id="rf_score"></span></li>
+            <li>RF-Score LE (pKd): <span id="rf_score_le"></span></li>
           </ul>
         </div>
         <div class="col-md-3">
-          <p>10 molecular properties</p>
+          <p>11 molecular properties</p>
           <ul>
+            <li>Heavy atoms: <span id="hac"></span></li>
             <li>Molecular weight (g/mol): <span id="mwt"></span></li>
             <li>Partition coefficient xlogP: <span id="lgp"></span></li>
             <li>Rotatable bonds: <span id="nrb"></span></li>

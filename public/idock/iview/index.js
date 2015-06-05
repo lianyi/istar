@@ -1267,7 +1267,7 @@ void main()\n\
 		return Math.atan2(b1xb2.dot(b2Xb3), b1Xb2.dot(b2Xb3)); // atan2 returns a radian in [-pi, pi].
 	};
 	var path = '/idock/jobs/' + location.search.substr(1) + '/';
-	$('#results a').each(function () {
+	$('#downloads a').each(function () {
 		var t = $(this);
 		t.attr('href', path + t.text());
 	});
@@ -1574,53 +1574,77 @@ void main()\n\
 				if (lsrcz.length == 2) return;
 				var gunzipWorker = new Worker('/gunzip.js');
 				gunzipWorker.addEventListener('message', function (e) {
-					var version, ligands = [], ligand, atoms, start_frame, rotors, model;
+					var version, i = 0, ligands = [], ligand, atoms, start_frame, rotors, model;
 					var lines = e.data.split('\n');
-					for (var i = 0, l = lines.length; i < l; ++i) {
+					var line0 = lines[0];
+					if (line0.substr(7, 3) === '901') {
+						version = line0.substr(25);
+						i = 1;
+					}
+					for (var nlines = lines.length; i < nlines; ++i) {
 						var line = lines[i];
 						var record = line.substr(0, 6);
 						if (record === 'MODEL ') {
 							model = parseInt(line.substr(10, 4));
 						} else if (record === 'REMARK') {
-							if (line.substr(7, 3) === '901') {
-								version = line.substr(11);
-								continue;
+							var rno = line.substr(7, 3);
+							if (version === undefined || rno === "911") {
+								rotors = [];
+								ligand = {
+									atoms: {},
+									hac: 0,
+									refresh: function() {
+										refreshRepresentation(entities.ligand);
+									},
+								}, atoms = ligand.atoms, hac = 0;
 							}
-							var zid = line.substr(11, 8);
-							if (isNaN(parseInt(zid))) continue;
-							rotors = [];
-							var ligand = {
-								atoms: {},
-								refresh: function() {
-									refreshRepresentation(entities.ligand);
-								},
-								zid: zid,
-								 id: model > 0 ? zid.concat('-', model) : zid,
-								mwt: parseFloat(line.substr(20, 8)),
-								lgp: parseFloat(line.substr(29, 8)),
-								ads: parseFloat(line.substr(38, 8)),
-								pds: parseFloat(line.substr(47, 8)),
-								hbd: parseInt(line.substr(56, 3)),
-								hba: parseInt(line.substr(60, 3)),
-								psa: parseInt(line.substr(64, 3)),
-								chg: parseInt(line.substr(68, 3)),
-								nrb: parseInt(line.substr(72, 3)),
-							}, atoms = ligand.atoms;
-							ligand.smiles = lines[++i].substr(11);
-							ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
-							ligand.nsuppliers = ligand.suppliers.length;
-							if (version) i += 4;
-							ligand.idock_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
-							ligand.e_total = parseFloat(lines[++i].substr(55, 8));
-							ligand.e_inter = parseFloat(lines[++i].substr(55, 8));
-							ligand.e_intra = parseFloat(lines[++i].substr(55, 8));
-							if (!version) {
-								ligand.efficiency = parseFloat(lines[++i].substr(55, 8));
-								ligand.hbonds = parseFloat(lines[++i].substr(55, 8));
-								ligand.rf_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
-								ligand.consensus_score = parseFloat(lines[++i].substr(55, 8));
+							if (version === undefined) {
+								$.extend(ligand, {
+									zid: line.substr(11, 8),
+									mwt: parseFloat(line.substr(20, 8)),
+									lgp: parseFloat(line.substr(29, 8)),
+									ads: parseFloat(line.substr(38, 8)),
+									pds: parseFloat(line.substr(47, 8)),
+									hbd: parseInt(line.substr(56, 3)),
+									hba: parseInt(line.substr(60, 3)),
+									psa: parseInt(line.substr(64, 3)),
+									chg: parseInt(line.substr(68, 3)),
+									nrb: parseInt(line.substr(72, 3)),
+									smiles: lines[++i].substr(11),
+									suppliers: lines[++i].substr(11).split(' | ').slice(1),
+									idock_score: parseFloat(lines[++i].substr(55, 8)),
+									e_total: parseFloat(lines[++i].substr(55, 8)),
+									e_inter: parseFloat(lines[++i].substr(55, 8)),
+									e_intra: parseFloat(lines[++i].substr(55, 8)),
+									efficiency: parseFloat(lines[++i].substr(55, 8)),
+									hbonds: parseFloat(lines[++i].substr(55, 8)),
+									rf_score: parseFloat(lines[++i].substr(55, 8)),
+									consensus_score: parseFloat(lines[++i].substr(55, 8)),
+								});
 							} else {
-								ligand.rf_score = parseFloat(lines[++i].substr(55, 8)).toFixed(3);
+								if (rno === "911") {
+									ligand.zid = line.substr(20);
+								} else if (rno === "912") {
+									$.extend(ligand, {
+										mwt: parseFloat(line.substr(27, 8)),
+										lgp: parseFloat(line.substr(35, 8)),
+										ads: parseFloat(line.substr(43, 8)),
+										pds: parseFloat(line.substr(51, 8)),
+										hbd: parseInt(line.substr(59, 3)),
+										hba: parseInt(line.substr(62, 3)),
+										psa: parseInt(line.substr(65, 3)),
+										chg: parseInt(line.substr(68, 3)),
+										nrb: parseInt(line.substr(71, 3)),
+									});
+								} else if (rno === "913") {
+									ligand.smiles = line.substr(24);
+								} else if (rno === "914") {
+									ligand.suppliers = line.substr(27).split(' | ').slice(1);
+								} else if (rno === "921") {
+									ligand.idock_score = parseFloat(line.substr(55, 8));
+								} else if (rno === "927") {
+									ligand.rf_score = parseFloat(line.substr(55, 8));
+								}
 							}
 						} else if (record === 'ATOM  ' || record === 'HETATM') {
 							var atom = {
@@ -1634,6 +1658,7 @@ void main()\n\
 							if (atom.elem === 'H') continue;
 							var elem = pdbqt2pdb[atom.elem];
 							if (elem) atom.elem = elem;
+							if (atom.elem !== 'H') ++ligand.hac;
 							atom.color = atomColors[atom.elem] || defaultColor.atom;
 							atoms[atom.serial] = atom;
 							if (start_frame === undefined) start_frame = atom.serial;
@@ -1659,7 +1684,15 @@ void main()\n\
 							ligands.push(ligand);
 							start_frame = undefined;
 						} else if (record === 'ENDMDL') {
+							ligand.id = model > 0 ? ligand.zid.concat('-', model) : ligand.zid;
+							ligand.nsuppliers = ligand.suppliers.length;
 							model = undefined;
+							var hacv = 1 / ligand.hac;
+							ligand.idock_score_le = ligand.idock_score * hacv;
+							ligand.rf_score_le = ligand.rf_score * hacv;
+							['idock_score', 'idock_score_le', 'rf_score', 'rf_score_le'].forEach(function (key) {
+								ligand[key] = ligand[key].toFixed(3);
+							});
 						}
 					}
 					$('#nligands').text(ligands.length);
