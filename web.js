@@ -15,44 +15,41 @@ if (cluster.isMaster) {
 		chg = new Int16Array(num_ligands),
 		nrb = new Int16Array(num_ligands);
 	// Parse ligand properties
-	var prop = 'idock/16_prop.bin.gz';
+	var prop = 'idock/16_prop.bin';
 	console.log('Parsing %s', prop);
 	var start = Date.now();
-	fs.readFile(prop, function(err, data) {
+	fs.readFile(prop, function(err, buf) {
 		if (err) throw err;
-		require('zlib').gunzip(data, function(err, buf) {
-			if (err) throw err;
-			for (i = 0, o = 0; i < num_ligands; ++i, o += 26) {
-				mwt[i] = buf.readFloatLE(o +  0);
-				lgp[i] = buf.readFloatLE(o +  4);
-				ads[i] = buf.readFloatLE(o +  8);
-				pds[i] = buf.readFloatLE(o + 12);
-				hbd[i] = buf.readInt16LE(o + 16);
-				hba[i] = buf.readInt16LE(o + 18);
-				psa[i] = buf.readInt16LE(o + 20);
-				chg[i] = buf.readInt16LE(o + 22);
-				nrb[i] = buf.readInt16LE(o + 24);
-			}
-			console.log('Parsed %d ligands within %d milliseconds', num_ligands, Date.now() - start);
-			// Fork worker processes with cluster
-			var numCPUs = require('os').cpus().length;
-			console.log('Forking %d worker processes', numCPUs);
-			var msg = function(m) {
-				if (m.query == '/idock/ligands') {
-					var ligands = 0;
-					for (var i = 0; i < num_ligands; ++i) {
-						if ((m.mwt_lb <= mwt[i]) && (mwt[i] <= m.mwt_ub) && (m.lgp_lb <= lgp[i]) && (lgp[i] <= m.lgp_ub) && (m.ads_lb <= ads[i]) && (ads[i] <= m.ads_ub) && (m.pds_lb <= pds[i]) && (pds[i] <= m.pds_ub) && (m.hbd_lb <= hbd[i]) && (hbd[i] <= m.hbd_ub) && (m.hba_lb <= hba[i]) && (hba[i] <= m.hba_ub) && (m.psa_lb <= psa[i]) && (psa[i] <= m.psa_ub) && (m.chg_lb <= chg[i]) && (chg[i] <= m.chg_ub) && (m.nrb_lb <= nrb[i]) && (nrb[i] <= m.nrb_ub)) ++ligands;
-					}
-					this.send({ligands: ligands});
+		for (i = 0, o = 0; i < num_ligands; ++i, o += 26) {
+			mwt[i] = buf.readFloatLE(o +  0);
+			lgp[i] = buf.readFloatLE(o +  4);
+			ads[i] = buf.readFloatLE(o +  8);
+			pds[i] = buf.readFloatLE(o + 12);
+			hbd[i] = buf.readInt16LE(o + 16);
+			hba[i] = buf.readInt16LE(o + 18);
+			psa[i] = buf.readInt16LE(o + 20);
+			chg[i] = buf.readInt16LE(o + 22);
+			nrb[i] = buf.readInt16LE(o + 24);
+		}
+		console.log('Parsed %d ligands within %d milliseconds', num_ligands, Date.now() - start);
+		// Fork worker processes with cluster
+		var numCPUs = require('os').cpus().length;
+		console.log('Forking %d worker processes', numCPUs);
+		var msg = function(m) {
+			if (m.query == '/idock/ligands') {
+				var ligands = 0;
+				for (var i = 0; i < num_ligands; ++i) {
+					if ((m.mwt_lb <= mwt[i]) && (mwt[i] <= m.mwt_ub) && (m.lgp_lb <= lgp[i]) && (lgp[i] <= m.lgp_ub) && (m.ads_lb <= ads[i]) && (ads[i] <= m.ads_ub) && (m.pds_lb <= pds[i]) && (pds[i] <= m.pds_ub) && (m.hbd_lb <= hbd[i]) && (hbd[i] <= m.hbd_ub) && (m.hba_lb <= hba[i]) && (hba[i] <= m.hba_ub) && (m.psa_lb <= psa[i]) && (psa[i] <= m.psa_ub) && (m.chg_lb <= chg[i]) && (chg[i] <= m.chg_ub) && (m.nrb_lb <= nrb[i]) && (nrb[i] <= m.nrb_ub)) ++ligands;
 				}
+				this.send({ligands: ligands});
 			}
-			for (var i = 0; i < numCPUs; i++) {
-				cluster.fork().on('message', msg);
-			}
-			cluster.on('death', function(worker) {
-				console.error('Worker process %d died. Restarting...', worker.pid);
-				cluster.fork().on('message', msg);
-			});
+		}
+		for (var i = 0; i < numCPUs; i++) {
+			cluster.fork().on('message', msg);
+		}
+		cluster.on('death', function(worker) {
+			console.error('Worker process %d died. Restarting...', worker.pid);
+			cluster.fork().on('message', msg);
 		});
 	});
 	process.env.PYTHONPATH = process.env.MGL_ROOT + '/MGLToolsPckgs'
