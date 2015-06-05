@@ -32,6 +32,18 @@ inline static string local_time()
 	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
+struct zproperty
+{
+	float mwt, lgp, ads, pds;
+	int16_t hbd, hba, psa, chg, nrb;
+};
+
+struct iproperty
+{
+	array<int16_t, 20> counts;
+	float mwt;
+};
+
 int main(int argc, char* argv[])
 {
 	// Check the required number of comand line arguments.
@@ -67,8 +79,6 @@ int main(int argc, char* argv[])
 	const auto param_fields = BSON("_id" << 0 << "ligands" << 1 << "mwt_lb" << 1 << "mwt_ub" << 1 << "lgp_lb" << 1 << "lgp_ub" << 1 << "ads_lb" << 1 << "ads_ub" << 1 << "pds_lb" << 1 << "pds_ub" << 1 << "hbd_lb" << 1 << "hbd_ub" << 1 << "hba_lb" << 1 << "hba_ub" << 1 << "psa_lb" << 1 << "psa_ub" << 1 << "chg_lb" << 1 << "chg_ub" << 1 << "nrb_lb" << 1 << "nrb_ub" << 1);
 	const auto compl_fields = BSON("_id" << 0 << "completed" << 1);
 	const auto compt_fields = BSON("_id" << 0 << "email" << 1 << "submitted" << 1 << "description" << 1);
-	const path ligands_path = "16_lig.pdbqt";
-	const path headers_path = "16_hdr.bin";
 	const size_t seed = system_clock::now().time_since_epoch().count();
 	const size_t num_threads = thread::hardware_concurrency();
 	const size_t num_mc_tasks = 64;
@@ -163,24 +173,75 @@ int main(int argc, char* argv[])
 	}
 
 	// Reserve space for containers.
-	cout << local_time() << "Reserving space for containers" << endl;
 	vector<size_t> atom_types_to_populate; atom_types_to_populate.reserve(XS_TYPE_SIZE);
 	ptr_vector<ptr_vector<result>> result_containers;
 	result_containers.resize(num_mc_tasks);
 	for (auto& rc : result_containers) rc.reserve(1);
 	ptr_vector<result> results(1);
 
-	// Open files for reading.
-	cout << "Reading header file" << endl;
-	vector<size_t> headers;
+	// Read ID file.
+	string line;
+	cout << local_time() << "Reading ID file" << endl;
+	vector<string> zincids(total_ligands);
 	{
-		boost::filesystem::ifstream ifs(headers_path, ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
-		headers.resize(num_bytes / sizeof(size_t));
-		ifs.seekg(0);
-		ifs.read(reinterpret_cast<char*>(headers.data()), num_bytes);
+		std::ifstream ifs("16_id.tsv");
+		for (auto& zincid : zincids)
+		{
+			getline(ifs, zincid);
+		}
 	}
-	boost::filesystem::ifstream ligands(ligands_path);
+
+	// Read ZINC property file.
+	cout << local_time() << "Reading ZINC property file" << endl;
+	vector<zproperty> zproperties(total_ligands);
+	{
+		std::ifstream ifs("16_prop.bin", ios::binary);
+		for (auto& p : zproperties)
+		{
+			ifs.read(reinterpret_cast<char*>(&p), 26); // sizeof(zproperty) == 28
+		}
+	}
+
+	// Read SMILES file.
+	cout << local_time() << "Reading SMILES file" << endl;
+	vector<string> smileses(total_ligands);
+	{
+		std::ifstream ifs("16_smiles.tsv");
+		for (auto& smiles : smileses)
+		{
+			getline(ifs, smiles);
+		}
+	}
+
+	// Read supplier file.
+	cout << local_time() << "Reading supplier file" << endl;
+	vector<string> suppliers(total_ligands);
+	{
+		std::ifstream ifs("16_sup.tsv");
+		for (auto& supplier : suppliers)
+		{
+			getline(ifs, supplier);
+		}
+	}
+
+	// Read idock property file.
+	cout << local_time() << "Reading idock property file" << endl;
+	vector<iproperty> iproperties(total_ligands);
+	{
+		std::ifstream ifs("16_stat.bin", ios::binary);
+		ifs.read(reinterpret_cast<char*>(iproperties.data()), sizeof(iproperty) * total_ligands);
+	}
+
+	// Read header file.
+	cout << local_time() << "Reading header file" << endl;
+	vector<size_t> headers(total_ligands);
+	{
+		std::ifstream ifs("16_hdr.bin", ios::binary);
+		ifs.read(reinterpret_cast<char*>(headers.data()), sizeof(size_t) * total_ligands);
+	}
+
+	// Open ligand file for reading.
+	boost::filesystem::ifstream ligands("16_lig.pdbqt");
 
 	cout << local_time() << "Entering event loop" << endl;
 	bool sleeping = false;
@@ -287,28 +348,23 @@ int main(int argc, char* argv[])
 			slice_csv << setprecision(12); // Dump as many digits as possible in order to recover accurate conformations in summaries.
 			for (auto idx = beg_lig; idx < end_lig; ++idx)
 			{
-				// Locate a ligand.
-				ligands.seekg(headers[idx]);
-
 				// Check if the ligand satisfies the filtering conditions.
-				string property;
-				getline(ligands, property); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
-				const auto mwt = right_cast<fl>(property, 21, 28);
-				const auto lgp = right_cast<fl>(property, 30, 37);
-				const auto ads = right_cast<fl>(property, 39, 46);
-				const auto pds = right_cast<fl>(property, 48, 55);
-				const auto hbd = right_cast<int>(property, 57, 59);
-				const auto hba = right_cast<int>(property, 61, 63);
-				const auto psa = right_cast<int>(property, 65, 67);
-				const auto chg = right_cast<int>(property, 69, 71);
-				const auto nrb = right_cast<int>(property, 73, 75);
-				if (!((mwt_lb <= mwt) && (mwt <= mwt_ub) && (lgp_lb <= lgp) && (lgp <= lgp_ub) && (ads_lb <= ads) && (ads <= ads_ub) && (pds_lb <= pds) && (pds <= pds_ub) && (hbd_lb <= hbd) && (hbd <= hbd_ub) && (hba_lb <= hba) && (hba <= hba_ub) && (psa_lb <= psa) && (psa <= psa_ub) && (chg_lb <= chg) && (chg <= chg_ub) && (nrb_lb <= nrb) && (nrb <= nrb_ub))) continue;
+				const auto zp = zproperties[idx];
+				if (!(mwt_lb <= zp.mwt && zp.mwt <= mwt_ub
+				   && lgp_lb <= zp.lgp && zp.lgp <= lgp_ub
+				   && ads_lb <= zp.ads && zp.ads <= ads_ub
+				   && pds_lb <= zp.pds && zp.pds <= pds_ub
+				   && hbd_lb <= zp.hbd && zp.hbd <= hbd_ub
+				   && hba_lb <= zp.hba && zp.hba <= hba_ub
+				   && psa_lb <= zp.psa && zp.psa <= psa_ub
+				   && chg_lb <= zp.chg && zp.chg <= chg_ub
+				   && nrb_lb <= zp.nrb && zp.nrb <= nrb_ub)) continue;
 
 				// Filtering out the ligand randomly according to the maximum number of ligands per job.
 				if (u01(rng) > filtering_probability) continue;
 
-				// Obtain ligand ID. ZINC IDs are 8-character long.
-				const auto lig_id = property.substr(11, 8);
+				// Locate a ligand.
+				ligands.seekg(headers[idx]);
 
 				// Parse the ligand.
 				ligand lig(ligands);
@@ -433,7 +489,6 @@ int main(int argc, char* argv[])
 		{
 			// Parse slice csv.
 			const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
-			string line;
 			for (boost::filesystem::ifstream slice_csv(slice_csv_path); getline(slice_csv, line);)
 			{
 				vector<string> tokens;
@@ -462,6 +517,12 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		// Check the validity of slice csv files.
+		if (summaries.size() > num_ligands)
+		{
+			cerr << local_time() << "[warning] Invalid number of rows in slice csv files: num_ligands = " << num_ligands << ", summaries.size() = " << summaries.size() << endl;
+		}
+
 		// Sort summaries.
 		cout << local_time() << "Sorting " << summaries.size() << " ligands" << endl;
 		summaries.sort();
@@ -469,10 +530,6 @@ int main(int argc, char* argv[])
 		// Determine the number of ligands to write to output files.
 		const auto num_summaries = min<size_t>(summaries.size(), num_ligands); // Number of ligands to be written to log.csv.gz
 		BOOST_ASSERT(num_summaries <= num_ligands);
-		if (summaries.size() > num_ligands)
-		{
-			cerr << local_time() << "[warning] Invalid number of rows in multiple slice csv's: num_ligands = " << num_ligands << ", summaries.size() = " << summaries.size() << endl;
-		}
 		const auto num_hits = min<size_t>(num_summaries, 1000); // Number of ligands to be written to ligands.pdbqt.gz
 		BOOST_ASSERT(num_hits <= num_ligands);
 
@@ -490,45 +547,47 @@ int main(int argc, char* argv[])
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
 			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
-			ligands_pdbqt_gz << "REMARK 901 1\n" << setprecision(3);
-			for (auto idx = 0; idx < num_summaries;)
+			ligands_pdbqt_gz << "REMARK 901 FILE VERSION: 1.0.0\n" << setprecision(3);
+			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
-				// Locate the ligand.
+				// Retrieve the ligand properties.
 				const auto& s = summaries[idx];
-				ligands.seekg(headers[s.index]);
-
-				// Parse the REMARK lines.
-				vector<string> remarks(7);
-				for (auto& line : remarks)
-				{
-					getline(ligands, line);
-				}
-				const string& property = remarks[0];
-				const auto lig_id = property.substr(11, 8);
-				const auto mwt = right_cast<fl>(property, 21, 28);
-				const auto lgp = right_cast<fl>(property, 30, 37);
-				const auto ads = right_cast<fl>(property, 39, 46);
-				const auto pds = right_cast<fl>(property, 48, 55);
-				const auto hbd = right_cast<int>(property, 57, 59);
-				const auto hba = right_cast<int>(property, 61, 63);
-				const auto psa = right_cast<int>(property, 65, 67);
-				const auto chg = right_cast<int>(property, 69, 71);
-				const auto nrb = right_cast<int>(property, 73, 75);
-				const auto hac = right_cast<int>(remarks[4], 12, 14);
+				const auto zincid = zincids[s.index];
+				const auto zp = zproperties[s.index];
+				const auto ip = iproperties[s.index];
+				const auto smiles = smileses[s.index];
+				const auto supplier = suppliers[s.index];
 
 				// Write to log.csv.gz.
-				log_csv_gz << lig_id << ',' << s.energy << ',' << s.rfscore << ',' << hac << ',' << mwt << ',' << lgp << ',' << ads << ',' << pds << ',' << hbd << ',' << hba << ',' << psa << ',' << chg << ',' << nrb << ',' << remarks[1].substr(11) << ",http://zinc.docking.org/substance/" << lig_id << ',' << remarks[2].substr(11) << '\n';
+				log_csv_gz
+					<< zincid << ','
+					<< s.energy << ','
+					<< s.rfscore << ','
+					<< ip.counts[14] << ','
+					<< zp.mwt << ','
+					<< zp.lgp << ','
+					<< zp.ads << ','
+					<< zp.pds << ','
+					<< zp.hbd << ','
+					<< zp.hba << ','
+					<< zp.psa << ','
+					<< zp.chg << ','
+					<< zp.nrb << ','
+					<< smiles << ','
+					<< "http://zinc.docking.org/substance/" << zincid << ','
+					<< supplier << '\n';
 
 				// Only write conformations of the top ligands to ligands.pdbqt.gz.
 				if (idx >= num_hits) continue;
 
-				// Parse the ligand.
+				// Locate and parse the ligand.
+				ligands.seekg(headers[s.index]);
 				ligand lig(ligands);
 
 				// Validate the correctness of the current summary.
 				if (s.conf.torsions.size() != lig.num_active_torsions)
 				{
-					cerr << local_time() << "[warning] Inequal numbers of torsions: ligand index = " << s.index << ", ZIND ID = " << lig_id << ", lig.num_active_torsions = " << lig.num_active_torsions << ", s.conf.torsions.size() = " << s.conf.torsions.size() << endl;
+					cerr << local_time() << "[warning] Inequal numbers of torsions: ligand index = " << s.index << ", ZIND ID = " << zincid << ", lig.num_active_torsions = " << lig.num_active_torsions << ", s.conf.torsions.size() = " << s.conf.torsions.size() << endl;
 					continue;
 				}
 
@@ -565,8 +624,51 @@ int main(int argc, char* argv[])
 				const auto r = lig.compose_result(e, f, s.conf);
 
 				// Write models to file.
-				ligands_pdbqt_gz << "MODEL     " << setw(4) << ++idx << '\n';
-				lig.write_model(ligands_pdbqt_gz, remarks, s, r, b, grid_maps);
+				ligands_pdbqt_gz
+					<< "MODEL " << '\n'
+					<< "REMARK 911 ZINC ID: " << zincid << '\n'
+					<< "REMARK 912 ZINC PROPERTIES:"
+					<< setw(8) << zp.mwt
+					<< setw(8) << zp.lgp
+					<< setw(8) << zp.ads
+					<< setw(8) << zp.pds
+					<< setw(3) << zp.hbd
+					<< setw(3) << zp.hba
+					<< setw(3) << zp.psa
+					<< setw(3) << zp.chg
+					<< setw(3) << zp.nrb
+					<< '\n'
+					<< "REMARK 913 ZINC SMILES: " << smiles << '\n'
+					<< "REMARK 914 ZINC SUPPLIERS: " << supplier << '\n'
+					<< "REMARK 915 IDOCK ATOM COUNTS:"
+					<< setw(3) << ip.counts[0]
+					<< setw(3) << ip.counts[1]
+					<< setw(3) << ip.counts[2]
+					<< setw(3) << ip.counts[3]
+					<< setw(3) << ip.counts[4]
+					<< setw(3) << ip.counts[5]
+					<< setw(3) << ip.counts[6]
+					<< setw(3) << ip.counts[7]
+					<< setw(3) << ip.counts[8]
+					<< setw(3) << ip.counts[9]
+					<< setw(3) << ip.counts[10]
+					<< setw(3) << ip.counts[11]
+					<< setw(3) << ip.counts[12]
+					<< setw(3) << ip.counts[13]
+					<< '\n'
+					<< "REMARK 916 IDOCK ATOM COUNTS:"
+					<< setw(3) << ip.counts[14]
+					<< setw(3) << ip.counts[15]
+					<< setw(3) << ip.counts[16]
+					<< setw(3) << ip.counts[17]
+					<< '\n'
+					<< "REMARK 917 IDOCK FRAME COUNTS:"
+					<< setw(3) << ip.counts[18]
+					<< setw(3) << ip.counts[19]
+					<< '\n'
+					<< "REMARK 918 IDOCK PROPERTIES:" << setw(8) << ip.mwt << '\n'
+				;
+				lig.write_model(ligands_pdbqt_gz, s, r, b, grid_maps);
 				ligands_pdbqt_gz << "ENDMDL\n";
 			}
 		}
