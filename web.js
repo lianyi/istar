@@ -55,6 +55,7 @@ if (cluster.isMaster) {
 			});
 		});
 	});
+	process.env.PYTHONPATH = process.env.MGL_ROOT + '/MGLToolsPckgs'
 } else {
 	// Connect to MongoDB
 	var mongodb = require('mongodb');
@@ -253,7 +254,7 @@ if (cluster.isMaster) {
 						if (err) throw err;
 						fs.writeFile(dir + '/receptor.pdb', req.body['receptor'], function(err) {
 							if (err) throw err;
-							child_process.execFile('python2.5', [process.env.HOME + '/mgltools_x86_64Linux2_1.5.6/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_receptor4.pyo', '-A', 'checkhydrogens', '-U', 'nphs_lps_waters_deleteAltB', '-r', 'receptor.pdb'], { cwd: dir }, function(err, stdout, stderr) {
+							child_process.execFile('python2.7', [process.env.MGL_ROOT + '/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_receptor4.pyo', '-A', 'checkhydrogens', '-U', 'nphs_lps_waters_deleteAltB', '-r', 'receptor.pdb'], { cwd: dir }, function(err, stdout, stderr) {
 								if (err) {
 									fs.unlink(dir + '/receptor.pdb', function(err) {
 										if (err) throw err;
