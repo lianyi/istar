@@ -1681,18 +1681,18 @@ void main()\n\
 								atoms[r.x].bonds.push(atoms[r.y]);
 								atoms[r.y].bonds.push(atoms[r.x]);
 							}
-							ligands.push(ligand);
-							start_frame = undefined;
-						} else if (record === 'ENDMDL') {
-							ligand.id = model > 0 ? ligand.zid.concat('-', model) : ligand.zid;
-							ligand.nsuppliers = ligand.suppliers.length;
-							model = undefined;
 							var hacv = 1 / ligand.hac;
 							ligand.idock_score_le = ligand.idock_score * hacv;
 							ligand.rf_score_le = ligand.rf_score * hacv;
 							['idock_score', 'idock_score_le', 'rf_score', 'rf_score_le'].forEach(function (key) {
 								ligand[key] = ligand[key].toFixed(3);
 							});
+							ligand.id = model > 0 ? ligand.zid.concat('-', model) : ligand.zid;
+							ligand.nsuppliers = ligand.suppliers.length;
+							ligands.push(ligand);
+							start_frame = undefined;
+						} else if (record === 'ENDMDL') {
+							model = undefined;
 						}
 					}
 					$('#nligands').text(ligands.length);
