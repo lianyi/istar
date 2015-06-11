@@ -257,7 +257,7 @@ if (cluster.isMaster) {
 										if (err) throw err;
 										fs.rmdir(dir, function (err) {
 											if (err) throw err;
-											res.json({ receptor: 'failed PDB to PDBQT conversion' });
+											res.json({ receptor: 'failed to convert PDB to PDBQT' });
 										});
 									});
 								} else {
