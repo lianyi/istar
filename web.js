@@ -3,6 +3,7 @@
 var fs = require('fs'),
 	cluster = require('cluster');
 if (cluster.isMaster) {
+	process.env.PYTHONPATH = process.env.MGL_ROOT + '/MGLToolsPckgs';
 	// Allocate arrays to hold ligand properties
 	var num_ligands = 23129083,
 		mwt = new Float32Array(num_ligands),
@@ -52,7 +53,6 @@ if (cluster.isMaster) {
 			cluster.fork().on('message', msg);
 		});
 	});
-	process.env.PYTHONPATH = process.env.MGL_ROOT + '/MGLToolsPckgs'
 } else {
 	// Connect to MongoDB
 	var mongodb = require('mongodb');
