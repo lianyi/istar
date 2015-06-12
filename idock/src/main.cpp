@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
 			// Fetch an incompleted job in a first-come-first-served manner.
 			if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 			BSONObj info;
-			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("done" << BSON("$exists" << false) << "scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 			const auto value = info["value"];
 			if (value.isNull())
 			{
