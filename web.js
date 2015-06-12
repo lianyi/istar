@@ -42,7 +42,7 @@ if (cluster.isMaster) {
 				for (var i = 0; i < num_ligands; ++i) {
 					if ((m.mwt_lb <= mwt[i]) && (mwt[i] <= m.mwt_ub) && (m.lgp_lb <= lgp[i]) && (lgp[i] <= m.lgp_ub) && (m.ads_lb <= ads[i]) && (ads[i] <= m.ads_ub) && (m.pds_lb <= pds[i]) && (pds[i] <= m.pds_ub) && (m.hbd_lb <= hbd[i]) && (hbd[i] <= m.hbd_ub) && (m.hba_lb <= hba[i]) && (hba[i] <= m.hba_ub) && (m.psa_lb <= psa[i]) && (psa[i] <= m.psa_ub) && (m.chg_lb <= chg[i]) && (chg[i] <= m.chg_ub) && (m.nrb_lb <= nrb[i]) && (nrb[i] <= m.nrb_ub)) ++ligands;
 				}
-				this.send({ligands: ligands});
+				this.send({uuid: m.uuid, ligands: ligands});
 			}
 		}
 		for (var i = 0; i < numCPUs; i++) {
@@ -89,16 +89,17 @@ if (cluster.isMaster) {
 			// Define helper variables and functions
 			var child_process = require('child_process');
 			var validator = require('./public/validator');
-			var ligands;
-			function sync(callback) {
-				if (ligands == -1) setImmediate(function() {
-					sync(callback);
+			var uuid = require('uuid');
+			var msg = {};
+			var sync = function(m_uuid, callback) {
+				if (msg.uuid !== m_uuid) setImmediate(function() {
+					sync(m_uuid, callback);
 				});
-				else callback();
+				else callback(msg.ligands);
 			};
 			process.on('message', function(m) {
 				if (m.ligands !== undefined) {
-					ligands = m.ligands;
+					msg = m;
 				}
 			});
 			var getJobs = function(req, res, collection, jobFields, progressFields) {
@@ -212,7 +213,9 @@ if (cluster.isMaster) {
 				}
 				// Send query to master process
 				ligands = -1;
+				var m_uuid = uuid.v1();
 				process.send({
+					uuid: m_uuid,
 					query: '/idock/ligands',
 					mwt_lb: v.res.mwt_lb,
 					mwt_ub: v.res.mwt_ub,
@@ -233,7 +236,7 @@ if (cluster.isMaster) {
 					nrb_lb: v.res.nrb_lb,
 					nrb_ub: v.res.nrb_ub
 				});
-				sync(function() {
+				sync(m_uuid, function(ligands) {
 					if (!(1 <= ligands)) {
 						res.json({'ligands': 'the number of filtered ligands must be at least 1'});
 						return;
@@ -314,8 +317,9 @@ if (cluster.isMaster) {
 				// Send query to master process
 				ligands = -1;
 				v.res.query = '/idock/ligands';
+				v.res.uuid = uuid.v1();
 				process.send(v.res);
-				sync(function() {
+				sync(v.res.uuid, function(ligands) {
 					res.json(ligands);
 				});
 			});
