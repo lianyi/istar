@@ -517,19 +517,10 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		// Check the validity of slice csv files.
-		if (summaries.size() > num_ligands)
-		{
-			cerr << local_time() << "[warning] Invalid number of rows in slice csv files: num_ligands = " << num_ligands << ", summaries.size() = " << summaries.size() << endl;
-		}
-
 		// Sort summaries.
-		cout << local_time() << "Sorting " << summaries.size() << " ligands" << endl;
+		const auto num_summaries = summaries.size(); // Number of ligands to be written to log.csv.gz
+		cout << local_time() << "Sorting " << num_summaries << " ligands" << endl;
 		summaries.sort();
-
-		// Determine the number of ligands to write to output files.
-		const auto num_summaries = min<size_t>(summaries.size(), num_ligands); // Number of ligands to be written to log.csv.gz
-		BOOST_ASSERT(num_summaries <= num_ligands);
 		const auto num_hits = min<size_t>(num_summaries, 1000); // Number of ligands to be written to ligands.pdbqt.gz
 		BOOST_ASSERT(num_hits <= num_ligands);
 
