@@ -1409,6 +1409,7 @@ void main()\n\
 				var atom2 = curResAtoms.filter(function (atom) {
 					return atom.name === 'CA';
 				})[0];
+				if (atom2 === undefined) return; // Nucleic acid residues like A, C, G, T, U do not have CA.
 				// Find charged groups.
 				if (curResAtoms.some(function (atom) {
 					return atom.bdist < cutoffSquared.saltBridge;
