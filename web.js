@@ -254,7 +254,7 @@ if (cluster.isMaster) {
 						if (err) throw err;
 						fs.writeFile(dir + '/receptor.pdb', req.body['receptor'], function(err) {
 							if (err) throw err;
-							child_process.execFile('python2.7', [process.env.MGL_ROOT + '/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_receptor4.pyo', '-A', 'checkhydrogens', '-U', 'nphs_lps_waters_deleteAltB', '-r', 'receptor.pdb'], { cwd: dir }, function(err, stdout, stderr) {
+							child_process.execFile(process.env.MGL_ROOT + '/bin/python', [process.env.MGL_ROOT + '/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_receptor4.pyo', '-A', 'checkhydrogens', '-U', 'nphs_lps_waters_deleteAltB', '-r', 'receptor.pdb'], { cwd: dir }, function(err, stdout, stderr) {
 								if (err) {
 									fs.unlink(dir + '/receptor.pdb', function(err) {
 										if (err) throw err;
