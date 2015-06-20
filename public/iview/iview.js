@@ -726,8 +726,9 @@ void main()\n\
 		this.waters = {};
 		this.calphas = {};
 		var curChain, curResi, curInsc, curResAtoms = [], me = this;
-		var refreshBonds = function (f) {
+		var processResidue = function (f) {
 			var n = curResAtoms.length;
+			if (n === 0) return;
 			for (var j = 0; j < n; ++j) {
 				var atom0 = curResAtoms[j];
 				for (var k = j + 1; k < n; ++k) {
@@ -739,6 +740,20 @@ void main()\n\
 				}
 				f && f(atom0);
 			}
+			var entity;
+			var atom0 = curResAtoms[0];
+			if (atom0.serial <= me.lastTerSerial) {
+				entity = me.peptides;
+			} else if (curResAtoms.length === 1) {
+				entity = atom0.elem === 'O' ? me.waters : me.ions;
+			} else if (curResAtoms.length === 3 && atom0.elem === 'O' && curResAtoms[1].elem === 'H' && curResAtoms[2].elem === 'H') {
+				entity = me.waters;
+			} else {
+				entity = me.ligands;
+			}
+			curResAtoms.forEach(function (atom) {
+				entity[atom.serial] = atom;
+			});
 		};
 		var pmin = new THREE.Vector3( 9999, 9999, 9999);
 		var pmax = new THREE.Vector3(-9999,-9999,-9999);
@@ -752,7 +767,6 @@ void main()\n\
 			pmax.max(coord);
 			++cnt;
 			if (atom.serial <= this.lastTerSerial) {
-				this.peptides[atom.serial] = atom;
 				if (atom.name === 'CA') this.calphas[atom.serial] = atom;
 				for (var j in helices) {
 					var helix = helices[j];
@@ -771,30 +785,22 @@ void main()\n\
 					}
 				}
 				if (atom.het) continue;
-				if (!(curChain == atom.chain && curResi == atom.resi && curInsc == atom.insc)) {
-					refreshBonds(function (atom0) {
-						if (((atom0.name === 'C' && atom.name === 'N') || (atom0.name === 'O3\'' && atom.name === 'P')) && me.hasCovalentBond(atom0, atom)) {
-							atom0.bonds.push(atom);
-							atom.bonds.push(atom0);
-						}
-					});
-					curChain = atom.chain;
-					curResi = atom.resi;
-					curInsc = atom.insc;
-					curResAtoms.length = 0;
-				}
-				curResAtoms.push(atom);
-			} else if ((this.atoms[atom.serial - 1] === undefined || this.atoms[atom.serial - 1].resi !== atom.resi) && (this.atoms[atom.serial + 1] === undefined || this.atoms[atom.serial + 1].resi !== atom.resi)) {
-				if (atom.elem === 'O') {
-					this.waters[atom.serial] = atom;
-				} else {
-					this.ions[atom.serial] = atom;
-				}
-			} else {
-				this.ligands[atom.serial] = atom;
 			}
+			if (!(curChain == atom.chain && curResi == atom.resi && curInsc == atom.insc)) {
+				processResidue(function (atom0) {
+					if (((atom0.name === 'C' && atom.name === 'N') || (atom0.name === 'O3\'' && atom.name === 'P')) && me.hasCovalentBond(atom0, atom)) {
+						atom0.bonds.push(atom);
+						atom.bonds.push(atom0);
+					}
+				});
+				curResAtoms.length = 0;
+				curChain = atom.chain;
+				curResi = atom.resi;
+				curInsc = atom.insc;
+			}
+			curResAtoms.push(atom);
 		}
-		refreshBonds();
+		processResidue();
 		this.pmin = pmin;
 		this.pmax = pmax;
 		this.surfaces = {
