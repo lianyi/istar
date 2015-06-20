@@ -10,7 +10,9 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
-//#include <immintrin.h>
+#ifdef AVX
+#include <immintrin.h>
+#endif
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
 #include <boost/tokenizer.hpp>
@@ -42,6 +44,7 @@ inline static string local_time()
 
 int main(int argc, char* argv[])
 {
+	cout << "avx" << endl;
 	// Check the required number of command line arguments.
 	if (argc != 5)
 	{
@@ -70,7 +73,6 @@ int main(int argc, char* argv[])
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
 	const auto collection = "istar.usr";
-//	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 	const auto epoch = date(1970, 1, 1);
 	const size_t num_usrs = 2;
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
@@ -85,6 +87,9 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
+#ifdef AVX
+	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
+#endif
 
 	// Read the header bin file.
 	vector<size_t> headers;
@@ -100,9 +105,11 @@ int main(int argc, char* argv[])
 	// Search the features for records similar to the query.
 //	vector<array<double, qn.back()>> features;
 	array<array<double, qn.back()>, 2> qlw;
-//	array<array<double, 4>, 1> aw;
 	auto l = qlw[1];
-//	auto a = aw.front();
+#ifdef AVX
+	array<array<double, 4>, 1> aw;
+	auto a = aw.front();
+#endif
 	array<vector<double>, 2> scores{{ vector<double>(num_ligands), vector<double>(num_ligands) }};
 	vector<size_t> scase(num_ligands);
 	string line;
@@ -284,14 +291,17 @@ int main(int argc, char* argv[])
 					#pragma unroll
 					for (; i < qn[u]; i += 4)
 					{
-//						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-//						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-//						s += a[0] + a[2];
+#ifdef AVX
+						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+						s += a[0] + a[2];
+#else
 						#pragma unroll
 						for (size_t o = i; o < i + 4; ++o)
 						{
 							s += fabs(q[o] - l[o]);
 						}
+#endif
 					}
 					scores[u][k] = 1 / (1 + s * qv[u]);
 				}
