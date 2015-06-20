@@ -3,7 +3,7 @@ $(function () {
 	var code = location.search.substr(1);
 	if (!code.length) code = '3KFN';
 	var loadPDB = function (code) {
-		$.get('http://www.pdb.org/pdb/files/' + code + '.pdb', function (src) {
+		$.get('http://www.rcsb.org/pdb/files/' + code + '.pdb', function (src) {
 			iv.loadPDB(src);
 		});
 	};
