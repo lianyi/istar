@@ -350,22 +350,12 @@ int main(int argc, char* argv[])
 			filtering_ostream ligands_sdf_gz;
 			ligands_sdf_gz.push(gzip_compressor());
 			ligands_sdf_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
-			ligands_sdf_gz.setf(ios::fixed, ios::floatfield);
-			ligands_sdf_gz << setprecision(8);
 			for (size_t k = 0; k < 1000; ++k)
 			{
 				const size_t c = scase[k];
 				ligand_sdf.seekg(headers[c]);
-				getline(ligand_sdf, line); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
-				ligands_sdf_gz << line << '\n';
-				log_csv_gz << line.substr(11, 8) << ',' << scores[0][c] << ',' << scores[1][c] << '\n';
-				getline(ligand_sdf, line); // REMARK     CCN(CC)C(=O)COc1ccc(cc1OC)CC=C
-				ligands_sdf_gz << line << '\n';
-				getline(ligand_sdf, line); // REMARK     8 | ChEMBL12 | ChEMBL13 | ChEMBL14 | ChEMBL15 | ChemDB | Enamine (Depleted) | PubChem | UORSY
-				ligands_sdf_gz << line << '\n';
-				ligands_sdf_gz << "REMARK 951    USR SCORE: " << setw(10) << scores[0][c] << '\n';
-				ligands_sdf_gz << "REMARK 952 USRCAT SCORE: " << setw(10) << scores[1][c] << '\n';
-				while (getline(ligand_sdf, line))
+				log_csv_gz << zincids.substr(9 * c, 8) << ',' << scores[0][c] << ',' << scores[1][c] << '\n';
+				while (getline(ligand_sdf, line)) // TODO: bulk write.
 				{
 					ligands_sdf_gz << line << '\n';
 					if (line.substr(0, 4) == "$$$$") break;
