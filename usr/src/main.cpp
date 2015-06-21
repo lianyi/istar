@@ -42,9 +42,21 @@ inline static string local_time()
 	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
+template <typename T>
+inline vector<T> read(const string path)
+{
+	cout << local_time() << "Reading " << path << endl;
+	vector<T> buf;
+	std::ifstream ifs(path, ios::binary | ios::ate);
+	const size_t num_bytes = ifs.tellg();
+	buf.resize(num_bytes / sizeof(T));
+	ifs.seekg(0);
+	ifs.read(reinterpret_cast<char*>(buf.data()), num_bytes);
+	return buf;
+}
+
 int main(int argc, char* argv[])
 {
-	cout << "avx" << endl;
 	// Check the required number of command line arguments.
 	if (argc != 5)
 	{
@@ -91,30 +103,44 @@ int main(int argc, char* argv[])
 	const auto m256s = _mm256_set1_pd(-0. ); // -0.  = 1 << 63
 #endif
 
-	// Read the header bin file.
-	vector<size_t> headers;
-	{
-		std::ifstream hdr_bin("16_hdr.bin", ios::binary | ios::ate);
-		const size_t num_bytes = hdr_bin.tellg();
-		headers.resize(num_bytes / sizeof(size_t));
-		hdr_bin.seekg(0);
-		hdr_bin.read(reinterpret_cast<char*>(headers.data()), num_bytes);
-	}
-	const size_t num_ligands = headers.size();
-
-	// Search the features for records similar to the query.
-//	vector<array<double, qn.back()>> features;
+	// Initialize variables.
 	array<array<double, qn.back()>, 2> qlw;
 	auto l = qlw[1];
 #ifdef AVX
 	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
 #endif
+	string line;
+
+	// Read ID file.
+	string zincids;
+	{
+		std::ifstream ifs("16_zincid.txt", ios::binary | ios::ate);
+		const size_t num_bytes = ifs.tellg();
+		zincids.resize(num_bytes);
+		ifs.seekg(0);
+		ifs.read(const_cast<char*>(zincids.data()), num_bytes);
+	}
+	assert(zincids.size() % 9 == 0);
+	const size_t num_ligands = zincids.size() / 9;
+
+	// Read cumulative number of conformers file.
+	const auto mconfss = read<uint16_t>("16_mconfs.bin");
+	const size_t num_conformers = mconfss.back();
+	assert(mconfss.size() == num_ligands);
+	assert(num_conformers >= num_ligands);
+
+	// Read header file.
+	const auto headers = read<uint16_t>("16_header.bin");
+	assert(headers.size() == num_conformers);
+
+	// Read feature file.
+	const auto features = read<array<double, qn.back()>>("16_usrcat.bin");
+	assert(features.size() == num_conformers);
+
 	array<vector<double>, 2> scores{{ vector<double>(num_ligands), vector<double>(num_ligands) }};
 	vector<size_t> scase(num_ligands);
-	string line;
-	std::ifstream usrcat_bin("16_usrcat.bin", ios::binary);
-	std::ifstream lig_pdbqt("16_lig.pdbqt");
+	std::ifstream ligand_sdf("16_ligand.sdf");
 	cout << local_time() << "Entering event loop" << endl;
 	while (true)
 	{
@@ -131,7 +157,7 @@ int main(int argc, char* argv[])
 			const auto email = job["email"].String();
 
 			// Record job starting time stamp.
-			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count()))));
+			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count())))); // Use findandmodify to fetch jobs and set started time.
 
 			// Parse the user-supplied ligand.
 			OBMol obMol;
@@ -278,11 +304,11 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Read features chunk by chunk, and compute USR and USRCAT scores.
-			usrcat_bin.seekg(0);
+//			usrcat_bin.seekg(0);
 			for (size_t k = 0; k < num_ligands; ++k)
 			{
-//				const auto& l = features[k];
-				usrcat_bin.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+				const auto& l = features[k];
+//				usrcat_bin.read(reinterpret_cast<char*>(l.data()), sizeof(l));
 				double s = 0;
 				size_t i = 0;
 				#pragma unroll
@@ -321,28 +347,28 @@ int main(int argc, char* argv[])
 			log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
 			log_csv_gz.setf(ios::fixed, ios::floatfield);
 			log_csv_gz << "ZINC ID,USR score,USRCAT score\n" << setprecision(8);
-			filtering_ostream ligands_pdbqt_gz;
-			ligands_pdbqt_gz.push(gzip_compressor());
-			ligands_pdbqt_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
-			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-			ligands_pdbqt_gz << setprecision(8);
+			filtering_ostream ligands_sdf_gz;
+			ligands_sdf_gz.push(gzip_compressor());
+			ligands_sdf_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
+			ligands_sdf_gz.setf(ios::fixed, ios::floatfield);
+			ligands_sdf_gz << setprecision(8);
 			for (size_t k = 0; k < 1000; ++k)
 			{
 				const size_t c = scase[k];
-				lig_pdbqt.seekg(headers[c]);
-				getline(lig_pdbqt, line); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
-				ligands_pdbqt_gz << line << '\n';
+				ligand_sdf.seekg(headers[c]);
+				getline(ligand_sdf, line); // REMARK     00000007  277.364     2.51        9   -14.93   0   4  39   0   8    
+				ligands_sdf_gz << line << '\n';
 				log_csv_gz << line.substr(11, 8) << ',' << scores[0][c] << ',' << scores[1][c] << '\n';
-				getline(lig_pdbqt, line); // REMARK     CCN(CC)C(=O)COc1ccc(cc1OC)CC=C
-				ligands_pdbqt_gz << line << '\n';
-				getline(lig_pdbqt, line); // REMARK     8 | ChEMBL12 | ChEMBL13 | ChEMBL14 | ChEMBL15 | ChemDB | Enamine (Depleted) | PubChem | UORSY
-				ligands_pdbqt_gz << line << '\n';
-				ligands_pdbqt_gz << "REMARK 951    USR SCORE: " << setw(10) << scores[0][c] << '\n';
-				ligands_pdbqt_gz << "REMARK 952 USRCAT SCORE: " << setw(10) << scores[1][c] << '\n';
-				while (getline(lig_pdbqt, line))
+				getline(ligand_sdf, line); // REMARK     CCN(CC)C(=O)COc1ccc(cc1OC)CC=C
+				ligands_sdf_gz << line << '\n';
+				getline(ligand_sdf, line); // REMARK     8 | ChEMBL12 | ChEMBL13 | ChEMBL14 | ChEMBL15 | ChemDB | Enamine (Depleted) | PubChem | UORSY
+				ligands_sdf_gz << line << '\n';
+				ligands_sdf_gz << "REMARK 951    USR SCORE: " << setw(10) << scores[0][c] << '\n';
+				ligands_sdf_gz << "REMARK 952 USRCAT SCORE: " << setw(10) << scores[1][c] << '\n';
+				while (getline(ligand_sdf, line))
 				{
-					ligands_pdbqt_gz << line << '\n';
-					if (line.substr(0, 6) == "TORSDO") break;
+					ligands_sdf_gz << line << '\n';
+					if (line.substr(0, 4) == "$$$$") break;
 				}
 			}
 
