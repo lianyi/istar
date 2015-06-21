@@ -125,20 +125,21 @@ int main(int argc, char* argv[])
 	const size_t num_ligands = zincids.size() / 9;
 
 	// Read cumulative number of conformers file.
-	const auto mconfss = read<uint16_t>("16_mconfs.bin");
+	const auto mconfss = read<size_t>("16_mconfs.bin");
 	const size_t num_conformers = mconfss.back();
 	assert(mconfss.size() == num_ligands);
 	assert(num_conformers >= num_ligands);
 
 	// Read header file.
-	const auto headers = read<uint16_t>("16_header.bin");
+	const auto headers = read<size_t>("16_header.bin");
 	assert(headers.size() == num_conformers);
 
 	// Read feature file.
 	const auto features = read<array<double, qn.back()>>("16_usrcat.bin");
 	assert(features.size() == num_conformers);
 
-	array<vector<double>, 2> scores{{ vector<double>(num_ligands), vector<double>(num_ligands) }};
+	array<vector<double>, 2> scores{{ vector<double>(num_ligands, 0), vector<double>(num_ligands, 0) }};
+	array<vector<size_t>, 2> cnfids{{ vector<size_t>(num_ligands), vector<size_t>(num_ligands) }};
 	vector<size_t> scase(num_ligands);
 	std::ifstream ligand_sdf("16_ligand.sdf");
 	cout << local_time() << "Entering event loop" << endl;
@@ -305,36 +306,44 @@ int main(int argc, char* argv[])
 
 			// Read features chunk by chunk, and compute USR and USRCAT scores.
 //			usrcat_bin.seekg(0);
-			for (size_t k = 0; k < num_ligands; ++k)
+			for (size_t j = 0, k = 0; k < num_ligands; ++k)
 			{
-				const auto& l = features[k];
-//				usrcat_bin.read(reinterpret_cast<char*>(l.data()), sizeof(l));
-				double s = 0;
-				size_t i = 0;
-				#pragma unroll
-				for (size_t u = 0; u < num_usrs; ++u)
+				for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 				{
+					const auto& l = features[j];
+//					usrcat_bin.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+					double s = 0;
 					#pragma unroll
-					for (; i < qn[u]; i += 4)
+					for (size_t i = 0, u = 0; u < num_usrs; ++u)
 					{
-#ifdef AVX
-						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-						s += a[0] + a[2];
-#else
 						#pragma unroll
-						for (size_t o = i; o < i + 4; ++o)
+						for (; i < qn[u]; i += 4)
 						{
-							s += fabs(q[o] - l[o]);
-						}
+#ifdef AVX
+							const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+							_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+							s += a[0] + a[2];
+#else
+							#pragma unroll
+							for (size_t o = i; o < i + 4; ++o)
+							{
+								s += fabs(q[o] - l[o]);
+							}
 #endif
+						}
+						s = 1 / (1 + s * qv[u]);
+						if (s > scores[u][k])
+						{
+							scores[u][k] = s;
+							cnfids[u][k] = j;
+						}
 					}
-					scores[u][k] = 1 / (1 + s * qv[u]);
 				}
 			}
 
-			// Sort the ligands by USRCAT scores.
-			const auto& uscores = scores[1];
+			// Sort ligands by USRCAT score.
+			const size_t u = 1;
+			const auto& uscores = scores[u];
 			iota(scase.begin(), scase.end(), 0);
 			sort(scase.begin(), scase.end(), [&uscores](const size_t val1, const size_t val2)
 			{
@@ -350,11 +359,11 @@ int main(int argc, char* argv[])
 			filtering_ostream ligands_sdf_gz;
 			ligands_sdf_gz.push(gzip_compressor());
 			ligands_sdf_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
-			for (size_t k = 0; k < 1000; ++k)
+			for (size_t t = 0; t < 1000; ++t)
 			{
-				const size_t c = scase[k];
-				ligand_sdf.seekg(headers[c]);
-				log_csv_gz << zincids.substr(9 * c, 8) << ',' << scores[0][c] << ',' << scores[1][c] << '\n';
+				const size_t k = scase[t];
+				log_csv_gz << zincids.substr(9 * k, 8) << ',' << scores[0][k] << ',' << scores[1][k] << '\n';
+				ligand_sdf.seekg(headers[cnfids[u][k]]);
 				while (getline(ligand_sdf, line)) // TODO: bulk write.
 				{
 					ligands_sdf_gz << line << '\n';
