@@ -359,7 +359,7 @@ int main(int argc, char* argv[])
 			log_csv_gz << "ZINC ID,USR score,USRCAT score\n" << setprecision(8);
 			filtering_ostream ligands_sdf_gz;
 			ligands_sdf_gz.push(gzip_compressor());
-			ligands_sdf_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
+			ligands_sdf_gz.push(file_sink((job_path / "ligands.sdf.gz").string()));
 			for (size_t t = 0; t < 1000; ++t)
 			{
 				const size_t k = scase[t];
