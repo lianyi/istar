@@ -110,7 +110,6 @@ int main(int argc, char* argv[])
 	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
 #endif
-	string line;
 
 	// Read ID file.
 	cout << local_time() << "Reading 16_zincid.txt" << endl;
@@ -133,7 +132,7 @@ int main(int argc, char* argv[])
 
 	// Read header file.
 	const auto headers = read<size_t>("16_header.bin");
-	assert(headers.size() == num_conformers);
+	assert(headers.size() == num_conformers + 1);
 
 	// Read feature file.
 	const auto features = read<array<double, qn.back()>>("16_usrcat.bin");
@@ -142,6 +141,8 @@ int main(int argc, char* argv[])
 	array<vector<double>, 2> scores{{ vector<double>(num_ligands, 0), vector<double>(num_ligands, 0) }};
 	array<vector<size_t>, 2> cnfids{{ vector<size_t>(num_ligands), vector<size_t>(num_ligands) }};
 	vector<size_t> scase(num_ligands);
+	string buf;
+	buf.resize(5366);
 	std::ifstream ligand_sdf("16_ligand.sdf");
 	cout << local_time() << "Entering event loop" << endl;
 	while (true)
@@ -364,17 +365,12 @@ int main(int argc, char* argv[])
 			{
 				const size_t k = scase[t];
 				log_csv_gz << zincids.substr(9 * k, 8) << ',' << scores[0][k] << ',' << scores[1][k] << '\n';
-				ligand_sdf.seekg(headers[cnfids[u][k]]);
-				while (getline(ligand_sdf, line))
-				{
-					ligands_sdf_gz << line << '\n';
-					if (line.substr(0, 4) == "$$$$") break;
-				}
-/*				const size_t length = headers[k + 1] - headers[k];
-				string buf;
-				buf.resize(length);
+				const size_t j = cnfids[u][k];
+				ligand_sdf.seekg(headers[j]);
+				const size_t length = headers[j + 1] - headers[j];
+				if (length > buf.size()) buf.resize(length);
 				ligand_sdf.read(const_cast<char*>(buf.data()), length);
-				ligands_sdf_gz.write(buf.data(), length);*/
+				ligands_sdf_gz.write(buf.data(), length);
 			}
 
 			// Update progress.
