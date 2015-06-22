@@ -373,13 +373,6 @@ $(function () {
 	var sphereRadius = 1.5;
 	var cylinderRadius = 0.3;
 	var linewidth = 2;
-	var pdbqt2pdb = {
-		HD: 'H',
-		A : 'C',
-		NA: 'N',
-		OA: 'O',
-		SA: 'S',
-	};
 	var catalogs = {
 		'ACB Blocks': 'http://www.acbblocks.com',
 		'Acorn PharmaTech': 'http://www.acornpharmatech.com',
@@ -858,8 +851,9 @@ void main()\n\
 		return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
 	};
 	var path = '/usr/jobs/' + location.search.substr(1) + '/';
-	$('#results a').each(function () {
-		$(this).attr('href', path + this.innerText);
+	$('#downloads a').each(function () {
+		var t = $(this);
+		t.attr('href', path + t.text());
 	});
 	var ligand;
 	$.ajax({
