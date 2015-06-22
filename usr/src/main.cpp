@@ -105,14 +105,15 @@ int main(int argc, char* argv[])
 
 	// Initialize variables.
 	array<array<double, qn.back()>, 2> qlw;
-	auto l = qlw[1];
 #ifdef AVX
+	auto l = qlw[1];
 	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
 #endif
 	string line;
 
 	// Read ID file.
+	cout << local_time() << "Reading 16_zincid.txt" << endl;
 	string zincids;
 	{
 		std::ifstream ifs("16_zincid.txt", ios::binary | ios::ate);
@@ -364,11 +365,16 @@ int main(int argc, char* argv[])
 				const size_t k = scase[t];
 				log_csv_gz << zincids.substr(9 * k, 8) << ',' << scores[0][k] << ',' << scores[1][k] << '\n';
 				ligand_sdf.seekg(headers[cnfids[u][k]]);
-				while (getline(ligand_sdf, line)) // TODO: bulk write.
+				while (getline(ligand_sdf, line))
 				{
 					ligands_sdf_gz << line << '\n';
 					if (line.substr(0, 4) == "$$$$") break;
 				}
+/*				const size_t length = headers[k + 1] - headers[k];
+				string buf;
+				buf.resize(length);
+				ligand_sdf.read(const_cast<char*>(buf.data()), length);
+				ligands_sdf_gz.write(buf.data(), length);*/
 			}
 
 			// Update progress.
