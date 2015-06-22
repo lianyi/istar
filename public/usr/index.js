@@ -328,15 +328,20 @@ $(function() {
 			if (format === 'mol2') {
 				var offset = 0;
 				while (lines[offset++].substr(0, 17) !== '@<TRIPOS>MOLECULE');
-				var atomCount = parseInt(lines[++offset].substr(0, 5));
-				var bondCount = parseInt(lines[offset++].substr(5, 6));
+				var tokens = lines[++offset].split(" ").filter(function (token) {
+					return token.length;
+				});
+				var atomCount = parseInt(tokens[0]);
+				var bondCount = parseInt(tokens[1]);
 				while (lines[offset++].substr(0, 13) !== '@<TRIPOS>ATOM');
 				for (var i = 1; i <= atomCount; ++i) {
-					var line = lines[offset++];
+					var tokens = lines[offset++].split(" ").filter(function (token) {
+						return token.length;
+					});
 					var atom = {
 						serial: i,
-						coord: new THREE.Vector3(parseFloat(line.substr(16, 10)), parseFloat(line.substr(26, 10)), parseFloat(line.substr(36, 10))),
-						elem: line.substr(47, 2).replace(/[\.\s]/g, '').toUpperCase(),
+						coord: new THREE.Vector3(parseFloat(tokens[2]), parseFloat(tokens[3]), parseFloat(tokens[4])),
+						elem: tokens[5].substr(0, 2).replace(/[\.\s]/g, '').toUpperCase(),
 						bonds: [],
 					};
 					if (atom.elem === 'H') continue;
@@ -344,10 +349,12 @@ $(function() {
 				}
 				while (lines[offset++].substr(0, 13) !== '@<TRIPOS>BOND');
 				for (var i = 1; i <= bondCount; ++i) {
-					var line = lines[offset++];
-					var atom0 = atoms[parseInt(line.substr( 6, 5))];
+					var tokens = lines[offset++].split(" ").filter(function (token) {
+						return token.length;
+					});
+					var atom0 = atoms[parseInt(tokens[1])];
 					if (atom0 === undefined) continue;
-					var atom1 = atoms[parseInt(line.substr(11, 5))];
+					var atom1 = atoms[parseInt(tokens[2])];
 					if (atom1 === undefined) continue;
 					atom0.bonds.push(atom1);
 					atom1.bonds.push(atom0);
