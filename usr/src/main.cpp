@@ -104,9 +104,8 @@ int main(int argc, char* argv[])
 #endif
 
 	// Initialize variables.
-	array<array<double, qn.back()>, 2> qlw;
+	array<array<double, qn.back()>, 1> qw;
 #ifdef AVX
-	auto l = qlw[1];
 	array<array<double, 4>, 1> aw;
 	auto a = aw.front();
 #endif
@@ -253,7 +252,7 @@ int main(int argc, char* argv[])
 					dists[subset0[i]] = sqrt(obMol.GetAtom(subset0[i])->GetVector().distSq(reference));
 				}
 			}
-			auto q = qlw[0];
+			auto q = qw[0];
 			size_t qo = 0;
 			for (const auto& subset : subsets)
 			{
@@ -306,14 +305,12 @@ int main(int argc, char* argv[])
 			}
 			assert(qo == qn.back());
 
-			// Read features chunk by chunk, and compute USR and USRCAT scores.
-//			usrcat_bin.seekg(0);
+			// Compute USR and USRCAT scores.
 			for (size_t j = 0, k = 0; k < num_ligands; ++k)
 			{
 				for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 				{
 					const auto& l = features[j];
-//					usrcat_bin.read(reinterpret_cast<char*>(l.data()), sizeof(l));
 					double s = 0;
 					#pragma unroll
 					for (size_t i = 0, u = 0; u < num_usrs; ++u)
@@ -333,7 +330,7 @@ int main(int argc, char* argv[])
 							}
 #endif
 						}
-						s = 1 / (1 + s * qv[u]);
+						s = 1 / (1 + s * qv[u]); // TODO: use s for sorting.
 						if (s > scores[u][k])
 						{
 							scores[u][k] = s;
