@@ -389,7 +389,6 @@ int main(int argc, char* argv[])
 		ligands_pdbqt_gz.push(gzip_compressor());
 		ligands_pdbqt_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
 		ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-		ligands_pdbqt_gz << setprecision(8);
 		for (size_t t = 0; t < 10000; ++t)
 		{
 			const size_t k = scase[t];
@@ -405,6 +404,7 @@ int main(int argc, char* argv[])
 			ligands_pdbqt_gz
 				<< "MODEL " << '\n'
 				<< "REMARK 911 " << zincid
+				<< setprecision(3)
 				<< ' ' << setw(8) << zp.mwt
 				<< ' ' << setw(8) << zp.lgp
 				<< ' ' << setw(8) << zp.ads
@@ -417,6 +417,7 @@ int main(int argc, char* argv[])
 				<< '\n'
 				<< "REMARK 912 " << smileses[k] << '\n'
 				<< "REMARK 913 " << suppliers[k] << '\n'
+				<< setprecision(8)
 				<< "REMARK 951    USR SCORE: " << setw(10) << u0score << '\n'
 				<< "REMARK 952 USRCAT SCORE: " << setw(10) << u1score << '\n'
 			;
