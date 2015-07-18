@@ -9,7 +9,7 @@ $(function() {
 			result = '';
 		} else {
 			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
-			result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a><a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.sdf.gz"><img src="/molecule.png" alt="ligands.sdf.gz"></a>';
+			result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a><a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
 		}
 		return [
 			job.description,

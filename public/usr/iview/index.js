@@ -373,6 +373,13 @@ $(function () {
 	var sphereRadius = 1.5;
 	var cylinderRadius = 0.3;
 	var linewidth = 2;
+	var pdbqt2pdb = {
+		HD: 'H',
+		A : 'C',
+		NA: 'N',
+		OA: 'O',
+		SA: 'S',
+	};
 	var catalogs = {
 		'ACB Blocks': 'http://www.acbblocks.com',
 		'Acorn PharmaTech': 'http://www.acornpharmatech.com',
@@ -829,10 +836,10 @@ void main()\n\
 			$this.text(ligand[$this.attr('id')]);
 		});
 		$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.id);
-/*		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
+		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
 			var link = catalogs[supplier];
 			return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
-		}).join(''));*/
+		}).join(''));
 	};
 	var render = function () {
 		var center = rot.position.z - camera.position.z;
@@ -857,66 +864,96 @@ void main()\n\
 	});
 	var ligand;
 	$.ajax({
-		url: path + 'ligands.sdf.gz',
+		url: path + 'ligands.pdbqt.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
 	}).done(function (lsrcz) {
 		var gunzipWorker = new Worker('/gunzip.js');
 		gunzipWorker.addEventListener('message', function (e) {
-			var ligands = [];
+			var ligands = [], atoms, start_frame, rotors;
 			var lines = e.data.split('\n');
-			for (var offset = 0, l = lines.length - 1; offset < l;)
-			{
-				var ligand = {
-					atoms: {},
-					refresh: function() {
-						var r = ligand.representations[ligand.active];
-						if (r === undefined) {
-							switch (ligand.active) {
-								case 'line':
-									r = createLineRepresentation(ligand.atoms);
-									break;
-								case 'stick':
-									r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius);
-									break;
-								case 'ball & stick':
-									r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius * 0.5);
-									break;
-								case 'sphere':
-									r = createSphereRepresentation(ligand.atoms);
-									break;
+			for (var i = 0, l = lines.length; i < l; ++i) {
+				var line = lines[i];
+				var record = line.substr(0, 6);
+				if (record === 'REMARK') {
+					var id = line.substr(11, 8);
+					if (isNaN(parseInt(id))) continue;
+					rotors = [];
+					var ligand = {
+						atoms: {},
+						refresh: function() {
+							var r = ligand.representations[ligand.active];
+							if (r === undefined) {
+								switch (ligand.active) {
+									case 'line':
+										r = createLineRepresentation(ligand.atoms);
+										break;
+									case 'stick':
+										r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius);
+										break;
+									case 'ball & stick':
+										r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius * 0.5);
+										break;
+									case 'sphere':
+										r = createSphereRepresentation(ligand.atoms);
+										break;
+								}
+								ligand.representations[ligand.active] = r;
 							}
-							ligand.representations[ligand.active] = r;
-						}
-						mdl.add(r);
-					},
-					id: lines[offset],
-				}, atoms = ligand.atoms;
-				offset += 3;
-				var atomCount = parseInt(lines[offset].substr(0, 3));
-				var bondCount = parseInt(lines[offset].substr(3, 3));
-				for (var i = 1; i <= atomCount; ++i) {
-					var line = lines[++offset];
+							mdl.add(r);
+						},
+						id: id,
+						mwt: parseFloat(line.substr(20, 8)),
+						lgp: parseFloat(line.substr(29, 8)),
+						ads: parseFloat(line.substr(38, 8)),
+						pds: parseFloat(line.substr(47, 8)),
+						hbd: parseInt(line.substr(56, 3)),
+						hba: parseInt(line.substr(60, 3)),
+						psa: parseInt(line.substr(64, 3)),
+						chg: parseInt(line.substr(68, 3)),
+						nrb: parseInt(line.substr(72, 3)),
+					}, atoms = ligand.atoms;
+					ligand.smiles = lines[++i].substr(11);
+					ligand.suppliers = lines[++i].substr(11).split(' | ').slice(1);
+					ligand.nsuppliers = ligand.suppliers.length;
+					ligand.usr_score = parseFloat(lines[++i].substr(25, 10));
+					ligand.usrcat_score = parseFloat(lines[++i].substr(25, 10));
+				} else if (record === 'ATOM  ' || record === 'HETATM') {
 					var atom = {
-						serial: i,
-						coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
-						elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
+						serial: parseInt(line.substr(6, 5)),
+						name: line.substr(12, 4).replace(/ /g, ''),
+						coord: new THREE.Vector3(parseFloat(line.substr(30, 8)), parseFloat(line.substr(38, 8)), parseFloat(line.substr(46, 8))),
+						elqt: line.substr(77, 2),
+						elem: line.substr(77, 2).replace(/ /g, '').toUpperCase(),
 						bonds: [],
 					};
+					var elem = pdbqt2pdb[atom.elem];
+					if (elem) atom.elem = elem;
 					if (atom.elem === 'H') continue;
 					atom.color = atomColors[atom.elem] || defaultAtomColor;
 					atoms[atom.serial] = atom;
+					if (start_frame === undefined) start_frame = atom.serial;
+					for (var j = start_frame; j < atom.serial; ++j) {
+						var a = atoms[j];
+						if (a && hasCovalentBond(a, atom)) {
+							a.bonds.push(atom);
+							atom.bonds.push(a);
+						}
+					}
+				} else if (record === 'BRANCH') {
+					rotors.push({
+						x: parseInt(line.substr( 6, 4)),
+						y: parseInt(line.substr(10, 4)),
+					});
+					start_frame = undefined;
+				} else if (record === 'TORSDO') {
+					for (var j in rotors) {
+						var r = rotors[j];
+						atoms[r.x].bonds.push(atoms[r.y]);
+						atoms[r.y].bonds.push(atoms[r.x]);
+					}
+					ligands.push(ligand);
+					start_frame = undefined;
 				}
-				for (var i = 1; i <= bondCount; ++i) {
-					var line = lines[++offset];
-					var atom0 = atoms[parseInt(line.substr(0, 3))];
-					if (atom0 === undefined) continue;
-					var atom1 = atoms[parseInt(line.substr(3, 3))];
-					if (atom1 === undefined) continue;
-					atom0.bonds.push(atom1);
-					atom1.bonds.push(atom0);
-				}
-				while (lines[offset++] !== "$$$$");
-				ligands.push(ligand);
 			}
 			$('#nligands').text(ligands.length);
 			var ids = $('#ids');

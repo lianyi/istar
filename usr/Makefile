@@ -18,7 +18,7 @@ obj/encode.o: src/encode.cpp
 	${CC} -o $@ $< -c -std=c++11 -O2 -Wall -I${OPENBABEL_ROOT}/include
 
 obj/main.o: src/main.cpp
-	${CC} -o $@ $< -c -std=c++11 -O2 -Wall -Wno-unused-local-typedef -Wno-deprecated-declarations -Wno-deprecated-register -I${OPENBABEL_ROOT}/include -I${BOOST_ROOT} -I${MONGODBCXXDRIVER_ROOT}/src -I${POCO_ROOT}/Foundation/include -I${POCO_ROOT}/Net/include #-DAVX -mavx
+	${CC} -o $@ $< -c -std=c++11 -O2 -Wall -Wno-unused-local-typedef -Wno-deprecated-declarations -Wno-deprecated-register -I${OPENBABEL_ROOT}/include -I${BOOST_ROOT} -I${MONGODBCXXDRIVER_ROOT}/src -I${POCO_ROOT}/Foundation/include -I${POCO_ROOT}/Net/include
 
 clean:
 	rm -f bin/* obj/*
