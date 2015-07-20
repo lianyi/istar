@@ -40,17 +40,92 @@ inline static string local_time()
 }
 
 template <typename T>
-inline vector<T> read(const string path)
+inline vector<T> read(const path src)
 {
-	cout << local_time() << "Reading " << path << endl;
+	cout << local_time() << "Reading " << src << endl;
 	vector<T> buf;
-	std::ifstream ifs(path, ios::binary | ios::ate);
+	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
 	buf.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
 	ifs.read(reinterpret_cast<char*>(buf.data()), num_bytes);
 	return buf;
 }
+
+template <typename size_type>
+class header_array
+{
+public:
+	explicit header_array(path src)
+	{
+		src.replace_extension(".ftr");
+		cout << local_time() << "Reading " << src;
+		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+		const size_t num_bytes = ifs.tellg();
+		cout << ", " << num_bytes << " bytes" << endl;
+		hdr.resize(1 + num_bytes / sizeof(size_type));
+		hdr.front() = 0;
+		ifs.seekg(0);
+		ifs.read(reinterpret_cast<char*>(hdr.data() + 1), num_bytes);
+	}
+
+	size_t size() const
+	{
+		return hdr.size() - 1;
+	}
+
+protected:
+	vector<size_type> hdr;
+};
+
+template <typename size_type>
+class string_array : public header_array<size_type>
+{
+public:
+	explicit string_array(const path src) : header_array<size_type>(src)
+	{
+		cout << local_time() << "Reading " << src;
+		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+		const size_t num_bytes = ifs.tellg();
+		cout << ", " << num_bytes << " bytes" << endl;
+		buf.resize(num_bytes);
+		ifs.seekg(0);
+		ifs.read(const_cast<char*>(buf.data()), num_bytes);
+	}
+
+	string operator[](const size_t index) const
+	{
+		const auto pos = this->hdr[index];
+		const auto len = this->hdr[index + 1] - pos;
+		return buf.substr(pos, len);
+	}
+
+protected:
+	string buf;
+};
+
+template <typename size_type>
+class stream_array : public header_array<size_type>
+{
+public:
+	explicit stream_array(const path src) : header_array<size_type>(src), ifs(src, ios::binary)
+	{
+	}
+
+	string operator[](const size_t index)
+	{
+		const auto pos = this->hdr[index];
+		const auto len = this->hdr[index + 1] - pos;
+		string buf;
+		buf.resize(len);
+		ifs.seekg(pos);
+		ifs.read(const_cast<char*>(buf.data()), len);
+		return buf;
+	}
+
+protected:
+	boost::filesystem::ifstream ifs;
+};
 
 struct zproperty
 {
@@ -108,23 +183,18 @@ int main(int argc, char* argv[])
 	array<array<double, qn.back()>, 1> lw;
 	auto q = qw[0];
 	auto l = lw[0];
-	string buf;
-	buf.resize(5366); // Maximum size of a ligand out of the 23M ligands in PDBQT format.
 
-	// Read ID file.
-	cout << local_time() << "Reading 16_zincid.txt" << endl;
-	string zincids;
-	{
-		std::ifstream ifs("16_zincid.txt", ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
-		zincids.resize(num_bytes);
-		ifs.seekg(0);
-		ifs.read(const_cast<char*>(zincids.data()), num_bytes);
-	}
-	assert(zincids.size() % 9 == 0);
-	const size_t num_ligands = zincids.size() / 9;
-	array<vector<double>, 2> scores{{ vector<double>(num_ligands, 0), vector<double>(num_ligands, 0) }};
-	vector<size_t> scase(num_ligands);
+	// Read ZINC ID file.
+	const string_array<size_t> zincids("16_zincid.txt");
+	const auto num_ligands = zincids.size();
+
+	// Read SMILES file.
+	const string_array<size_t> smileses("16_smiles.txt");
+	assert(smileses.size() == num_ligands);
+
+	// Read supplier file.
+	const string_array<size_t> suppliers("16_supplier.txt");
+	assert(suppliers.size() == num_ligands);
 
 	// Read ZINC property file.
 	cout << local_time() << "Reading ZINC property file" << endl;
@@ -137,35 +207,12 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	// Read SMILES file.
-	cout << local_time() << "Reading SMILES file" << endl;
-	vector<string> smileses(num_ligands);
-	{
-		std::ifstream ifs("16_smiles.txt");
-		for (auto& smiles : smileses)
-		{
-			getline(ifs, smiles);
-		}
-	}
-
-	// Read supplier file.
-	cout << local_time() << "Reading supplier file" << endl;
-	vector<string> suppliers(num_ligands);
-	{
-		std::ifstream ifs("16_supplier.txt");
-		for (auto& supplier : suppliers)
-		{
-			getline(ifs, supplier);
-		}
-	}
-
-	// Read header file.
-	const auto headers = read<size_t>("16_header.bin");
-	assert(headers.size() == num_ligands + 1);
-
 	// Open files for subsequent reading.
 	std::ifstream usrcat_bin("16_usrcat.bin");
-	std::ifstream ligand_pdbqt("16_ligand.pdbqt");
+	stream_array<size_t> ligands("16_ligand.pdbqt");
+	assert(ligands.size() == num_ligands);
+	array<vector<double>, 2> scores{{ vector<double>(num_ligands, 0), vector<double>(num_ligands, 0) }};
+	vector<size_t> scase(num_ligands);
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -174,7 +221,6 @@ int main(int argc, char* argv[])
 	{
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
-//		auto cursor = conn.query(collection, QUERY("done" << BSON("$exists" << false)).sort("submitted"), 1); // Each batch processes 1 job.
 		BSONObj info;
 		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count()))) << "fields" << BSON("_id" << 1 << "format" << 1 << "email" << 1 << "submitted" << 1 << "description" << 1)), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		const auto value = info["value"];
@@ -392,7 +438,7 @@ int main(int argc, char* argv[])
 		for (size_t t = 0; t < 10000; ++t)
 		{
 			const size_t k = scase[t];
-			const auto zincid = zincids.substr(9 * k, 8);
+			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
 			const auto u0score = scores[0][k];
 			const auto u1score = scores[1][k];
 			log_csv_gz << zincid << ',' << u0score << ',' << u1score << '\n';
@@ -415,17 +461,14 @@ int main(int argc, char* argv[])
 				<< ' ' << setw(3) << zp.chg
 				<< ' ' << setw(3) << zp.nrb
 				<< '\n'
-				<< "REMARK 912 " << smileses[k] << '\n'
-				<< "REMARK 913 " << suppliers[k] << '\n'
+				<< "REMARK 912 " << smileses[k]  // A newline is already included in smileses[k].
+				<< "REMARK 913 " << suppliers[k] // A newline is already included in suppliers[k].
 				<< setprecision(8)
 				<< "REMARK 951    USR SCORE: " << setw(10) << u0score << '\n'
 				<< "REMARK 952 USRCAT SCORE: " << setw(10) << u1score << '\n'
 			;
-			ligand_pdbqt.seekg(headers[k]);
-			const size_t length = headers[k + 1] - headers[k];
-			if (length > buf.size()) buf.resize(length);
-			ligand_pdbqt.read(const_cast<char*>(buf.data()), length);
-			ligands_pdbqt_gz.write(buf.data(), length);
+			const auto lig = ligands[k];
+			ligands_pdbqt_gz.write(lig.data(), lig.size());
 			ligands_pdbqt_gz << "ENDMDL\n";
 		}
 
