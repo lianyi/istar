@@ -212,6 +212,8 @@ int main(int argc, char* argv[])
 	stream_array<size_t> ligands("16_ligand.pdbqt");
 	assert(ligands.size() == num_ligands);
 	array<vector<double>, 2> scores{{ vector<double>(num_ligands, 0), vector<double>(num_ligands, 0) }};
+	const auto& u0scores = scores[0];
+	const auto& u1scores = scores[1];
 	vector<size_t> scase(num_ligands);
 
 	// Enter event loop.
@@ -411,18 +413,28 @@ int main(int argc, char* argv[])
 				{
 					s += fabs(q[i] - l[i]);
 				}
-				scores[u][k] = 1 / (1 + s * qv[u]); // TODO: use s for sorting.
+				scores[u][k] = s;
 			}
 		}
 		assert(usrcat_bin.tellg() == sizeof(l) * num_ligands);
 
 		// Sort ligands by USRCAT score.
-		const size_t u = 1;
-		const auto& uscores = scores[u];
 		iota(scase.begin(), scase.end(), 0);
-		sort(scase.begin(), scase.end(), [&uscores](const size_t val1, const size_t val2)
+		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 		{
-			return uscores[val1] > uscores[val2];
+			const auto u1score0 = u1scores[val0];
+			const auto u1score1 = u1scores[val1];
+			if (u1score0 == u1score1)
+			{
+				const auto u0score0 = u0scores[val0];
+				const auto u0score1 = u0scores[val1];
+				if (u0score0 == u0score1)
+				{
+					return zincids[val0] < zincids[val1];
+				}
+				return u0score0 < u0score1;
+			}
+			return u1score0 < u1score1;
 		});
 
 		// Write results.
@@ -439,8 +451,8 @@ int main(int argc, char* argv[])
 		{
 			const size_t k = scase[t];
 			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
-			const auto u0score = scores[0][k];
-			const auto u1score = scores[1][k];
+			const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
+			const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
 			log_csv_gz << zincid << ',' << u0score << ',' << u1score << '\n';
 
 			// Only write conformations of the top ligands to ligands.pdbqt.gz.
