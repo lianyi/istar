@@ -3,13 +3,14 @@ $(function() {
 	// Initialize pager
 	var pager = $('#pager');
 	pager.pager('init', [ 'Description', 'Submitted', 'Status', 'Result' ], function(job) {
-		var status, result;
-		if (!job.done) {
+		var status, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
+		if (!job.started) {
 			status = 'Queued for execution';
-			result = '';
+		} else if (!job.done) {
+			status = 'Execution in progress';
 		} else {
 			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
-			result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a><a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
+			result += '<a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
 		}
 		return [
 			job.description,
@@ -22,15 +23,14 @@ $(function() {
 	// Refresh the table of jobs and its pager every second
 	var jobs = [], skip = 0;
 	var tick = function() {
-		$.get('jobs', { skip: skip }, function(res) {
+		$.get('jobs', { skip: skip, count: jobs.length }, function(res) {
 			if (res.length) {
-				var nUpdate = 0;
 				for (var i = skip; i < jobs.length; ++i) {
 					var job = res[i - skip];
+					jobs[i].started = job.started;
 					jobs[i].done = job.done;
-					if (job.done) ++nUpdate;
 				}
-				pager.pager('refresh', skip, skip + nUpdate, 2, 5, true);
+				pager.pager('refresh', skip, jobs.length, 2, 5, false);
 				if (res.length > jobs.length - skip) {
 					var len = jobs.length;
 					jobs = jobs.concat(res.slice(jobs.length - skip));

@@ -399,6 +399,11 @@ if (cluster.isMaster) {
 				getJobs(req, res, usr, {
 					'description': 1,
 					'submitted': 1,
+					'started': 1,
+					'done': 1,
+				}, {
+					'_id': 0,
+					'started': 1,
 					'done': 1,
 				});
 			}).post(function(req, res) {
