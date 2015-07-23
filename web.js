@@ -323,7 +323,7 @@ if (cluster.isMaster) {
 					res.json(ligands);
 				});
 			});
-			// Get a specific idock job
+/*			// Get a specific idock job
 			app.route('/idock/job').get(function(req, res) {
 				var v = new validator(req.query);
 				if (v
@@ -394,7 +394,7 @@ if (cluster.isMaster) {
 					igrow.insert(v.res, {w: 0});
 					res.json({});
 				});
-			});
+			});*/
 			app.route('/usr/jobs').get(function(req, res) {
 				getJobs(req, res, usr, {
 					'description': 1,
