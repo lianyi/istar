@@ -12,7 +12,6 @@
 #include <thread>
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
-#include <boost/tokenizer.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/device/file.hpp>
@@ -42,10 +41,11 @@ inline static string local_time()
 template <typename T>
 inline vector<T> read(const path src)
 {
-	cout << local_time() << "Reading " << src << endl;
+	cout << local_time() << "Reading " << src;
 	vector<T> buf;
 	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
+	cout << ", " << num_bytes << " bytes" << endl;
 	buf.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
 	ifs.read(reinterpret_cast<char*>(buf.data()), num_bytes);
@@ -127,12 +127,6 @@ protected:
 	boost::filesystem::ifstream ifs;
 };
 
-struct zproperty
-{
-	float mwt, lgp, ads, pds;
-	int16_t hbd, hba, psa, chg, nrb;
-};
-
 int main(int argc, char* argv[])
 {
 	// Check the required number of command line arguments.
@@ -196,16 +190,11 @@ int main(int argc, char* argv[])
 	const string_array<size_t> suppliers("16_supplier.txt");
 	assert(suppliers.size() == num_ligands);
 
-	// Read ZINC property file.
-	cout << local_time() << "Reading ZINC property file" << endl;
-	vector<zproperty> zproperties(num_ligands);
-	{
-		std::ifstream ifs("16_zproperty.bin", ios::binary);
-		for (auto& p : zproperties)
-		{
-			ifs.read(reinterpret_cast<char*>(&p), 26); // sizeof(zproperty) == 28
-		}
-	}
+	// Read property files of floating point types and integer types.
+	const auto zfproperties = read<array<float, 4>>("16_zfprop.f32");
+	assert(zfproperties.size() == num_ligands);
+	const auto ziproperties = read<array<int16_t, 5>>("16_ziprop.i16");
+	assert(ziproperties.size() == num_ligands);
 
 	// Open files for subsequent reading.
 	std::ifstream usrcat_bin("16_usrcat.bin");
@@ -458,20 +447,21 @@ int main(int argc, char* argv[])
 			// Only write conformations of the top ligands to ligands.pdbqt.gz.
 			if (t >= 1000) continue;
 
-			const auto zp = zproperties[k];
+			const auto zfp = zfproperties[k];
+			const auto zip = ziproperties[k];
 			ligands_pdbqt_gz
 				<< "MODEL " << '\n'
 				<< "REMARK 911 " << zincid
 				<< setprecision(3)
-				<< ' ' << setw(8) << zp.mwt
-				<< ' ' << setw(8) << zp.lgp
-				<< ' ' << setw(8) << zp.ads
-				<< ' ' << setw(8) << zp.pds
-				<< ' ' << setw(3) << zp.hbd
-				<< ' ' << setw(3) << zp.hba
-				<< ' ' << setw(3) << zp.psa
-				<< ' ' << setw(3) << zp.chg
-				<< ' ' << setw(3) << zp.nrb
+				<< ' ' << setw(8) << zfp[0]
+				<< ' ' << setw(8) << zfp[1]
+				<< ' ' << setw(8) << zfp[2]
+				<< ' ' << setw(8) << zfp[3]
+				<< ' ' << setw(3) << zip[0]
+				<< ' ' << setw(3) << zip[1]
+				<< ' ' << setw(3) << zip[2]
+				<< ' ' << setw(3) << zip[3]
+				<< ' ' << setw(3) << zip[4]
 				<< '\n'
 				<< "REMARK 912 " << smileses[k]  // A newline is already included in smileses[k].
 				<< "REMARK 913 " << suppliers[k] // A newline is already included in suppliers[k].
