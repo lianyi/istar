@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
+#include <array>
 #include <cmath>
 using namespace std;
 
