@@ -30,28 +30,27 @@ int main(int argc, char* argv[])
 	constexpr array<double, num_usrs> qv{{ 1.0 / qn[0], 1.0 / qn[1] }};
 	const auto qs = read<array<double, qn.back()>>(argv[1]);
 	const auto ls = read<array<double, qn.back()>>(argv[2]);
-	const auto q = qs.front();
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(8);
-	for (const auto& l : ls)
+	for (const auto& q : qs)
 	{
-		double s = 0;
-		#pragma unroll
-		for (size_t i = 0, u = 0; u < num_usrs; ++u)
+		for (const auto& l : ls)
 		{
+			double s = 0;
 			#pragma unroll
-			for (; i < qn[u]; i += 4)
+			for (size_t i = 0, u = 0; u < num_usrs; ++u)
 			{
+				const auto qnu = qn[u];
 				#pragma unroll
-				for (size_t o = i; o < i + 4; ++o)
+				for (; i < qnu; ++i)
 				{
-					s += fabs(q[o] - l[o]);
+					s += fabs(q[i] - l[i]);
 				}
+				s = 1 / (1 + s * qv[u]);
+				cout << s;
+				if (u) cout << endl;
+				else cout << '\t';
 			}
-			s = 1 / (1 + s * qv[u]);
-			cout << s;
-			if (u) cout << endl;
-			else cout << '\t';
 		}
 	}
 }
