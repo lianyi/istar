@@ -200,7 +200,11 @@ int main(int argc, char* argv[])
 	std::ifstream usrcat_bin("16_usrcat.bin");
 	stream_array<size_t> ligands("16_ligand.pdbqt");
 	assert(ligands.size() == num_ligands);
-	array<vector<double>, 2> scores{{ vector<double>(num_ligands, 0), vector<double>(num_ligands, 0) }};
+	array<vector<double>, 2> scores
+	{{
+		vector<double>(num_ligands, 0),
+		vector<double>(num_ligands, 0)
+	}};
 	const auto& u0scores = scores[0];
 	const auto& u1scores = scores[1];
 	vector<size_t> scase(num_ligands);
@@ -213,12 +217,12 @@ int main(int argc, char* argv[])
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
-		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count()))) << "fields" << BSON("_id" << 1 << "format" << 1 << "email" << 1 << "submitted" << 1 << "description" << 1)), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count())))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		const auto value = info["value"];
 		if (value.isNull())
 		{
 			// No incompleted jobs. Sleep for a while.
-			if (!sleeping) cout << local_time() << "Sleeping for 10 seconds" << endl;
+			if (!sleeping) cout << local_time() << "Sleeping" << endl;
 			sleeping = true;
 			this_thread::sleep_for(chrono::seconds(10));
 			continue;
@@ -407,7 +411,7 @@ int main(int argc, char* argv[])
 		}
 		assert(usrcat_bin.tellg() == sizeof(l) * num_ligands);
 
-		// Sort ligands by USRCAT score.
+		// Sort ligands by USRCAT score and then by USR score and then by ZINC ID.
 		iota(scase.begin(), scase.end(), 0);
 		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 		{
