@@ -10,7 +10,7 @@
   "dependencies": {
     "mongodb": ">= 2.0.0",
     "express": ">= 4.0.0 < 5.0.0",
-    "spdy": ">= 1.25.0",
+    "spdy": ">= 1.25.0 < 2.0.0",
     "uuid": ">= 2.0.0",
     "body-parser": ">= 1.0.0",
     "compression": ">= 1.0.0",
