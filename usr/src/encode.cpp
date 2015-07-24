@@ -3,7 +3,6 @@
 #include <vector>
 #include <cmath>
 #include <limits>
-#include <sstream>
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
 using namespace std;
