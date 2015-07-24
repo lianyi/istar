@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	{
 		// Categorize atoms into pharmacophoric subsets.
 		OBMol mol;
-		conv.Read(&mol, &ifs);
+		conv.Read(&mol, &ifs); // The delimiter of multiple molecules is ENDMDL for pdbqt, $$$$ for sdf, @<TRIPOS>MOLECULE for mol2.
 		const auto num_atoms = mol.NumAtoms();
 		if (!num_atoms) break;
 
@@ -103,14 +103,13 @@ int main(int argc, char* argv[])
 				ftf_dist = this_dist;
 			}
 		}
-
 		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
 		array<vector<double>, num_references> dista;
 		for (size_t k = 0; k < num_references; ++k)
 		{
 			const auto& reference = references[k];
 			auto& dists = dista[k];
-			dists.resize(num_atoms);
+			dists.resize(1 + num_atoms); // OpenBabel atom index starts from 1. dists[0] is dummy.
 			for (size_t i = 0; i < n; ++i)
 			{
 				dists[subset0[i]] = sqrt(dist2(mol.GetAtom(subset0[i])->GetVector(), reference));
