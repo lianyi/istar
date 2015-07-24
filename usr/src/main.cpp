@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 	assert(ziproperties.size() == num_ligands);
 
 	// Open files for subsequent reading.
-	std::ifstream usrcat_bin("16_usrcat.bin");
+	std::ifstream usrcat_bin("16_usrcat.f64");
 	stream_array<size_t> ligands("16_ligand.pdbqt");
 	assert(ligands.size() == num_ligands);
 	array<vector<double>, 2> scores
