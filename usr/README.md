@@ -2,9 +2,11 @@ To compile from source, one needs to change the OPENBABEL_ROOT variable in the M
 
 The calculations of the three moments are as folllows:
 
-m1 = sum(di) / n
-m2 = sqrt(sum((di - m1) ^ 2) / n)
-m3 = cbrt(sum((di - m1) ^ 3) / n)
+	m1 = sum(di) / n
+
+	m2 = sqrt(sum((di - m1) ^ 2) / n)
+
+	m3 = cbrt(sum((di - m1) ^ 3) / n)
 
 All the three moments are of unit Armstrong.
 
@@ -14,7 +16,7 @@ Note that the calculations of m2 and m3 in the first version of [USR] do not com
 
 Also note that the calculation of m3 in [USRCAT] is slightly different:
 
-m3 = cbrt(sum((di - m1) ^ 3) / n) / m2 = cbrt(skew(di))
+	m3 = cbrt(sum((di - m1) ^ 3) / n) / m2 = cbrt(skew(di))
 
 This calculation has three disadvantages:
 
