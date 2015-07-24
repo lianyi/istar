@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 {
 	if (argc < 2)
 	{
-		cout << "subset ZINC00537755.mol2" << endl;
+		cout << "encode ZINC00537755.mol2" << endl;
 		return 0;
 	}
 
