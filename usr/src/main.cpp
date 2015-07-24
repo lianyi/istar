@@ -400,9 +400,8 @@ int main(int argc, char* argv[])
 			#pragma unroll
 			for (size_t i = 0, u = 0; u < num_usrs; ++u)
 			{
-				const auto qnu = qn[u];
 				#pragma unroll
-				for (; i < qnu; ++i)
+				for (const auto qnu = qn[u]; i < qnu; ++i)
 				{
 					s += fabs(q[i] - l[i]);
 				}
