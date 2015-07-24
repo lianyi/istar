@@ -46,8 +46,7 @@ int main(int argc, char* argv[])
 				{
 					s += fabs(q[i] - l[i]);
 				}
-				s = 1 / (1 + s * qv[u]);
-				cout << s;
+				cout << 1 / (1 + s * qv[u]);
 				if (u) cout << endl;
 				else cout << '\t';
 			}
