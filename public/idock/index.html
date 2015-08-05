@@ -287,9 +287,9 @@
 		      <p>Firefox WebGL can be enabled by following <a href="https://wiki.mozilla.org/Blocklisting/Blocked_Graphics_Drivers#How_to_force-enable_blocked_graphics_features">these instructions</a>.</p>
 		      <p>Safari WebGL can be enabled by following <a href="https://discussions.apple.com/thread/3300585">these instructions</a>.</p>
             </div>
-            <h3>Notes for homology modeling</h3>
+            <h3>How to get rid of "must conform to PDB specification"</h3>
             <div>
-              <p>If your protein is obtained from homology modeling, it is likely that the tooltip <span class="tooltip-inner">must conform to PDB specification</span> will show up when you click the submit button. It is due to the fact that many homology modeling programs do not output PDB files strictly following the <a href="http://www.wwpdb.org/documentation/format33/v3.3.html">official PDB specification</a>. Here is a checklist for your PDB file:</p>
+              <p>If your protein is not downloaded from <a href="http://www.rcsb.org">the official PDB website</a> but obtained from homology modeling or other software, it is likely that the tooltip <span class="tooltip-inner">must conform to PDB specification</span> will show up when you click the submit button. It is due to the fact that many software programs output PDB files that are somewhat customized and do not strictly following <a href="http://www.wwpdb.org/documentation/format33/v3.3.html">the official PDB specification</a>. Here is a checklist for your PDB file:</p>
 		      <ul>
 		        <li>Each line must consist of exactly 80 columns, including <code>ATOM</code>, <code>TER</code> and <code>CONECT</code> lines. For example, if your <code>TER</code> line consists of only 3 characters, you must append 77 extra spaces to align it to 80 characters wide.</li>
 		        <li>A <code>TER</code> line must be present at the end of a series of <code>ATOM</code> lines to specify the end of a chain.</li>
