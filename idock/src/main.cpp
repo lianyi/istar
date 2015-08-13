@@ -488,6 +488,7 @@ int main(int argc, char* argv[])
 		for (size_t s = 0; s < num_slices; ++s)
 		{
 			// Parse slice csv.
+			cout << local_time() << "Reading slice " << s << endl;
 			const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
 			for (boost::filesystem::ifstream slice_csv(slice_csv_path); getline(slice_csv, line);)
 			{
