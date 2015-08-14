@@ -488,7 +488,6 @@ int main(int argc, char* argv[])
 		for (size_t s = 0; s < num_slices; ++s)
 		{
 			// Parse slice csv.
-			cout << local_time() << "Reading slice " << s << endl;
 			const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
 			for (boost::filesystem::ifstream slice_csv(slice_csv_path); getline(slice_csv, line);)
 			{
@@ -507,14 +506,20 @@ int main(int argc, char* argv[])
 				}
 				// Ignore incorrect lines.
 				if (tokens.size() < 10) continue;
-				conformation conf(tokens.size() - 10);
-				conf.position = vec3(lexical_cast<fl>(tokens[3]), lexical_cast<fl>(tokens[4]), lexical_cast<fl>(tokens[5]));
-				conf.orientation = qtn4(lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]), lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]));
-				for (size_t i = 0; i < conf.torsions.size(); ++i)
+				try
 				{
-					conf.torsions[i] = lexical_cast<fl>(tokens[10 + i]);
+					conformation conf(tokens.size() - 10);
+					conf.position = vec3(lexical_cast<fl>(tokens[3]), lexical_cast<fl>(tokens[4]), lexical_cast<fl>(tokens[5]));
+					conf.orientation = qtn4(lexical_cast<fl>(tokens[6]), lexical_cast<fl>(tokens[7]), lexical_cast<fl>(tokens[8]), lexical_cast<fl>(tokens[9]));
+					for (size_t i = 0; i < conf.torsions.size(); ++i)
+					{
+						conf.torsions[i] = lexical_cast<fl>(tokens[10 + i]);
+					}
+					summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), conf));
 				}
-				summaries.push_back(new summary(lexical_cast<size_t>(tokens[0]), lexical_cast<fl>(tokens[1]), lexical_cast<fl>(tokens[2]), conf));
+				catch (...)
+				{
+				}
 			}
 		}
 
