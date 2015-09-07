@@ -16,7 +16,7 @@ if (cluster.isMaster) {
 		chg = new Int16Array(num_ligands),
 		nrb = new Int16Array(num_ligands);
 	// Parse ligand properties
-	var prop = 'idock/16_prop.bin';
+	var prop = 'idock/16_zprop.bin';
 	console.log('Parsing %s', prop);
 	var start = Date.now();
 	fs.readFile(prop, function(err, buf) {
