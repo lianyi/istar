@@ -3,7 +3,7 @@ mongodb
 jobs
 16_*
 web.log
-pdbbind-latest-refined-x42.rf
+*.rf
 genomes
 cudart
 seminar?.*
