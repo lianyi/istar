@@ -38,7 +38,7 @@ struct zproperty
 	int16_t hbd, hba, psa, chg, nrb;
 };
 
-struct iproperty
+struct xproperty
 {
 	std::array<int16_t, 20> counts;
 	float mwt;
@@ -226,10 +226,10 @@ int main(int argc, char* argv[])
 
 	// Read idock property file.
 	cout << local_time() << "Reading idock property file" << endl;
-	vector<iproperty> iproperties(total_ligands);
+	vector<xproperty> xproperties(total_ligands);
 	{
-		std::ifstream ifs("16_stat.bin", ios::binary);
-		ifs.read(reinterpret_cast<char*>(iproperties.data()), sizeof(iproperty) * total_ligands);
+		std::ifstream ifs("16_xprop.bin", ios::binary);
+		ifs.read(reinterpret_cast<char*>(xproperties.data()), sizeof(xproperty) * total_ligands);
 	}
 
 	// Read header file.
@@ -551,7 +551,7 @@ int main(int argc, char* argv[])
 				const auto& s = summaries[idx];
 				const auto zincid = zincids[s.index];
 				const auto zp = zproperties[s.index];
-				const auto ip = iproperties[s.index];
+				const auto xp = xproperties[s.index];
 				const auto smiles = smileses[s.index];
 				const auto supplier = suppliers[s.index];
 
@@ -560,7 +560,7 @@ int main(int argc, char* argv[])
 					<< zincid << ','
 					<< s.energy << ','
 					<< s.rfscore << ','
-					<< ip.counts[14] << ','
+					<< xp.counts[14] << ','
 					<< zp.mwt << ','
 					<< zp.lgp << ','
 					<< zp.ads << ','
@@ -638,32 +638,32 @@ int main(int argc, char* argv[])
 					<< "REMARK 913 ZINC SMILES: " << smiles << '\n'
 					<< "REMARK 914 ZINC SUPPLIERS: " << supplier << '\n'
 					<< "REMARK 915 IDOCK ATOM COUNTS:"
-					<< setw(3) << ip.counts[0]
-					<< setw(3) << ip.counts[1]
-					<< setw(3) << ip.counts[2]
-					<< setw(3) << ip.counts[3]
-					<< setw(3) << ip.counts[4]
-					<< setw(3) << ip.counts[5]
-					<< setw(3) << ip.counts[6]
-					<< setw(3) << ip.counts[7]
-					<< setw(3) << ip.counts[8]
-					<< setw(3) << ip.counts[9]
-					<< setw(3) << ip.counts[10]
-					<< setw(3) << ip.counts[11]
-					<< setw(3) << ip.counts[12]
-					<< setw(3) << ip.counts[13]
+					<< setw(3) << xp.counts[0]
+					<< setw(3) << xp.counts[1]
+					<< setw(3) << xp.counts[2]
+					<< setw(3) << xp.counts[3]
+					<< setw(3) << xp.counts[4]
+					<< setw(3) << xp.counts[5]
+					<< setw(3) << xp.counts[6]
+					<< setw(3) << xp.counts[7]
+					<< setw(3) << xp.counts[8]
+					<< setw(3) << xp.counts[9]
+					<< setw(3) << xp.counts[10]
+					<< setw(3) << xp.counts[11]
+					<< setw(3) << xp.counts[12]
+					<< setw(3) << xp.counts[13]
 					<< '\n'
 					<< "REMARK 916 IDOCK ATOM COUNTS:"
-					<< setw(3) << ip.counts[14]
-					<< setw(3) << ip.counts[15]
-					<< setw(3) << ip.counts[16]
-					<< setw(3) << ip.counts[17]
+					<< setw(3) << xp.counts[14]
+					<< setw(3) << xp.counts[15]
+					<< setw(3) << xp.counts[16]
+					<< setw(3) << xp.counts[17]
 					<< '\n'
 					<< "REMARK 917 IDOCK FRAME COUNTS:"
-					<< setw(3) << ip.counts[18]
-					<< setw(3) << ip.counts[19]
+					<< setw(3) << xp.counts[18]
+					<< setw(3) << xp.counts[19]
 					<< '\n'
-					<< "REMARK 918 IDOCK PROPERTIES:" << setw(8) << ip.mwt << '\n'
+					<< "REMARK 918 IDOCK PROPERTIES:" << setw(8) << xp.mwt << '\n'
 				;
 				lig.write_model(ligands_pdbqt_gz, s, r, b, grid_maps);
 				ligands_pdbqt_gz << "ENDMDL\n";
