@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
 	// Load a random forest from file.
 	cout << local_time() << "Loading a random forest from file" << endl;
 	forest f;
-	f.load("pdbbind-latest-refined-x42.rf");
+	f.load("pdbbind-refined-x42.rf");
 
 	// Initialize a MT19937 random number generator.
 	cout << local_time() << "Seeding a MT19937 RNG with " << seed << endl;
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Reading ID file" << endl;
 	vector<string> zincids(total_ligands);
 	{
-		std::ifstream ifs("16_id.tsv");
+		std::ifstream ifs("16_zincid.txt");
 		for (auto& zincid : zincids)
 		{
 			getline(ifs, zincid);
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Reading ZINC property file" << endl;
 	vector<zproperty> zproperties(total_ligands);
 	{
-		std::ifstream ifs("16_prop.bin", ios::binary);
+		std::ifstream ifs("16_zprop.bin", ios::binary);
 		for (auto& p : zproperties)
 		{
 			ifs.read(reinterpret_cast<char*>(&p), 26); // sizeof(zproperty) == 28
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Reading SMILES file" << endl;
 	vector<string> smileses(total_ligands);
 	{
-		std::ifstream ifs("16_smiles.tsv");
+		std::ifstream ifs("16_smiles.txt");
 		for (auto& smiles : smileses)
 		{
 			getline(ifs, smiles);
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Reading supplier file" << endl;
 	vector<string> suppliers(total_ligands);
 	{
-		std::ifstream ifs("16_sup.tsv");
+		std::ifstream ifs("16_supplier.txt");
 		for (auto& supplier : suppliers)
 		{
 			getline(ifs, supplier);
@@ -236,12 +236,12 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Reading header file" << endl;
 	vector<size_t> headers(total_ligands);
 	{
-		std::ifstream ifs("16_hdr.bin", ios::binary);
+		std::ifstream ifs("16_header.bin", ios::binary);
 		ifs.read(reinterpret_cast<char*>(headers.data()), sizeof(size_t) * total_ligands);
 	}
 
 	// Open ligand file for reading.
-	boost::filesystem::ifstream ligands("16_lig.pdbqt");
+	boost::filesystem::ifstream ligands("16_ligand.pdbqt");
 
 	cout << local_time() << "Entering event loop" << endl;
 	bool sleeping = false;
