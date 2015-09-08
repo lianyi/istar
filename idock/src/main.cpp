@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
 	// Initialize variables for job caching.
 	OID _id;
-	path rmt_job_path, lcl_job_path, receptor_path, box_path;
+	path rmt_job_path, lcl_job_path;
 	double mwt_lb, mwt_ub, lgp_lb, lgp_ub, ads_lb, ads_ub, pds_lb, pds_ub;
 	int num_ligands, hbd_lb, hbd_ub, hba_lb, hba_ub, psa_lb, psa_ub, chg_lb, chg_ub, nrb_lb, nrb_ub;
 	fl filtering_probability;
@@ -334,22 +334,20 @@ int main(int argc, char* argv[])
 			// Initialize paths for box and receptor files.
 			rmt_job_path = rmt_jobs_path / _id.str();
 			lcl_job_path = lcl_jobs_path / _id.str();
-			box_path = rmt_job_path / "box.conf";
-			receptor_path = rmt_job_path / "receptor.pdbqt";
 			create_directory(lcl_job_path);
 
-			// Read the box and receptor files remotely via SSH SCP.
+			// Read input files remotely via SSH SCP.
 			stringstream ssbox, ssrec;
 			const auto curl = curl_easy_init();
-			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+//			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_stringstream);
 			cout << local_time() << "Reloading the box file" << endl;
-			curl_easy_setopt(curl, CURLOPT_URL, box_path.c_str());
+			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "box.conf").c_str());
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ssbox);
 			curl_easy_perform(curl);
 			cout << local_time() << "Reloading the receptor file" << endl;
-			curl_easy_setopt(curl, CURLOPT_URL, receptor_path.c_str());
+			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "receptor.pdbqt").c_str());
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ssrec);
 			curl_easy_perform(curl);
 			curl_easy_cleanup(curl);
@@ -706,14 +704,16 @@ int main(int argc, char* argv[])
 
 		// Write output files remotely via SSH SCP.
 		const auto curl = curl_easy_init();
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+//		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 		curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 		curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
+		cout << local_time() << "Writing log.csv.gz" << endl;
 		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "log.csv.gz").c_str());
 		curl_easy_setopt(curl, CURLOPT_INFILESIZE, sslog.tellp());
 		curl_easy_setopt(curl, CURLOPT_READDATA, &sslog);
 		curl_easy_perform(curl);
+		cout << local_time() << "Writing ligands.pdbqt.gz" << endl;
 		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "ligands.pdbqt.gz").c_str());
 		curl_easy_setopt(curl, CURLOPT_INFILESIZE, sslig.tellp());
 		curl_easy_setopt(curl, CURLOPT_READDATA, &sslig);
