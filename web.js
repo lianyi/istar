@@ -77,13 +77,11 @@ if (cluster.isMaster) {
 			var env = process.env.NODE_ENV || 'development';
 			if (env == 'development') {
 				app.use(express.static(__dirname + '/public'));
-				app.use(express.static('/research/ksleung1/hjli/istar/public'));
 				app.use(favicon(__dirname + '/public/favicon.ico'));
 			} else if (env == 'production') {
 				var oneDay = 1000 * 60 * 60 * 24;
 				var oneYear = oneDay * 365.25;
 				app.use(express.static(__dirname + '/public', { maxAge: oneDay }));
-				app.use(express.static('/research/ksleung1/hjli/istar/public', { maxAge: oneDay }));
 				app.use(favicon(__dirname + '/public/favicon.ico', { maxAge: oneYear }));
 			};
 			// Define helper variables and functions
@@ -249,7 +247,7 @@ if (cluster.isMaster) {
 					}
 					v.res.submitted = new Date();
 					v.res._id = new mongodb.ObjectID();
-					var dir = '/research/ksleung1/hjli/istar/public/idock/jobs/' + v.res._id;
+					var dir = __dirname + '/public/idock/jobs/' + v.res._id;
 					fs.mkdir(dir, function (err) {
 						if (err) throw err;
 						fs.writeFile(dir + '/receptor.pdb', req.body['receptor'], function(err) {
@@ -419,7 +417,7 @@ if (cluster.isMaster) {
 				}
 				v.res.submitted = new Date();
 				v.res._id = new mongodb.ObjectID();
-				var dir = '/research/ksleung1/hjli/istar/public/usr/jobs/' + v.res._id;
+				var dir = __dirname + '/public/usr/jobs/' + v.res._id;
 				fs.mkdir(dir, function (err) {
 					if (err) throw err;
 					fs.writeFile(dir + '/ligand.' + v.res.format, req.body['ligand'], function(err) {
