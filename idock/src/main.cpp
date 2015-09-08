@@ -699,8 +699,8 @@ int main(int argc, char* argv[])
 					<< '\n'
 					<< "REMARK 918 IDOCK PROPERTIES:" << setw(8) << xp.mwt << '\n'
 				;
-				lig.write_model(foslog, s, r, b, grid_maps);
-				foslog << "ENDMDL\n";
+				lig.write_model(foslig, s, r, b, grid_maps);
+				foslig << "ENDMDL\n";
 			}
 		}
 
