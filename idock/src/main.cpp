@@ -743,14 +743,15 @@ int main(int argc, char* argv[])
 		// Remove slice csv files.
 		if (summaries.size())
 		{
-			cout << local_time() << "Removing slice csv files" << endl;
+/*			cout << local_time() << "Removing slice csv files" << endl;
 			for (size_t s = 0; s < num_slices; ++s)
 			{
 				const auto slice_csv_path = lcl_job_path / (lexical_cast<string>(s) + ".csv");
 				remove(slice_csv_path);
-			}
+			}*/
+			cout << local_time() << "Removing slice csv directory" << endl;
+			remove_all(lcl_job_path);
 		}
-		remove_all(lcl_job_path);
 
 		if (phase2only) break;
 	}
