@@ -6,7 +6,7 @@
 
 using std::istringstream;
 
-receptor::receptor(const path& p, const box& b) : partitions(b.num_partitions)
+receptor::receptor(istream& is, const box& b) : partitions(b.num_partitions)
 {
 	// Initialize necessary variables for constructing a receptor.
 	atoms.reserve(5000); // A receptor typically consists of <= 5,000 atoms.
@@ -20,7 +20,7 @@ receptor::receptor(const path& p, const box& b) : partitions(b.num_partitions)
 	line.reserve(79); // According to PDBQT specification, the last item AutoDock atom type locates at 1-based [78, 79].
 
 	// Parse ATOM/HETATM.
-	for (boost::filesystem::ifstream ifs(p); getline(ifs, line);)
+	while (getline(is, line))
 	{
 		++num_lines;
 		if (starts_with(line, "ATOM") || starts_with(line, "HETATM"))

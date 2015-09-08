@@ -8,6 +8,7 @@
 #include <Poco/Net/MailMessage.h>
 #include <Poco/Net/MailRecipient.h>
 #include <Poco/Net/SMTPClientSession.h>
+#include <curl/curl.h>
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
 #include "receptor.hpp"
@@ -44,12 +45,27 @@ struct xproperty
 	float mwt;
 };
 
+size_t write_to_stringstream(const char *buffer, size_t size, size_t count, ostringstream *ss)
+{
+	assert(size == 1);
+	ss->write(buffer, count);
+	return count;
+}
+
+size_t read_from_stringstream(char *buffer, size_t size, size_t count, istringstream *ss)
+{
+	assert(size == 1);
+	if (ss->eof()) return 0;
+	ss->read(buffer, count);
+	return count;
+}
+
 int main(int argc, char* argv[])
 {
 	// Check the required number of comand line arguments.
-	if (argc < 5)
+	if (argc < 6)
 	{
-		cout << "idock host user pwd jobs_path [jobid]" << endl;
+		cout << "idock host user pwd scp_path jobs_path [jobid]" << endl;
 		return 0;
 	}
 
@@ -57,8 +73,9 @@ int main(int argc, char* argv[])
 	const auto host = argv[1];
 	const auto user = argv[2];
 	const auto pwd = argv[3];
-	const path jobs_path = argv[4];
-	const bool phase2only = argc > 5;
+	const path rmt_jobs_path = argv[4];
+	const path lcl_jobs_path = argv[5];
+	const bool phase2only = argc > 6;
 
 	DBClientConnection conn;
 	{
@@ -100,7 +117,7 @@ int main(int argc, char* argv[])
 
 	// Initialize variables for job caching.
 	OID _id;
-	path job_path, receptor_path, box_path;
+	path rmt_job_path, lcl_job_path, receptor_path, box_path;
 	double mwt_lb, mwt_ub, lgp_lb, lgp_ub, ads_lb, ads_ub, pds_lb, pds_ub;
 	int num_ligands, hbd_lb, hbd_ub, hba_lb, hba_ub, psa_lb, psa_ub, chg_lb, chg_ub, nrb_lb, nrb_ub;
 	fl filtering_probability;
@@ -243,6 +260,9 @@ int main(int argc, char* argv[])
 	// Open ligand file for reading.
 	boost::filesystem::ifstream ligands("16_ligand.pdbqt");
 
+	// Initialize curl globally.
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+
 	cout << local_time() << "Entering event loop" << endl;
 	bool sleeping = false;
 	while (true)
@@ -312,21 +332,36 @@ int main(int argc, char* argv[])
 			filtering_probability = max_ligands_per_job / num_ligands;
 
 			// Initialize paths for box and receptor files.
-			job_path = jobs_path / _id.str();
-			box_path = job_path / "box.conf";
-			receptor_path = job_path / "receptor.pdbqt";
+			rmt_job_path = rmt_jobs_path / _id.str();
+			lcl_job_path = lcl_jobs_path / _id.str();
+			box_path = rmt_job_path / "box.conf";
+			receptor_path = rmt_job_path / "receptor.pdbqt";
+			create_directory(lcl_job_path);
+
+			// Read the box and receptor files remotely via SSH SCP.
+			stringstream ssbox, ssrec;
+			const auto curl = curl_easy_init();
+			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_stringstream);
+			cout << local_time() << "Reloading the box file" << endl;
+			curl_easy_setopt(curl, CURLOPT_URL, box_path.c_str());
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ssbox);
+			curl_easy_perform(curl);
+			cout << local_time() << "Reloading the receptor file" << endl;
+			curl_easy_setopt(curl, CURLOPT_URL, receptor_path.c_str());
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ssrec);
+			curl_easy_perform(curl);
+			curl_easy_cleanup(curl);
 
 			// Parse the box file.
-			cout << local_time() << "Reloading the box file" << endl;
 			variables_map vm;
-			boost::filesystem::ifstream box_ifs(box_path);
-			store(parse_config_file(box_ifs, box_options), vm);
+			store(parse_config_file(ssbox, box_options), vm);
 			vm.notify();
 			b = box(vec3(center[0], center[1], center[2]), vec3(size[0], size[1], size[2]), grid_granularity);
 
 			// Parse the receptor file.
-			cout << local_time() << "Reloading the receptor file" << endl;
-			rec = receptor(receptor_path, b);
+			rec = receptor(ssrec, b);
 
 			// Reserve storage for grid map task container.
 			num_gm_tasks = b.num_probes[0];
@@ -343,7 +378,7 @@ int main(int argc, char* argv[])
 			const auto slice_key = lexical_cast<string>(slice);
 			const auto beg_lig = slices[slice];
 			const auto end_lig = slices[slice + 1];
-			boost::filesystem::ofstream slice_csv(job_path / (slice_key + ".csv"));
+			boost::filesystem::ofstream slice_csv(lcl_job_path / (slice_key + ".csv"));
 			slice_csv.setf(ios::fixed, ios::floatfield);
 			slice_csv << setprecision(12); // Dump as many digits as possible in order to recover accurate conformations in summaries.
 			for (auto idx = beg_lig; idx < end_lig; ++idx)
@@ -488,7 +523,7 @@ int main(int argc, char* argv[])
 		for (size_t s = 0; s < num_slices; ++s)
 		{
 			// Parse slice csv.
-			const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
+			const auto slice_csv_path = lcl_job_path / (lexical_cast<string>(s) + ".csv");
 			for (boost::filesystem::ifstream slice_csv(slice_csv_path); getline(slice_csv, line);)
 			{
 				vector<string> tokens;
@@ -531,20 +566,19 @@ int main(int argc, char* argv[])
 		BOOST_ASSERT(num_hits <= num_ligands);
 
 		// Write results for successfully docked ligands.
-		cout << local_time() << "Writing output files" << endl;
+		cout << local_time() << "Writing output streams" << endl;
+		stringstream sslog, sslig;
 		{
-			boost::filesystem::ofstream log_csv(job_path / "log.csv.gz");
-			boost::filesystem::ofstream ligands_pdbqt(job_path / "ligands.pdbqt.gz");
-			filtering_ostream log_csv_gz;
-			filtering_ostream ligands_pdbqt_gz;
-			log_csv_gz.push(gzip_compressor());
-			ligands_pdbqt_gz.push(gzip_compressor());
-			log_csv_gz.push(log_csv);
-			ligands_pdbqt_gz.push(ligands_pdbqt);
-			log_csv_gz.setf(ios::fixed, ios::floatfield);
-			ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
-			ligands_pdbqt_gz << "REMARK 901 FILE VERSION: 1.0.0\n" << setprecision(3);
+			filtering_ostream foslog;
+			filtering_ostream foslig;
+			foslog.push(gzip_compressor());
+			foslig.push(gzip_compressor());
+			foslog.push(sslog);
+			foslig.push(sslig);
+			foslog.setf(ios::fixed, ios::floatfield);
+			foslig.setf(ios::fixed, ios::floatfield);
+			foslog << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
+			foslig << "REMARK 901 FILE VERSION: 1.0.0\n" << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
 				// Retrieve the ligand properties.
@@ -555,8 +589,8 @@ int main(int argc, char* argv[])
 				const auto smiles = smileses[s.index];
 				const auto supplier = suppliers[s.index];
 
-				// Write to log.csv.gz.
-				log_csv_gz
+				// Write to log stream.
+				foslog
 					<< zincid << ','
 					<< s.energy << ','
 					<< s.rfscore << ','
@@ -620,8 +654,8 @@ int main(int argc, char* argv[])
 				lig.evaluate(s.conf, sf, b, grid_maps, -99, e, f, g);
 				const auto r = lig.compose_result(e, f, s.conf);
 
-				// Write models to file.
-				ligands_pdbqt_gz
+				// Write models to ligand stream.
+				foslig
 					<< "MODEL " << '\n'
 					<< "REMARK 911 ZINC ID: " << zincid << '\n'
 					<< "REMARK 912 ZINC PROPERTIES:"
@@ -665,10 +699,26 @@ int main(int argc, char* argv[])
 					<< '\n'
 					<< "REMARK 918 IDOCK PROPERTIES:" << setw(8) << xp.mwt << '\n'
 				;
-				lig.write_model(ligands_pdbqt_gz, s, r, b, grid_maps);
-				ligands_pdbqt_gz << "ENDMDL\n";
+				lig.write_model(foslog, s, r, b, grid_maps);
+				foslog << "ENDMDL\n";
 			}
 		}
+
+		// Write output files remotely via SSH SCP.
+		const auto curl = curl_easy_init();
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+		curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
+		curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
+		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "log.csv.gz").c_str());
+		curl_easy_setopt(curl, CURLOPT_INFILESIZE, sslog.tellp());
+		curl_easy_setopt(curl, CURLOPT_READDATA, &sslog);
+		curl_easy_perform(curl);
+		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "ligands.pdbqt.gz").c_str());
+		curl_easy_setopt(curl, CURLOPT_INFILESIZE, sslig.tellp());
+		curl_easy_setopt(curl, CURLOPT_READDATA, &sslig);
+		curl_easy_perform(curl);
+		curl_easy_cleanup(curl);
 
 		// Set done time.
 		cout << local_time() << "Setting done time" << endl;
@@ -696,11 +746,13 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Removing slice csv files" << endl;
 			for (size_t s = 0; s < num_slices; ++s)
 			{
-				const auto slice_csv_path = job_path / (lexical_cast<string>(s) + ".csv");
+				const auto slice_csv_path = lcl_job_path / (lexical_cast<string>(s) + ".csv");
 				remove(slice_csv_path);
 			}
 		}
+		remove_all(lcl_job_path);
 
 		if (phase2only) break;
 	}
+	curl_global_cleanup();
 }
