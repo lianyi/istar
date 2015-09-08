@@ -8,6 +8,8 @@ genomes
 cudart
 seminar?.*
 backups
+piano
 *.tgz
 *.mp4
 *.m2ts
+*.iso
