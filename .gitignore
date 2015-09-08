@@ -9,3 +9,5 @@ cudart
 seminar?.*
 backups
 *.tgz
+*.mp4
+*.m2ts
