@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 	// Check the required number of comand line arguments.
 	if (argc < 6)
 	{
-		cout << "idock host user pwd scp_path jobs_path [jobid]" << endl;
+		cout << "idock host user pwd rmt_jobs_path lcl_jobs_path [jobid]" << endl;
 		return 0;
 	}
 
