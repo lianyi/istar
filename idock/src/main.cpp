@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
 			stringstream ssbox, ssrec;
 			const auto curl = curl_easy_init();
 //			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
-			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_stringstream);
 			cout << local_time() << "Reloading the box file" << endl;
 			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "box.conf").c_str());
@@ -705,7 +705,7 @@ int main(int argc, char* argv[])
 		// Write output files remotely via SSH SCP.
 		const auto curl = curl_easy_init();
 //		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
-		curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+		curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 		curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
 		cout << local_time() << "Writing log.csv.gz" << endl;
