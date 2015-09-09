@@ -444,8 +444,13 @@ if (cluster.isMaster) {
 					return;
 				}
 				v.res.submitted = new Date();
-				igrep.insert(v.res, {w: 0});
-				res.json({});
+				v.res._id = new mongodb.ObjectID();
+				var dir = __dirname + '/public/igrep/jobs/' + v.res._id;
+				fs.mkdir(dir, function (err) {
+					if (err) throw err;
+					igrep.insert(v.res, {w: 0});
+					res.json({});
+				});
 			});
 			// Start listening
 			var http_port = 3000, spdy_port = 3443;

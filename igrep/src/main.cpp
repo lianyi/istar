@@ -13,6 +13,7 @@
 #include <Poco/Net/MailMessage.h>
 #include <Poco/Net/MailRecipient.h>
 #include <Poco/Net/SMTPClientSession.h>
+#include <curl/curl.h>
 #include "kernel.hpp"
 
 using namespace std;
@@ -28,6 +29,14 @@ using namespace Poco::Net;
 inline static string local_time()
 {
 	return to_simple_string(microsec_clock::local_time()) + " ";
+}
+
+size_t read_from_stringstream(char *buffer, size_t size, size_t count, istringstream *ss)
+{
+	assert(size == 1);
+	if (ss->eof()) return 0;
+	ss->read(buffer, count);
+	return count;
 }
 
 /**
@@ -187,7 +196,7 @@ int main(int argc, char** argv)
 	// Check the required number of command line arguments.
 	if (argc != 5)
 	{
-		cout << "igrep host user pwd jobs_path" << endl;
+		cout << "igrep host user pwd rmt_rmt_jobs_path" << endl;
 		return 0;
 	}
 
@@ -195,7 +204,7 @@ int main(int argc, char** argv)
 	const auto host = argv[1];
 	const auto user = argv[2];
 	const auto pwd = argv[3];
-	const path jobs_path = argv[4];
+	const path rmt_jobs_path = argv[4];
 
 	DBClientConnection conn;
 	{
@@ -254,6 +263,9 @@ int main(int argc, char** argv)
 	// Initialize epoch
 	const auto epoch = date(1970, 1, 1);
 
+	// Initialize curl globally.
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+
 	while (true)
 	{
 		// Fetch jobs.
@@ -281,11 +293,8 @@ int main(int argc, char** argv)
 			checkCudaErrors(cudaMalloc((void**)&match_device, sizeof(unsigned int) * max_match_count));
 			initAgrepKernel(scodon_device, g.character_count, match_device, max_match_count);
 
-			// Create a job directory, open log and pos files, and write headers.
-			const path job_path = jobs_path / _id.str();
-			create_directory(job_path);
-			boost::filesystem::ofstream log(job_path / "log.csv");
-			boost::filesystem::ofstream pos(job_path / "pos.csv");
+			// Create output string streams.
+			stringstream log, pos;
 			log << "Query Index,Pattern,Edit Distance,Number of Matches\n";
 			pos << "Query Index,Match Index,File Index,Ending Position\n";
 
@@ -388,11 +397,25 @@ int main(int argc, char** argv)
 			}
 
 			// Release resources.
-			pos.close();
-			log.close();
 			checkCudaErrors(cudaFree(match_device));
 			checkCudaErrors(cudaFree(scodon_device));
 			checkCudaErrors(cudaDeviceReset());
+
+			// Write output files remotely via SSH SCP.
+			const path rmt_job_path = rmt_jobs_path / _id.str();
+			const auto curl = curl_easy_init();
+			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
+			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "log.csv").c_str());
+			curl_easy_setopt(curl, CURLOPT_INFILESIZE, log.tellp());
+			curl_easy_setopt(curl, CURLOPT_READDATA, &log);
+			curl_easy_perform(curl);
+			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "pos.csv").c_str());
+			curl_easy_setopt(curl, CURLOPT_INFILESIZE, pos.tellp());
+			curl_easy_setopt(curl, CURLOPT_READDATA, &pos);
+			curl_easy_perform(curl);
+			curl_easy_cleanup(curl);
 
 			// Update progress.
 			const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -420,4 +443,5 @@ int main(int argc, char** argv)
 		// Sleep for a second.
 		this_thread::sleep_for(std::chrono::seconds(10));
 	}
+	curl_global_cleanup();
 }
