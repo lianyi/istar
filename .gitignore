@@ -13,3 +13,6 @@ piano
 *.mp4
 *.m2ts
 *.iso
+*/log
+idock/idock.sh
+igrep/igrep.sh
