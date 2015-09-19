@@ -360,7 +360,7 @@ $(function() {
 		bgeo.vertices.push(b110);
 		bgeo.vertices.push(b111);
 		bgeo.computeLineDistances();
-		box = new THREE.Line(bgeo, new THREE.LineDashedMaterial({ linewidth: 4, color: defaultBoxColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		box = new THREE.LineSegments(bgeo, new THREE.LineDashedMaterial({ linewidth: 4, color: defaultBoxColor, dashSize: 0.25, gapSize: 0.125 }));
 		mdl.add(box);
 	};
 	var render = function () {
@@ -596,7 +596,7 @@ $(function() {
 					geo.colors.push(atom1.color);
 				}
 			});
-			mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: linewidth, vertexColors: true }), THREE.LinePieces));
+			mdl.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ linewidth: linewidth, vertexColors: true })));
 			model(ligands, function (atom0) {
 				mdl.add(createSphere(atom0, cylinderRadius));
 			}, function (atom0, atom1) {
@@ -616,7 +616,7 @@ $(function() {
 			}
 			if (ged.vertices.length) {
 				ged.computeLineDistances();
-				mdl.add(new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
+				mdl.add(new THREE.LineSegments(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 })));
 			}
 			var lidx, lcnt = 0;
 			for (var i in resi) {

@@ -855,7 +855,7 @@ void main()\n\
 		}
 		if (ged.vertices.length) {
 			ged.computeLineDistances();
-			this.mdl.add(new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: this.linewidth, color: this.defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces));
+			this.mdl.add(new THREE.LineSegments(ged, new THREE.LineDashedMaterial({ linewidth: this.linewidth, color: this.defaultBondColor, dashSize: 0.25, gapSize: 0.125 })));
 		}
 	},
 
@@ -902,7 +902,7 @@ void main()\n\
 				geo.colors.push(atom1.color);
 			}
 		});
-		this.mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: this.linewidth, vertexColors: true }), THREE.LinePieces));
+		this.mdl.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ linewidth: this.linewidth, vertexColors: true })));
 	},
 
 	subdivide: function (_points, DIV) { // Catmull-Rom subdivision
@@ -947,7 +947,7 @@ void main()\n\
 			geo.vertices.push(points[i]);
 			geo.colors.push(new THREE.Color(colors[i == 0 ? 0 : Math.round((i - 1) * divInv)]));
 		}
-		this.mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: width, vertexColors: true }), THREE.LineStrip));
+		this.mdl.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: width, vertexColors: true })));
 	},
 
 	createCurve: function (atoms, curveWidth, atomName, div) {

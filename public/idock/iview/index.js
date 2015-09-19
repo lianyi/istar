@@ -773,7 +773,7 @@ void main()\n\
 			}
 		}
 		geo.computeLineDistances();
-		return new THREE.Line(geo, new THREE.LineDashedMaterial({ color: defaultColor.bond, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		return new THREE.LineSegments(geo, new THREE.LineDashedMaterial({ color: defaultColor.bond, dashSize: 0.25, gapSize: 0.125 }));
 	};
 	var createSphereRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
@@ -800,7 +800,7 @@ void main()\n\
 	var createLineRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
 		var geo = new THREE.Geometry();
-		obj.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ vertexColors: true }), THREE.LinePieces));
+		obj.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ vertexColors: true })));
 		obj.add(createRepresentationSub(atoms, function (atom0) {
 			if (atom0.solvent) {
 				obj.add(createSphere(atom0, sphereRadius, false, 0.2));
@@ -832,7 +832,7 @@ void main()\n\
 			geo.vertices.push(interaction.l.coord);
 		});
 		geo.computeLineDistances();
-		return new THREE.Line(geo, new THREE.LineDashedMaterial({ color: color, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		return new THREE.LineSegments(geo, new THREE.LineDashedMaterial({ color: color, dashSize: 0.25, gapSize: 0.125 }));
 	};
 	var createLabelRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
@@ -850,7 +850,7 @@ void main()\n\
 			geo.vertices.push(points[elem]);
 		});
 		geo.computeLineDistances();
-		return new THREE.Line(geo, new THREE.LineDashedMaterial({ color: defaultColor.box, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		return new THREE.LineSegments(geo, new THREE.LineDashedMaterial({ color: defaultColor.box, dashSize: 0.25, gapSize: 0.125 }));
 	};
 	var refreshBoxRepresentation = function (box) {
 		var r = box.representations[box.active];
