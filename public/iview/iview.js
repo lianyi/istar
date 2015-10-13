@@ -1184,13 +1184,13 @@ void main()\n\
 			geo.computeVertexNormals(false);
 			this.surfaces[type] = geo;
 		}
-		geo.colorsNeedUpdate = true;
-		geo.faces.forEach(function (f) {
+		var geoc = geo.clone(); // A clone is necessary because the state of the geometry object will be changed.
+		geoc.faces.forEach(function (f) {
 			f.vertexColors = ['a', 'b', 'c' ].map(function (d) {
 				return atoms[geo.vertices[f[d]].atomid].color;
 			});
 		});
-		this.mdl.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+		this.mdl.add(new THREE.Mesh(geoc, new THREE.MeshLambertMaterial({
 			vertexColors: THREE.VertexColors,
 			wireframe: wireframe,
 			opacity: opacity,
