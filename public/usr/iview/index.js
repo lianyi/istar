@@ -946,6 +946,7 @@ void main()\n\
 					});
 					start_frame = undefined;
 				} else if (record === 'TORSDO') {
+					ligand.nha = Object.keys(atoms).length;
 					for (var j in rotors) {
 						var r = rotors[j];
 						atoms[r.x].bonds.push(atoms[r.y]);
