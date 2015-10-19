@@ -6,15 +6,15 @@
   <meta name="author" content="Hongjian Li">
   <meta name="description" content="idock: a multithreaded virtual screening tool for flexible ligand docking">
   <title>idock: a multithreaded virtual screening tool for flexible ligand docking</title>
-  <link rel="stylesheet" href="/bootstrap.min.css">
-  <link rel="stylesheet" href="/bootstrap-theme.min.css">
-  <link rel="stylesheet" href="/jquery-ui.min.css">
-  <link rel="stylesheet" href="/index.css">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+  <link rel="stylesheet" href="../bootstrap.min.css">
+  <link rel="stylesheet" href="../bootstrap-theme.min.css">
+  <link rel="stylesheet" href="../jquery-ui.min.css">
+  <link rel="stylesheet" href="../index.css">
+  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="../apple-touch-icon-57-precomposed.png">
   <script>
     var _gaq=[['_setAccount','UA-20604862-1'],['_trackPageview']];
     (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
@@ -24,7 +24,7 @@
 </head>
 <body>
   <a class="sr-only" href="#content">Skip navigation</a>
-  <a href="//github.com/HongjianLi/istar" class="ribbon"></a>
+  <a href="https://github.com/HongjianLi/istar" class="ribbon"></a>
   <header class="navbar navbar-inverse navbar-static-top" role="banner">
     <div class="container">
       <div class="navbar-header">
@@ -37,22 +37,22 @@
       <nav class="collapse navbar-collapse" role="navigation">
         <ul class="nav navbar-nav">
           <li>
-            <a href="/"><img src="/logo.png" alt="istar logo">istar: software as a service</a>
+            <a href=".."><img src="../logo.png" alt="istar logo">istar: software as a service</a>
           </li>
           <li class="active">
-            <a href="/idock"><img src="/idock/logo.png" alt="idock logo">idock: protein-ligand docking</a>
+            <a href="../idock"><img src="../idock/logo.png" alt="idock logo">idock: protein-ligand docking</a>
           </li>
           <li>
-            <a href="/usr"><img src="/usr/logo.png" alt="idock logo">usr: ultrafast shape recognition</a>
+            <a href="../usr"><img src="../usr/logo.png" alt="idock logo">usr: ultrafast shape recognition</a>
           </li>
           <li>
-            <a href="/iview"><img src="/iview/logo.png" alt="iview logo">iview: interactive WebGL visualizer</a>
+            <a href="../iview"><img src="../iview/logo.png" alt="iview logo">iview: interactive WebGL visualizer</a>
           </li>
           <li>
-            <a href="/igrep"><img src="/igrep/logo.png" alt="igrep logo">igrep: DNA sequence matching</a>
+            <a href="../igrep"><img src="../igrep/logo.png" alt="igrep logo">igrep: DNA sequence matching</a>
           </li>
           <li>
-            <a href="/icuda"><img src="/icuda/logo.png" alt="icuda logo">icuda: introduction to CUDA</a>
+            <a href="../icuda"><img src="../icuda/logo.png" alt="icuda logo">icuda: introduction to CUDA</a>
           </li>
         </ul>
       </nav>
@@ -92,8 +92,8 @@
         <div class="col-md-12">
           <p>The output from idock is twofold:</p>
           <ul>
-            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: the predicted free energy, ligand efficiency, RF-Score, hydrogen bonds, molecular properties, link to substance information and supplier list of the selected ligands.</li>
-            <li><img src="/molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: the predicted conformations of the top 1000 ligands.</li>
+            <li><img src="../excel.png" alt="log.csv.gz">log.csv.gz: the predicted free energy, ligand efficiency, RF-Score, hydrogen bonds, molecular properties, link to substance information and supplier list of the selected ligands.</li>
+            <li><img src="../molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: the predicted conformations of the top 1000 ligands.</li>
           </ul>
         </div>
       </div>
@@ -104,7 +104,7 @@
           </div>
         </div>
         <div class="col-md-7">
-          <p id="surfaceStatus" style="display: none">Creating protein surface <img src="/loading.gif" alt="loading" style="width: 16px; height: 16px;"></p>
+          <p id="surfaceStatus" style="display: none">Creating protein surface <img src="../loading.gif" alt="loading" style="width: 16px; height: 16px;"></p>
         </div>
       </div>
       <div class="row">
@@ -242,7 +242,7 @@
           </div>
         </div>
         <div class="col-md-1">
-          <p id="submissionStatus" style="display: none"><img src="/loading.gif" alt="loading"></p>
+          <p id="submissionStatus" style="display: none"><img src="../loading.gif" alt="loading"></p>
         </div>
       </div>
     </section>
@@ -270,14 +270,14 @@
 		        <li>Shift: zoom in/out</li>
 		        <li>Ctrl + shift: slab</li>
 		      </ul>
-              <img class="img-responsive" src="/grey.gif" data-original="4MBS.png" alt="4MBS">
+              <img class="img-responsive" src="../grey.gif" data-original="4MBS.png" alt="4MBS">
               <p>Adjust the center and the size so that the search space covers your desired binding site just right.</p>
               <p>Fill in your email to receive notification upon job completion. Fill in any anonymous email should you not want to receive notification.</p>
               <p>Filter ligands according to your application. Avoid choosing too many ligands to make sure your job can be done within a reasonable time. Current docking speed is 1 second per ligand.</p>
               <p>Submit your job. Only protein chains and ions will be sent to the server. Ligands and waters will be discarded.</p>
               <p>Check your job status in the topmost table.</p>
               <p>In some cases we do not want to send all protein chains to the server. Take the influenza A virus nucleoprotein (PDB code: <a href="http://www.pdb.org/pdb/explore/explore.do?structureId=2IQH">2IQH</a>) as an example. It is a trimer and contains three chains. The binding site of a chain is occupied by the tail loop of a neighboring chain. Therefore use a text editor to manually remove two chains in advance, and repeat the above procedure.</p>
-              <img class="img-responsive" src="/grey.gif" data-original="2IQH.png" alt="2IQH">
+              <img class="img-responsive" src="../grey.gif" data-original="2IQH.png" alt="2IQH">
             </div>
             <h3>How to enable WebGL to visualize the target protein</h3>
             <div>
@@ -344,35 +344,35 @@ curl http://istar.cse.cuhk.edu.hk/idock/ligands -Gd 'mwt_lb=400&amp;mwt_ub=500&a
             <div>
               <div class="row">
                 <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="mwt.png" alt="Molecular weight (g/mol)">
+                  <img class="img-responsive" src="../grey.gif" data-original="mwt.png" alt="Molecular weight (g/mol)">
                 </div>
                 <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="lgp.png" alt="Partition coefficient xlogP">
+                  <img class="img-responsive" src="../grey.gif" data-original="lgp.png" alt="Partition coefficient xlogP">
                 </div>
                 <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="ads.png" alt="Apolar desolvation (kcal/mol)">
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="pds.png" alt="Polar desolvation (kcal/mol)">
-                </div>
-                <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="hbd.png" alt="Hydrogen bond donors">
-                </div>
-                <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="hba.png" alt="Hydrogen bond acceptors">
+                  <img class="img-responsive" src="../grey.gif" data-original="ads.png" alt="Apolar desolvation (kcal/mol)">
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="psa.png" alt="Polar surface area tPSA (&Aring;<sup>2</sup>)">
+                  <img class="img-responsive" src="../grey.gif" data-original="pds.png" alt="Polar desolvation (kcal/mol)">
                 </div>
                 <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="chg.png" alt="Net charge">
+                  <img class="img-responsive" src="../grey.gif" data-original="hbd.png" alt="Hydrogen bond donors">
                 </div>
                 <div class="col-md-4">
-                  <img class="img-responsive" src="/grey.gif" data-original="nrb.png" alt="Rotatable bonds">
+                  <img class="img-responsive" src="../grey.gif" data-original="hba.png" alt="Hydrogen bond acceptors">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4">
+                  <img class="img-responsive" src="../grey.gif" data-original="psa.png" alt="Polar surface area tPSA (&Aring;<sup>2</sup>)">
+                </div>
+                <div class="col-md-4">
+                  <img class="img-responsive" src="../grey.gif" data-original="chg.png" alt="Net charge">
+                </div>
+                <div class="col-md-4">
+                  <img class="img-responsive" src="../grey.gif" data-original="nrb.png" alt="Rotatable bonds">
                 </div>
               </div>
             </div>
@@ -411,18 +411,18 @@ curl http://istar.cse.cuhk.edu.hk/idock/ligands -Gd 'mwt_lb=400&amp;mwt_ub=500&a
   </div>
   <footer role="contentinfo">
     <div class="container">
-      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+      <p><a href="http://www.cuhk.edu.hk"><img src="../cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="../HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
     </div>
   </footer>
-  <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="/bootstrap.min.js"></script>
-  <script src="/jquery-ui.min.js"></script>
-  <script src="/jquery-dateFormat.min.js"></script>
-  <script src="/jquery.pager.js"></script>
-  <script src="/jquery.lazyload.min.js"></script>
-  <script src="/iview/three.min.js"></script>
-  <script src="/istar.js"></script>
-  <script src="/validator.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../bootstrap.min.js"></script>
+  <script src="../jquery-ui.min.js"></script>
+  <script src="../jquery-dateFormat.min.js"></script>
+  <script src="../jquery.pager.js"></script>
+  <script src="../jquery.lazyload.min.js"></script>
+  <script src="../iview/three.min.js"></script>
+  <script src="../istar.js"></script>
+  <script src="../validator.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
