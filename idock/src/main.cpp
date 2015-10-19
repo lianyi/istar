@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
 		if (phase2only)
 		{
 			cout << local_time() << "Running in phase 2 only mode" << endl;
-			_id.init(argv[5]);
+			_id.init(argv[6]);
 			reload = true;
 		}
 		else
