@@ -958,19 +958,14 @@ void main()\n\
 			}
 			$('#nligands').text(ligands.length);
 			var ids = $('#ids');
-			ids.html(ligands.map(function(ligand) {
-				return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';
+			ids.html(ligands.map(function(ligand, index) {
+				return '<label class="btn btn-primary"><input type="radio" value="' + index + '">' + ligand.id + '</label>';
 			}).join(''));
 			$(':first', ids).addClass('active');
 			$('> .btn', ids).click(function(e) {
 				mdl.remove(ligand.representations.label);
 				mdl.remove(ligand.representations[ligand.active]);
-				ligands.forEach(function(l) {
-					if (l.id.toString() === $(e.target).text().trim()) {
-						ligand = l;
-					}
-				});
-				refreshLigand(ligand);
+				refreshLigand(ligand=ligands[$(e.target)[0].children[0].value]);
 				ligand.active = $('#ligand .active').text().trim();
 				ligand.refresh();
 				render();
