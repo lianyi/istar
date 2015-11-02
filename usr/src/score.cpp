@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 {
 	if (argc < 3)
 	{
-		cout << "score sample.bin output.bin" << endl;
+		cout << "score query.f64 database.f64" << endl;
 		return 1;
 	}
 	const size_t num_usrs = 2;
