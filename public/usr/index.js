@@ -324,18 +324,18 @@ $(function() {
 			rot.add(mdl = new THREE.Object3D());
 			ligand = reader.result;
 			format = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase();
-			var lines = ligand.split('\n'), atoms = {};
+			var lines = ligand.split(/\r?\n/), atoms = {};
 			if (format === 'mol2') {
 				var offset = 0;
 				while (lines[offset++].substr(0, 17) !== '@<TRIPOS>MOLECULE');
-				var tokens = lines[++offset].split(" ").filter(function (token) {
+				var tokens = lines[++offset].split(' ').filter(function (token) {
 					return token.length;
 				});
 				var atomCount = parseInt(tokens[0]);
 				var bondCount = parseInt(tokens[1]);
 				while (lines[offset++].substr(0, 13) !== '@<TRIPOS>ATOM');
 				for (var i = 1; i <= atomCount; ++i) {
-					var tokens = lines[offset++].split(" ").filter(function (token) {
+					var tokens = lines[offset++].split(' ').filter(function (token) {
 						return token.length;
 					});
 					var atom = {
@@ -349,7 +349,7 @@ $(function() {
 				}
 				while (lines[offset++].substr(0, 13) !== '@<TRIPOS>BOND');
 				for (var i = 1; i <= bondCount; ++i) {
-					var tokens = lines[offset++].split(" ").filter(function (token) {
+					var tokens = lines[offset++].split(' ').filter(function (token) {
 						return token.length;
 					});
 					var atom0 = atoms[parseInt(tokens[1])];

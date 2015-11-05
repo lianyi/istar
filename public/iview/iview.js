@@ -672,7 +672,7 @@ void main()\n\
 	loadPDB: function (src) {
 		var helices = [], sheets = [];
 		this.atoms = {};
-		var lines = src.split('\n');
+		var lines = src.split(/\r?\n/);
 		for (var i in lines) {
 			var line = lines[i];
 			var record = line.substr(0, 6);

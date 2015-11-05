@@ -870,7 +870,7 @@ void main()\n\
 		var gunzipWorker = new Worker('/gunzip.js');
 		gunzipWorker.addEventListener('message', function (e) {
 			var ligands = [], atoms, start_frame, rotors;
-			var lines = e.data.split('\n');
+			var lines = e.data.split(/\r?\n/);
 			for (var i = 0, l = lines.length; i < l; ++i) {
 				var line = lines[i];
 				var record = line.substr(0, 6);

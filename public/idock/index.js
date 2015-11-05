@@ -394,7 +394,7 @@ $(function() {
 			rot.remove(mdl);
 			mdl = new THREE.Object3D();
 			rot.add(mdl);
-			var lines = reader.result.split('\n'), atoms = {}, lastTerSerial, alines = [], clines = [], plines = {};
+			var lines = reader.result.split(/\r?\n/), atoms = {}, lastTerSerial, alines = [], clines = [], plines = {};
 			for (var i in lines) {
 				var line = lines[i];
 				var record = line.substr(0, 6);

@@ -1272,7 +1272,7 @@ void main()\n\
 		t.attr('href', path + t.text());
 	});
 	$.get(path + 'box.conf', function (bsrc) {
-		var lines = bsrc.split('\n');
+		var lines = bsrc.split(/\r?\n/);
 		var bctr = new THREE.Vector3(parseFloat(lines[0].substr(9)), parseFloat(lines[1].substr(9)), parseFloat(lines[2].substr(9)));
 		var bsiz = new THREE.Vector3(parseFloat(lines[3].substr(7)), parseFloat(lines[4].substr(7)), parseFloat(lines[5].substr(7)));
 		var bhlf = bsiz.multiplyScalar(0.5);
@@ -1304,7 +1304,7 @@ void main()\n\
 				psystems: [],
 				xba: [],
 			}, atoms = protein.atoms;
-			var lines = psrc.split('\n');
+			var lines = psrc.split(/\r?\n/);
 			for (var i in lines) {
 				var line = lines[i];
 				var record = line.substr(0, 6);
@@ -1576,7 +1576,7 @@ void main()\n\
 				var gunzipWorker = new Worker('/gunzip.js');
 				gunzipWorker.addEventListener('message', function (e) {
 					var version, i = 0, ligands = [], ligand, atoms, start_frame, rotors, model;
-					var lines = e.data.split('\n');
+					var lines = e.data.split(/\r?\n/);
 					var line0 = lines[0];
 					if (line0.substr(7, 3) === '901') {
 						version = line0.substr(25);
