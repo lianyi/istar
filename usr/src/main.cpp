@@ -241,11 +241,11 @@ int main(int argc, char* argv[])
 		const auto format = job["format"].String();
 		const auto email = job["email"].String();
 
-		// Parse the user-supplied ligand.
+		// Parse the user-supplied query molecule.
 		OBMol obMol;
 		OBConversion obConversion;
 		obConversion.SetInFormat(format.c_str());
-		obConversion.ReadFile(&obMol, (job_path / ("ligand." + format)).string());
+		obConversion.ReadFile(&obMol, (job_path / ("query." + format)).string());
 		const auto num_atoms = obMol.NumAtoms();
 //		obMol.AddHydrogens(); // Adding hydrogens does not seem to affect SMARTS matching.
 

@@ -608,7 +608,7 @@ $(function() {
 			$('#' + (keys[0] === 'format' ? 'ligand' : keys[0])).focus();
 			return;
 		}
-		job.ligand = ligand;
+		job.query = ligand;
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
 		// Post a new job with server side validation
