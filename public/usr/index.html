@@ -83,7 +83,7 @@
         <div class="col-md-12">
           <p>The input to USR is onefold:</p>
           <ul>
-            <li>A query ligand in 3D format. Totally 23,129,083 ligands collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
+            <li>A query molecule in 3D format. Totally 23,129,083 molecules collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
           </ul>
         </div>
       </div>
@@ -91,15 +91,15 @@
         <div class="col-md-12">
           <p>The output from USR is twofold:</p>
           <ul>
-            <li><img src="../excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 10000 ligands geometrically and pharmacophorically similar to the query ligand.</li>
-            <li><img src="../molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: structures of the top 1000 ligands.</li>
+            <li><img src="../excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 10000 hit molecules geometrically and pharmacophorically similar to the query molecule.</li>
+            <li><img src="../molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: structures of the top 1000 hit molecules.</li>
           </ul>
         </div>
       </div>
       <div class="row" role="form">
         <div class="col-md-12">
           <div class="form-group">
-            <label for="ligand"><a title="must conform to MOL2, SDF, XYZ, PDB or PDBQT format" id="ligand_label">Ligand in MOL2, SDF, XYZ, PDB or PDBQT format</a></label> <input type="file" id="ligand">
+            <label for="ligand"><a title="must conform to MOL2, SDF, XYZ, PDB or PDBQT format" id="ligand_label">Query molecule in MOL2, SDF, XYZ, PDB or PDBQT format</a></label> <input type="file" id="ligand">
           </div>
         </div>
       </div>
@@ -145,7 +145,7 @@
           <div class="ui-accordion">
             <h3>How to submit a new job</h3>
             <div>
-		      <p>Open your query ligand locally in the WebGL canvas. The supported file formats are:</p>
+		      <p>Open your query molecule locally in the WebGL canvas. The supported file formats are:</p>
 		      <ul>
 		        <li>MOL2. Your mol2 file must contain <code>@&lt;TRIPOS&gt;ATOM</code> and <code>@&lt;TRIPOS&gt;BOND</code> records. Here is <a href="sample.mol2">a sample file</a>.</li>
 		        <li>SDF. Your sdf file must contain atoms and bonds. Here is <a href="sample.sdf">a sample file</a>.</li>
@@ -153,7 +153,7 @@
 		        <li>PDB. Your pdb file must contain <code>HETATM</code> and <code>CONECT</code> records. Here is <a href="sample.pdb">a sample file</a>.</li>
 		        <li>PDBQT. Your pdbqt file must contain <code>ATOM</code> records. Bonds will be recovered automatically. Here is <a href="sample.pdbqt">a sample file</a>.</li>
 		      </ul>
-		      <p>The provided ligand file must contain exactly one query ligand.</p>
+		      <p>The provided molecule file must contain exactly one query molecule.</p>
 		      <p>The WebGL canvas supports the following keyings:</p>
 		      <ul>
 		        <li>Default: rotate</li>
@@ -162,12 +162,12 @@
 		        <li>Ctrl + shift: slab</li>
 		      </ul>
               <img class="img-responsive" src="../grey.gif" data-original="ZINC01493878.png" alt="ZINC01493878">
-              <p>Briefly describe your job. The job description is defaulted to your query ligand filename.</p>
+              <p>Briefly describe your job. The job description is defaulted to your query molecule filename.</p>
               <p>Fill in your email to receive notification upon job completion. Fill in any anonymous email should you not want to receive notification.</p>
               <p>Submit your job.</p>
               <p>Check your job status in the topmost table.</p>
             </div>
-            <h3>How to enable WebGL to visualize the query ligand</h3>
+            <h3>How to enable WebGL to visualize the query molecule</h3>
             <div>
               <p>Check the compatibility table for support of WebGL in desktop and mobile browsers at <a href="http://caniuse.com/webgl">http://caniuse.com/webgl</a>.</p>
 		      <p>IE11 has experimental support of WebGL.</p>
@@ -300,7 +300,7 @@ curl http://istar.cse.cuhk.edu.hk/usr/jobs/
       </div>
       <div class="row">
         <div class="col-md-12">
-          <p>23,129,083 ligands are collected from versions 2012-04-26, 2013-01-10 and 2013-12-18 of the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> and converted into <a href="http://autodock.scripps.edu/faqs-help/faq/what-is-the-format-of-a-pdbqt-file">PDBQT</a> format. We thank Professor John J. Irwin, the developer and maintainer of ZINC, for granting us permission to use ZINC with three conditions:</p>
+          <p>23,129,083 molecules were collected from versions 2012-04-26, 2013-01-10 and 2013-12-18 of the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> and converted into <a href="http://autodock.scripps.edu/faqs-help/faq/what-is-the-format-of-a-pdbqt-file">PDBQT</a> format. We thank Professor John J. Irwin, the developer and maintainer of ZINC, for granting us permission to use ZINC with three conditions:</p>
           <ul>
             <li>We shall provide links to http://zinc.docking.org/substance/zincid for top hits so that users can seek for the most current purchasing information at ZINC's official web site.</li>
             <li>We shall limit the number of hits for download to 1000 molecules from a single job.</li>
