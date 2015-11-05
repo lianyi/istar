@@ -170,6 +170,9 @@ int main(int argc, char* argv[])
 	}};
 
 	// Initialize variables.
+	array<vector<int>, num_subsets> subsets;
+	array<vector3, num_references> references;
+	array<vector<double>, num_references> dista;
 	alignas(32) array<double, qn.back()> q;
 	alignas(32) array<double, qn.back()> l;
 
@@ -241,17 +244,18 @@ int main(int argc, char* argv[])
 //		obMol.AddHydrogens(); // Adding hydrogens does not seem to affect SMARTS matching.
 
 		// Classify subset atoms.
-		array<vector<int>, num_subsets> subsets;
 		for (size_t k = 0; k < num_subsets; ++k)
 		{
-			auto& subset = subsets[k];
-			subset.reserve(num_atoms);
 			OBSmartsPattern smarts;
 			smarts.Init(SubsetSMARTS[k]);
 			smarts.Match(obMol);
-			for (const auto& map : smarts.GetMapList())
+			const auto maps = smarts.GetMapList();
+			const auto num_maps = maps.size();
+			auto& subset = subsets[k];
+			subset.resize(num_maps);
+			for (size_t i = 0; i < num_maps; ++i)
 			{
-				subset.push_back(map.front());
+				subset[i] = maps[i].front();
 			}
 		}
 		const auto& subset0 = subsets.front();
@@ -280,7 +284,10 @@ int main(int argc, char* argv[])
 		// Calculate the four reference points.
 		const auto n = subset0.size();
 		const auto v = 1.0 / n;
-		array<vector3, num_references> references{};
+		for (auto& ref : references)
+		{
+			ref.Set(0, 0, 0);
+		}
 		auto& ctd = references[0];
 		auto& cst = references[1];
 		auto& fct = references[2];
@@ -320,7 +327,6 @@ int main(int argc, char* argv[])
 		}
 
 		// Precalculate the distances between each atom and each reference point.
-		array<vector<double>, num_references> dista;
 		for (size_t k = 0; k < num_references; ++k)
 		{
 			const auto& reference = references[k];
