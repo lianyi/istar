@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Hongjian Li">
-  <meta name="description" content="idock: a multithreaded virtual screening tool for flexible ligand docking">
-  <title>idock: a multithreaded virtual screening tool for flexible ligand docking</title>
+  <meta name="description" content="idock: fast and flexible ligand docking for prospective virtual screening">
+  <title>idock: fast and flexible ligand docking for prospective virtual screening</title>
   <link rel="stylesheet" href="../bootstrap.min.css">
   <link rel="stylesheet" href="../bootstrap-theme.min.css">
   <link rel="stylesheet" href="../jquery-ui.min.css">
@@ -61,7 +61,7 @@
   <div class="jumbotron" id="content" role="main">
     <div class="container">
       <h1><img src="logo.png" alt="logo" class="logo">idock</h1>
-      <p>a multithreaded virtual screening tool for flexible ligand docking</p>
+      <p>fast and flexible ligand docking for prospective virtual screening</p>
     </div>
   </div>
   <div class="container">
@@ -325,11 +325,11 @@ curl http://istar.cse.cuhk.edu.hk/idock/ligands -Gd 'mwt_lb=400&amp;mwt_ub=500&a
     </section>
     <section>
       <div class="page-header">
-        <h2>ZINC ligands</h2>
+        <h2>Screening library</h2>
       </div>
       <div class="row">
         <div class="col-md-12">
-          <p>23,129,083 ligands are collected from versions 2012-04-26, 2013-01-10 and 2013-12-18 of the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> and converted into <a href="http://autodock.scripps.edu/faqs-help/faq/what-is-the-format-of-a-pdbqt-file">PDBQT</a> format. We thank Professor John J. Irwin, the developer and maintainer of ZINC, for granting us permission to use ZINC with three conditions:</p>
+          <p>23,129,083 ligands were collected from versions 2012-04-26, 2013-01-10 and 2013-12-18 of the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> and converted into <a href="http://autodock.scripps.edu/faqs-help/faq/what-is-the-format-of-a-pdbqt-file">PDBQT</a> format. We thank Professor John J. Irwin, the developer and maintainer of ZINC, for granting us permission to use ZINC with three conditions:</p>
           <ul>
             <li>We shall provide links to http://zinc.docking.org/substance/zincid for top hits so that users can seek for the most current purchasing information at ZINC's official web site.</li>
             <li>We shall limit the number of top hits for download to 1000 ligands from a single job.</li>
@@ -393,18 +393,19 @@ curl http://istar.cse.cuhk.edu.hk/idock/ligands -Gd 'mwt_lb=400&amp;mwt_ub=500&a
     </section>
     <section>
       <div class="page-header">
-        <h2>Citations</h2>
+        <h2>References</h2>
       </div>
       <div class="row">
         <div class="col-md-12">
-          <h4>Reference for istar</h4>
+          <h4>istar</h4>
           <p>Hongjian Li, Kwong-Sak Leung, Pedro J. Ballester and Man-Hon Wong. istar: A Web Platform for Large-Scale Protein-Ligand Docking. <em>PLoS ONE</em>, 9(1):e85678, 2014. <a href="http://dx.doi.org/10.1371/journal.pone.0085678">DOI: 10.1371/journal.pone.0085678</a></p>
-          <h4>Reference for idock</h4>
+          <h4>idock</h4>
           <p>Hongjian Li, Kwong-Sak Leung, and Man-Hon Wong. idock: A Multithreaded Virtual Screening Tool for Flexible Ligand Docking. In <em>Proceedings of the 2012 IEEE Symposium on Computational Intelligence in Bioinformatics and Computational Biology (CIBCB)</em>, pp.77-84, San Diego, United States, 9-12 May 2012. <a href="http://dx.doi.org/10.1109/CIBCB.2012.6217214">DOI: 10.1109/CIBCB.2012.6217214</a></p>
-          <h4>Reference for RF-Score-v3</h4>
+          <h4>RF-Score-v3</h4>
           <p>Hongjian Li, Kwong-Sak Leung, Man-Hon Wong and Pedro J. Ballester. Improving AutoDock Vina using Random Forest: the growing accuracy of binding affinity prediction by the effective exploitation of larger data sets. <em>Molecular Informatics</em>, 34(2-3):115-126, 2015. <a href="http://dx.doi.org/10.1002/minf.201400132">DOI: 10.1002/minf.201400132</a></p>
-          <h4>Reference for a prospective application of istar, idock, iview</h4>
+          <h4>Prospective applications of istar, idock, iview</h4>
           <p>Xi-Nan Shi, Hongjian Li, Hong Yao, Xu Liu, Ling Li, Kwong-Sak Leung, Hsiang-fu Kung, Di Lu, Man-Hon Wong, and Marie Chia-mi Lin. In silico Identification and in vitro and in vivo Validation of Anti-Psychotic Drug Fluspirilene as a Potential CDK2 Inhibitor and a Candidate Anti-Cancer Drug. <em>PLoS ONE</em>, 10(7):e0132072, 2015. <a href="http://dx.doi.org/10.1371/journal.pone.0132072">DOI: 10.1371/journal.pone.0132072</a></p>
+          <p>Xi-Nan Shi, Hongjian Li, Hong Yao, Xu Liu, Ling Li, Kwong-Sak Leung, Hsiang-fu Kung, Man-Hon Wong, and Marie Chia-mi Lin. Adapalene Inhibited the Activity of Cyclin-Dependent Kinase 2 in Colorectal Carcinoma. <em>Molecular Medicine Reports</em>, 12(5):6501-6508, 2015. <a href="http://dx.doi.org/10.3892/mmr.2015.4310">DOI: 10.3892/mmr.2015.4310</a></p>
         </div>
       </div>
     </section>
