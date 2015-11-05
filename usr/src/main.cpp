@@ -282,8 +282,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Calculate the four reference points.
-		const auto n = subset0.size();
-		const auto v = 1.0 / n;
+		const auto num_points = subset0.size();
 		for (auto& ref : references)
 		{
 			ref.Set(0, 0, 0);
@@ -296,7 +295,7 @@ int main(int argc, char* argv[])
 		{
 			ctd += obMol.GetAtom(i)->GetVector();
 		}
-		ctd *= v;
+		ctd /= num_points;
 		double cst_dist = numeric_limits<double>::max();
 		double fct_dist = numeric_limits<double>::lowest();
 		double ftf_dist = numeric_limits<double>::lowest();
@@ -332,7 +331,7 @@ int main(int argc, char* argv[])
 			const auto& reference = references[k];
 			auto& dists = dista[k];
 			dists.resize(1 + num_atoms); // OpenBabel atom index starts from 1. dists[0] is dummy.
-			for (size_t i = 0; i < n; ++i)
+			for (size_t i = 0; i < num_points; ++i)
 			{
 				dists[subset0[i]] = sqrt(obMol.GetAtom(subset0[i])->GetVector().distSq(reference));
 			}
