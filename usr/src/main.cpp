@@ -170,10 +170,8 @@ int main(int argc, char* argv[])
 	}};
 
 	// Initialize variables.
-	array<array<double, qn.back()>, 1> qw;
-	array<array<double, qn.back()>, 1> lw;
-	auto q = qw[0];
-	auto l = lw[0];
+	alignas(32) array<double, qn.back()> q;
+	alignas(32) array<double, qn.back()> l;
 
 	// Read ZINC ID file.
 	const string_array<size_t> zincids("16_zincid.txt");
