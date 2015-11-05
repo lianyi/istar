@@ -436,29 +436,29 @@ int main(int argc, char* argv[])
 		});
 
 		// Write results.
-		filtering_ostream log_csv_gz;
-		log_csv_gz.push(gzip_compressor());
-		log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
-		log_csv_gz.setf(ios::fixed, ios::floatfield);
-		log_csv_gz << "ZINC ID,USR score,USRCAT score\n" << setprecision(8);
-		filtering_ostream ligands_pdbqt_gz;
-		ligands_pdbqt_gz.push(gzip_compressor());
-		ligands_pdbqt_gz.push(file_sink((job_path / "ligands.pdbqt.gz").string()));
-		ligands_pdbqt_gz.setf(ios::fixed, ios::floatfield);
+		filtering_ostream hits_csv_gz;
+		hits_csv_gz.push(gzip_compressor());
+		hits_csv_gz.push(file_sink((job_path / "hits.csv.gz").string()));
+		hits_csv_gz.setf(ios::fixed, ios::floatfield);
+		hits_csv_gz << "ZINC ID,USR score,USRCAT score\n" << setprecision(8);
+		filtering_ostream hits_pdbqt_gz;
+		hits_pdbqt_gz.push(gzip_compressor());
+		hits_pdbqt_gz.push(file_sink((job_path / "hits.pdbqt.gz").string()));
+		hits_pdbqt_gz.setf(ios::fixed, ios::floatfield);
 		for (size_t t = 0; t < 10000; ++t)
 		{
 			const size_t k = scase[t];
 			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
 			const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
 			const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
-			log_csv_gz << zincid << ',' << u0score << ',' << u1score << '\n';
+			hits_csv_gz << zincid << ',' << u0score << ',' << u1score << '\n';
 
 			// Only write conformations of the top ligands to ligands.pdbqt.gz.
 			if (t >= 1000) continue;
 
 			const auto zfp = zfproperties[k];
 			const auto zip = ziproperties[k];
-			ligands_pdbqt_gz
+			hits_pdbqt_gz
 				<< "MODEL " << '\n'
 				<< "REMARK 911 " << zincid
 				<< setprecision(3)
@@ -479,8 +479,8 @@ int main(int argc, char* argv[])
 				<< "REMARK 952 USRCAT SCORE: " << setw(10) << u1score << '\n'
 			;
 			const auto lig = ligands[k];
-			ligands_pdbqt_gz.write(lig.data(), lig.size());
-			ligands_pdbqt_gz << "ENDMDL\n";
+			hits_pdbqt_gz.write(lig.data(), lig.size());
+			hits_pdbqt_gz << "ENDMDL\n";
 		}
 
 		// Update progress.

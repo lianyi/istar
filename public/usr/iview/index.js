@@ -864,7 +864,7 @@ void main()\n\
 	});
 	var ligand;
 	$.ajax({
-		url: path + 'ligands.pdbqt.gz',
+		url: path + 'hits.pdbqt.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
 	}).done(function (lsrcz) {
 		var gunzipWorker = new Worker('/gunzip.js');

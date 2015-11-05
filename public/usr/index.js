@@ -6,7 +6,7 @@ $(function() {
 		var status, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
 		if (job.done) {
 			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
-			result += '<a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
+			result += '<a href="jobs/' + job._id + '/hits.csv.gz"><img src="/excel.png" alt="hits.csv.gz"></a><a href="jobs/' + job._id + '/hits.pdbqt.gz"><img src="/molecule.png" alt="hits.pdbqt.gz"></a>';
 		} else if (job.started) {
 			status = 'Execution in progress';
 		} else {
