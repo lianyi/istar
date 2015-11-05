@@ -62,6 +62,7 @@
     <div class="container">
       <h1><img src="logo.png" alt="logo" class="logo">USR & USRCAT</h1>
       <p>ligand-based virtual screening powered by ultrafast shape recognition techniques</p>
+      <p>a newer version is running at <a href="http://usr.marseille.inserm.fr">http://usr.marseille.inserm.fr</a>, supporting multiple conformers</p>
     </div>
   </div>
   <div class="container">
@@ -80,7 +81,7 @@
       </div>
       <div class="row">
         <div class="col-md-12">
-          <p>The input to usr is onefold:</p>
+          <p>The input to USR is onefold:</p>
           <ul>
             <li>A query ligand in 3D format. Totally 23,129,083 ligands collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
           </ul>
@@ -88,7 +89,7 @@
       </div>
       <div class="row">
         <div class="col-md-12">
-          <p>The output from usr is twofold:</p>
+          <p>The output from USR is twofold:</p>
           <ul>
             <li><img src="../excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 10000 ligands geometrically similar to the query ligand.</li>
             <li><img src="../molecule.png" alt="ligands.pdbqt.gz">ligands.pdbqt.gz: structures of the top 1000 ligands geometrically similar to the query ligand.</li>
@@ -295,7 +296,7 @@ curl http://istar.cse.cuhk.edu.hk/usr/jobs/
     </section>
     <section>
       <div class="page-header">
-        <h2>ZINC ligands</h2>
+        <h2>Screening library</h2>
       </div>
       <div class="row">
         <div class="col-md-12">
