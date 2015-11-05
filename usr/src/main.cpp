@@ -38,6 +38,11 @@ inline static string local_time()
 	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
+inline static auto milliseconds_since_epoch()
+{
+	return Date_t(duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
+}
+
 template <typename T>
 inline vector<T> read(const path src)
 {
@@ -215,7 +220,8 @@ int main(int argc, char* argv[])
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
-		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count())))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+		const auto started = milliseconds_since_epoch();
+		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		const auto value = info["value"];
 		if (value.isNull())
 		{
@@ -479,15 +485,23 @@ int main(int argc, char* argv[])
 
 		// Update progress.
 		cout << local_time() << "Setting done time" << endl;
-		const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
+		const auto completed = milliseconds_since_epoch();
+		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << completed)));
+
+		// Calculate runtime in seconds and screening speed in million molecules per second.
+		const auto runtime = (completed - started) * 0.001;
+		const auto speed = num_ligands * 0.000001 / runtime;
+		cout
+			<< local_time() << "Screening time was " << setprecision(3) << runtime << " seconds" << endl
+			<< local_time() << "Screening speed was " << setprecision(0) << speed << " M molecules per second" << endl
+		;
 
 		// Send completion notification email.
 		cout << local_time() << "Sending a completion notification email to " << email << endl;
 		MailMessage message;
 		message.setSender("istar <noreply@cse.cuhk.edu.hk>");
 		message.setSubject("Your usr job has completed");
-		message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nResult: http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
+		message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(completed))) + " UTC\nResult: http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
 		message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
 		SMTPClientSession session("137.189.91.190");
 		session.login();
