@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
 		const auto started = milliseconds_since_epoch();
-		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0. Some completed old jobs do not have the "started" field, so use the non-existence of "done" field as part of the query to filter out such old jobs.
 		const auto value = info["value"];
 		if (value.isNull())
 		{
