@@ -38,7 +38,7 @@ inline static string local_time()
 	return to_simple_string(microsec_clock::local_time()) + " ";
 }
 
-inline static auto milliseconds_since_epoch()
+inline static Date_t milliseconds_since_epoch()
 {
 	return Date_t(duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
 }
