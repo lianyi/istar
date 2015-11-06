@@ -490,10 +490,10 @@ int main(int argc, char* argv[])
 
 		// Calculate runtime in seconds and screening speed in million molecules per second.
 		const auto runtime = (completed - started) * 0.001;
-		const auto speed = num_ligands * 0.000001 / runtime;
+		const auto speed = num_ligands * 0.001 / runtime;
 		cout
-			<< local_time() << "Screening time was " << setprecision(3) << runtime << " seconds" << endl
-			<< local_time() << "Screening speed was " << setprecision(0) << speed << " M molecules per second" << endl
+			<< local_time() << "Screening time was " << setprecision(0) << runtime << " seconds" << endl
+			<< local_time() << "Screening speed was " << setprecision(0) << speed << " K molecules per second" << endl
 		;
 
 		// Send completion notification email.
