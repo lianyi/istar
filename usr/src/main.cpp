@@ -214,6 +214,7 @@ int main(int argc, char* argv[])
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
+	cout.setf(ios::fixed, ios::floatfield);
 	bool sleeping = false;
 	while (true)
 	{
