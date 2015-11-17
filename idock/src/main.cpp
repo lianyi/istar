@@ -575,7 +575,7 @@ int main(int argc, char* argv[])
 			foslig.push(sslig);
 			foslog.setf(ios::fixed, ios::floatfield);
 			foslig.setf(ios::fixed, ios::floatfield);
-			foslog << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
+			foslog << "ZINC ID,idock score (kcal/mol),RF-Score (pKd),Heavy atoms,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n" << setprecision(3);
 			foslig << "REMARK 901 FILE VERSION: 1.0.0\n" << setprecision(3);
 			for (auto idx = 0; idx < num_summaries; ++idx)
 			{
