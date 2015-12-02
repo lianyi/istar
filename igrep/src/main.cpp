@@ -217,7 +217,12 @@ int main(int argc, char** argv)
 			return 1;
 		}
 	}
+
+	// Initialize constants.
+	const auto epoch = date(1970, 1, 1);
 	const auto collection = "istar.igrep";
+	const auto private_keyfile = string(getenv("HOME")) + "/.ssh/id_rsa";
+	const auto public_keyfile = private_keyfile + ".pub";
 
 	// Initialize genomes.
 	vector<genome> genomes;
@@ -259,9 +264,6 @@ int main(int argc, char** argv)
 	unsigned int match_count;	// Actual number of matches in the match array. match_count <= potential_match_count should always holds.
 	unsigned int *scodon_device;	// CUDA global memory pointer pointing to the special codon array.
 	unsigned int *match_device;	// CUDA global memory pointer pointing to the match array.
-
-	// Initialize epoch
-	const auto epoch = date(1970, 1, 1);
 
 	// Initialize curl globally.
 	curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -405,6 +407,8 @@ int main(int argc, char** argv)
 			const path rmt_job_path = rmt_jobs_path / _id.str();
 			const auto curl = curl_easy_init();
 			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+			curl_easy_setopt(curl, CURLOPT_SSH_PRIVATE_KEYFILE, private_keyfile.c_str());
+			curl_easy_setopt(curl, CURLOPT_SSH_PUBLIC_KEYFILE, public_keyfile.c_str());
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
 			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "log.csv").c_str());

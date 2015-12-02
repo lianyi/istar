@@ -102,6 +102,8 @@ int main(int argc, char* argv[])
 	const fl grid_granularity = 0.08;
 	const fl max_ligands_per_job = 1e+6;
 	const auto epoch = boost::gregorian::date(1970, 1, 1);
+	const auto private_keyfile = string(getenv("HOME")) + "/.ssh/id_rsa";
+	const auto public_keyfile = private_keyfile + ".pub";
 
 	// Calculate the slice split points on the fly.
 	const size_t total_ligands = 23129083;
@@ -341,6 +343,8 @@ int main(int argc, char* argv[])
 			const auto curl = curl_easy_init();
 //			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 			curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+			curl_easy_setopt(curl, CURLOPT_SSH_PRIVATE_KEYFILE, private_keyfile.c_str());
+			curl_easy_setopt(curl, CURLOPT_SSH_PUBLIC_KEYFILE, public_keyfile.c_str());
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_stringstream);
 			cout << local_time() << "Reloading the box file" << endl;
 			curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "box.conf").c_str());
