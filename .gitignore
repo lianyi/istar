@@ -15,4 +15,6 @@ piano
 *.iso
 */log
 idock/idock.sh
+idock/monitor.sh
 igrep/igrep.sh
+igrep/monitor.sh
