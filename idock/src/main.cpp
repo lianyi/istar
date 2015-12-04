@@ -710,6 +710,8 @@ int main(int argc, char* argv[])
 		const auto curl = curl_easy_init();
 //		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 		curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+		curl_easy_setopt(curl, CURLOPT_SSH_PRIVATE_KEYFILE, private_keyfile.c_str());
+		curl_easy_setopt(curl, CURLOPT_SSH_PUBLIC_KEYFILE, public_keyfile.c_str());
 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 		curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
 		cout << local_time() << "Writing log.csv.gz" << endl;
