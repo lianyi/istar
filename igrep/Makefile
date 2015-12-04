@@ -7,7 +7,7 @@ obj/%.o: src/%.cu
 	nvcc -o $@ $< -c -O2 -gencode arch=compute_35,code=sm_35 #-maxrregcount=N -Xptxas=-v
 
 obj/%.o: src/%.cpp
-	${CC} -o $@ $< -c -std=c++11 -Wall -Wno-deprecated-declarations -Wno-unused-local-typedef -I${BOOST_ROOT} -I${MONGODBCXXDRIVER_ROOT}/src -I${POCO_ROOT}/include -I${CUDA_ROOT}/include -I${CUDA_ROOT}/samples/common/inc -I${CURL_ROOT}/include
+	${CC} -o $@ $< -c -std=c++11 -DNDEBUG -Wall -Wno-deprecated-declarations -Wno-unused-local-typedef -I${BOOST_ROOT} -I${MONGODBCXXDRIVER_ROOT}/src -I${POCO_ROOT}/include -I${CUDA_ROOT}/include -I${CUDA_ROOT}/samples/common/inc -I${CURL_ROOT}/include
 
 clean:
 	rm -f bin/igrep obj/*.o
