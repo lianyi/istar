@@ -15,3 +15,6 @@ piano
 *.iso
 */log
 */start.sh
+bootstrap-theme.css
+bootstrap.css
+bootstrap.js
