@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
 	OBConversion conv;
-	conv.SetInFormat(argv[1] + string(argv[1]).find_last_of('.') + 1);
+	conv.SetInFormat(OBConversion::FormatFromExt(argv[1]));
 	for (ifstream ifs(argv[1]); true;)
 	{
 		// Categorize atoms into pharmacophoric subsets.
