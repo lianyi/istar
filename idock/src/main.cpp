@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 	const auto collection = "istar.idock";
 	const auto jobid_fields = BSON("_id" << 1 << "scheduled" << 1);
 	const auto param_fields = BSON("_id" << 0 << "ligands" << 1 << "mwt_lb" << 1 << "mwt_ub" << 1 << "lgp_lb" << 1 << "lgp_ub" << 1 << "ads_lb" << 1 << "ads_ub" << 1 << "pds_lb" << 1 << "pds_ub" << 1 << "hbd_lb" << 1 << "hbd_ub" << 1 << "hba_lb" << 1 << "hba_ub" << 1 << "psa_lb" << 1 << "psa_ub" << 1 << "chg_lb" << 1 << "chg_ub" << 1 << "nrb_lb" << 1 << "nrb_ub" << 1);
-	const auto compl_fields = BSON("_id" << 0 << "completed" << 1);
+	const auto finis_fields = BSON("_id" << 0 << "finished" << 1);
 	const auto compt_fields = BSON("_id" << 0 << "email" << 1 << "submitted" << 1 << "description" << 1);
 	const size_t seed = system_clock::now().time_since_epoch().count();
 	const size_t num_threads = thread::hardware_concurrency();
@@ -512,11 +512,11 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Closing slice csv" << endl;
 			slice_csv.close();
 
-			// Increment the completed slice counter.
-			cout << local_time() << "Incrementing the completed slice counter" << endl;
-			BSONObj compl_obj;
-			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("_id" << _id) << "update" << BSON("$inc" << BSON("completed" << 1)) << "fields" << compl_fields), compl_obj);
-			if (compl_obj["value"].Obj()["completed"].Int() + 1 < num_slices) continue;
+			// Increment the finished slice counter.
+			cout << local_time() << "Incrementing the finished slice counter" << endl;
+			BSONObj finis_obj;
+			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("_id" << _id) << "update" << BSON("$inc" << BSON("finished" << 1)) << "fields" << finis_fields), finis_obj);
+			if (finis_obj["value"].Obj()["finished"].Int() + 1 < num_slices) continue;
 		}
 
 		// Combine slice csv files. Phase 2 starts here.
