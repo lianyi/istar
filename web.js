@@ -411,6 +411,7 @@ if (cluster.isMaster) {
 					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
 					.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
 					.field('query').message('must be provided and must not exceed 100KB').length(1, 102400)
+					.field('library').message('must be 16 or dfn').in(['16', 'dfn']).copy()
 					.failed()) {
 					res.json(v.err);
 					return;

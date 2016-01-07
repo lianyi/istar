@@ -129,6 +129,44 @@ protected:
 	boost::filesystem::ifstream ifs;
 };
 
+class library
+{
+public:
+	explicit library(const path dir) :
+		zincids(dir / "zincid.txt"),
+		smileses(dir / "smiles.txt"),
+		suppliers(dir / "supplier.txt"),
+		zfproperties(read<array<float, 4>>(dir / "zfprop.f32")),
+		ziproperties(read<array<int16_t, 5>>(dir / "ziprop.i16")),
+		num_ligands(zincids.size()),
+		usrcat_bin(dir / "usrcat.f64", ios::ate),
+		ligands(dir / "ligand.pdbqt")
+	{
+		assert(smileses.size() == num_ligands);
+		assert(suppliers.size() == num_ligands);
+		assert(ligands.size() == num_ligands);
+		assert(zfproperties.size() == num_ligands);
+		assert(ziproperties.size() == num_ligands);
+		assert(usrcat_bin.tellg() == 480 * num_ligands);
+		for (auto& ss : scores)
+		{
+			ss.resize(num_ligands, 0);
+		}
+		scase.resize(num_ligands);
+	}
+
+	const string_array<size_t> zincids;
+	const string_array<size_t> smileses;
+	const string_array<size_t> suppliers;
+	const vector<array<float, 4>> zfproperties;
+	const vector<array<int16_t, 5>> ziproperties;
+	const size_t num_ligands;
+	boost::filesystem::ifstream usrcat_bin;
+	stream_array<size_t> ligands;
+	array<vector<double>, 2> scores;
+	vector<size_t> scase;
+};
+
 int main(int argc, char* argv[])
 {
 	// Check the required number of command line arguments.
@@ -174,39 +212,16 @@ int main(int argc, char* argv[])
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
 
+	// Read library files.
+	library lib_16("16");
+	library lib_dfn("dfn");
+
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
 	array<vector3, num_references> references;
 	array<vector<double>, num_references> dista;
 	alignas(32) array<double, qn.back()> q;
 	alignas(32) array<double, qn.back()> l;
-
-	// Read necessary files.
-	const path library = "16";
-	const string_array<size_t> zincids(library / "zincid.txt");
-	const auto num_ligands = zincids.size();
-	const string_array<size_t> smileses(library / "smiles.txt");
-	assert(smileses.size() == num_ligands);
-	const string_array<size_t> suppliers(library / "supplier.txt");
-	assert(suppliers.size() == num_ligands);
-	const auto zfproperties = read<array<float, 4>>(library / "zfprop.f32");
-	assert(zfproperties.size() == num_ligands);
-	const auto ziproperties = read<array<int16_t, 5>>(library / "ziprop.i16");
-	assert(ziproperties.size() == num_ligands);
-
-	// Open files for subsequent reading.
-	boost::filesystem::ifstream usrcat_bin(library / "usrcat.f64");
-	stream_array<size_t> ligands(library / "ligand.pdbqt");
-
-	assert(ligands.size() == num_ligands);
-	array<vector<double>, 2> scores
-	{{
-		vector<double>(num_ligands, 0),
-		vector<double>(num_ligands, 0)
-	}};
-	const auto& u0scores = scores[0];
-	const auto& u1scores = scores[1];
-	vector<size_t> scase(num_ligands);
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -237,8 +252,10 @@ int main(int argc, char* argv[])
 		const auto job_path = jobs_path / _id.str();
 		const auto format = job["format"].String();
 		const auto email = job["email"].String();
+		const auto library = job["library"].String();
 
 		// Parse the user-supplied query molecule.
+		cout << local_time() << "Parsing the query molecule in " << format << " format" << endl;
 		OBMol obMol;
 		OBConversion obConversion;
 		obConversion.SetInFormat(format.c_str());
@@ -247,6 +264,7 @@ int main(int argc, char* argv[])
 //		obMol.AddHydrogens(); // Adding hydrogens does not seem to affect SMARTS matching.
 
 		// Classify subset atoms.
+		cout << local_time() << "Classifying " << num_atoms << " atoms into " << num_subsets << " subsets" << endl;
 		for (size_t k = 0; k < num_subsets; ++k)
 		{
 			OBSmartsPattern smarts;
@@ -394,7 +412,23 @@ int main(int argc, char* argv[])
 		}
 		assert(qo == qn.back());
 
+		// Obtain references to the selected library.
+		auto& lib = library == "16" ? lib_16 : lib_dfn;
+		const auto& num_ligands = lib.num_ligands;
+		const auto& smileses = lib.smileses;
+		const auto& suppliers = lib.suppliers;
+		const auto& zfproperties = lib.zfproperties;
+		const auto& ziproperties = lib.ziproperties;
+		const auto& u0scores = lib.scores[0];
+		const auto& u1scores = lib.scores[1];
+		auto& usrcat_bin = lib.usrcat_bin;
+		auto& ligands = lib.ligands;
+		auto& scores = lib.scores;
+		auto& scase = lib.scase;
+		auto& zincids = lib.zincids;
+
 		// Compute USR and USRCAT scores.
+		cout << local_time() << "Computing USR and USRCAT scores of " << num_ligands << " molecules" << endl;
 		usrcat_bin.seekg(0);
 		for (size_t k = 0; k < num_ligands; ++k)
 		{
@@ -442,7 +476,7 @@ int main(int argc, char* argv[])
 		hits_pdbqt_gz.push(gzip_compressor());
 		hits_pdbqt_gz.push(file_sink((job_path / "hits.pdbqt.gz").string()));
 		hits_pdbqt_gz.setf(ios::fixed, ios::floatfield);
-		for (size_t t = 0; t < 10000; ++t)
+		for (size_t t = 0, n = min<size_t>(10000, num_ligands); t < n; ++t)
 		{
 			const size_t k = scase[t];
 			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.

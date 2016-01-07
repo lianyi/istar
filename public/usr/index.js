@@ -593,6 +593,7 @@ $(function() {
 		var job = {
 			description: $('#description').val(),
 			email: $('#email').val(),
+			library: $('input[name="libraryRadioOptions"]:checked').val(),
 			format: format,
 		};
 		var v = new validator(job);
@@ -600,6 +601,7 @@ $(function() {
 			.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
+			.field('library').message('must be 16 or dfn').in(['16', 'dfn']).copy()
 			.failed()) {
 			var keys = Object.keys(v.err);
 			keys.forEach(function(key) {

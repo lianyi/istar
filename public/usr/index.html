@@ -127,6 +127,19 @@
             </div>
           </div>
         </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label><a>Choose a compound library to screen</a></label>
+            <div class="input-group">
+              <label class="radio-inline">
+                <input type="radio" name="libraryRadioOptions" value="16" checked>23,129,083 clean compounds
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="libraryRadioOptions" value="dfn">3,152 approved drugs
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="row">
         <div class="col-md-1">
@@ -296,7 +309,7 @@ curl http://istar.cse.cuhk.edu.hk/usr/jobs/
     </section>
     <section>
       <div class="page-header">
-        <h2>Screening library</h2>
+        <h2>Screening libraries</h2>
       </div>
       <div class="row">
         <div class="col-md-12">
@@ -306,6 +319,7 @@ curl http://istar.cse.cuhk.edu.hk/usr/jobs/
             <li>We shall limit the number of hits for download to 1000 molecules from a single job.</li>
             <li>We shall update our data when ZINC data is updated so that users can benefit from the most current information.</li>
           </ul>
+          <p>3,152 approved drugs were collected from <a href="http://zinc.docking.org/catalogs/dbap">dbap</a>, <a href="http://zinc.docking.org/catalogs/fda">fda</a> and <a href="http://zinc.docking.org/catalogs/npc">npc</a> catalogs of ZINC. Duplicate compounds were removed.</p>
         </div>
       </div>
     </section>
