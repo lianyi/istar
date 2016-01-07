@@ -152,12 +152,12 @@ if (cluster.isMaster) {
 				'ligands': 1,
 				'submitted': 1,
 				'scheduled': 1,
-				'done': 1,
+				'completed': 1,
 			};
 			var idockProgressFields = {
 				'_id': 0,
 				'scheduled': 1,
-				'done': 1,
+				'completed': 1,
 			};
 			for (var i = 0; i < 10; ++i) {
 				idockJobFields[i] = 1;
@@ -332,7 +332,7 @@ if (cluster.isMaster) {
 				};
 				idock.findOne({
 					'_id': new mongodb.ObjectID(v.res.id),
-					'done': { $exists: 1 },
+					'completed': { $exists: 1 },
 				}, {
 					'_id': 0,
 					'description': 1,
@@ -347,11 +347,11 @@ if (cluster.isMaster) {
 					'idock_id': 1,
 					'submitted': 1,
 //					'scheduled': 1,
-					'done': 1,
+					'completed': 1,
 				}, {
 					'_id': 0,
 //					'scheduled': 1,
-					'done': 1,
+					'completed': 1,
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
@@ -381,7 +381,7 @@ if (cluster.isMaster) {
 				};
 				idock.findOne({
 					'_id': new mongodb.ObjectID(v.res.idock_id),
-					'done': { $exists: 1 },
+					'completed': { $exists: 1 },
 				}, {}, function(err, doc) {
 					if (err) throw err;
 					if (!doc) {
@@ -398,11 +398,11 @@ if (cluster.isMaster) {
 					'description': 1,
 					'submitted': 1,
 					'started': 1,
-					'done': 1,
+					'completed': 1,
 				}, {
 					'_id': 0,
 					'started': 1,
-					'done': 1,
+					'completed': 1,
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
@@ -432,7 +432,7 @@ if (cluster.isMaster) {
 				getJobs(req, res, igrep, {
 					'taxid': 1,
 					'submitted': 1,
-					'done': 1,
+					'completed': 1,
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);

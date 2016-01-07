@@ -271,7 +271,7 @@ int main(int argc, char** argv)
 	while (true)
 	{
 		// Fetch jobs.
-		auto cursor = conn.query(collection, QUERY("done" << BSON("$exists" << false)).sort("submitted"), 100); // Each batch processes 100 jobs.
+		auto cursor = conn.query(collection, QUERY("completed" << BSON("$exists" << false)).sort("submitted"), 100); // Each batch processes 100 jobs.
 		while (cursor->more())
 		{
 			const auto job = cursor->next();
@@ -423,7 +423,7 @@ int main(int argc, char** argv)
 
 			// Update progress.
 			const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
+			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << Date_t(millis_since_epoch))));
 			const auto err = conn.getLastError();
 			if (!err.empty())
 			{

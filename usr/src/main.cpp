@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
 		const auto started = milliseconds_since_epoch();
-		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0. Some completed old jobs do not have the "started" field, so use the non-existence of "done" field as part of the query to filter out such old jobs.
+		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("completed" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0. Some completed old jobs do not have the "started" field, so use the non-existence of the completed field as part of the query to filter out such old jobs.
 		const auto value = info["value"];
 		if (value.isNull())
 		{
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
 		{
 			// Record job completion time stamp.
 			const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
+			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << Date_t(millis_since_epoch))));
 
 			// Send error notification email.
 			cout << local_time() << "Sending an error notification email to " << email << endl;
@@ -515,9 +515,9 @@ int main(int argc, char* argv[])
 		}
 
 		// Update progress.
-		cout << local_time() << "Setting done time" << endl;
+		cout << local_time() << "Setting completed time" << endl;
 		const auto completed = milliseconds_since_epoch();
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << completed)));
+		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << completed)));
 
 		// Calculate runtime in seconds and screening speed in million molecules per second.
 		const auto runtime = (completed - started) * 0.001;

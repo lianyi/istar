@@ -4,8 +4,8 @@ $(function() {
 	var pager = $('#pager');
 	pager.pager('init', [ 'Description', 'Submitted', 'Status', 'Result' ], function(job) {
 		var status, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
-		if (job.done) {
-			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
+		if (job.completed) {
+			status = 'Completed ' + $.format.date(new Date(job.completed), 'yyyy/MM/dd HH:mm:ss');
 			result += '<a href="jobs/' + job._id + '/hits.csv.gz"><img src="/excel.png" alt="hits.csv.gz"></a><a href="jobs/' + job._id + '/hits.pdbqt.gz"><img src="/molecule.png" alt="hits.pdbqt.gz"></a>';
 		} else if (job.started) {
 			status = 'Execution in progress';
@@ -28,7 +28,7 @@ $(function() {
 				for (var i = skip; i < jobs.length; ++i) {
 					var job = res[i - skip];
 					jobs[i].started = job.started;
-					jobs[i].done = job.done;
+					jobs[i].completed = job.completed;
 				}
 				pager.pager('refresh', skip, jobs.length, 2, 5, false);
 				if (res.length > jobs.length - skip) {
@@ -37,7 +37,7 @@ $(function() {
 					pager.pager('source', jobs);
 					pager.pager('refresh', len, jobs.length, 0, 5, true);
 				}
-				for (; skip < jobs.length && jobs[skip].done; ++skip);
+				for (; skip < jobs.length && jobs[skip].completed; ++skip);
 			}
 			setTimeout(tick, 1000);
 		});

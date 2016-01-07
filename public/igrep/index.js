@@ -2568,9 +2568,9 @@ $(function() {
 		return [
 			getGenome(job.taxid).name,
 			$.format.date(new Date(job.submitted), 'yyyy/MM/dd HH:mm:ss'),
-			job.done ? 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss') : 'Queued for execution',
-			job.done ? '<a href="jobs/' + job._id + '/log.csv"><img src="/excel.png" alt="log.csv"></a>' : null,
-			job.done ? '<a href="jobs/' + job._id + '/pos.csv"><img src="/excel.png" alt="pos.csv"></a>' : null
+			job.completed ? 'Completed ' + $.format.date(new Date(job.completed), 'yyyy/MM/dd HH:mm:ss') : 'Queued for execution',
+			job.completed ? '<a href="jobs/' + job._id + '/log.csv"><img src="/excel.png" alt="log.csv"></a>' : null,
+			job.completed ? '<a href="jobs/' + job._id + '/pos.csv"><img src="/excel.png" alt="pos.csv"></a>' : null
 		];
 	});
 
@@ -2582,8 +2582,8 @@ $(function() {
 				var nUpdate = 0;
 				for (var i = skip; i < jobs.length; ++i) {
 					var job = res[i - skip];
-					jobs[i].done = job.done;
-					if (job.done) ++nUpdate;
+					jobs[i].completed = job.completed;
+					if (job.completed) ++nUpdate;
 				}
 				pager.pager('refresh', skip, skip + nUpdate, 2, 6, true);
 				if (res.length > jobs.length - skip) {
@@ -2592,7 +2592,7 @@ $(function() {
 					pager.pager('source', jobs);
 					pager.pager('refresh', len, jobs.length, 0, 6, true);
 				}
-				for (; skip < jobs.length && jobs[skip].done; ++skip);
+				for (; skip < jobs.length && jobs[skip].completed; ++skip);
 			}
 			setTimeout(tick, 1000);
 		});

@@ -7,11 +7,11 @@ $(function() {
 		if (!job.scheduled) {
 			status = 'Queued for execution';
 			progress = 0;
-		} else if (!job.done) {
+		} else if (!job.completed) {
 			status = 'Execution in progress';
 			progress = 0; // job.generation / job.num_generations
 		} else {
-			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
+			status = 'Completed ' + $.format.date(new Date(job.completed), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
 			result += '<a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
 		}
@@ -32,7 +32,7 @@ $(function() {
 			if (res.length) {
 				for (var i = skip; i < jobs.length; ++i) {
 					var job = res[i - skip];
-					jobs[i].done = job.done;
+					jobs[i].completed = job.completed;
 				}
 				pager.pager('refresh', skip, jobs.length, 3, 6, false);
 				if (res.length > jobs.length - skip) {
@@ -41,7 +41,7 @@ $(function() {
 					pager.pager('source', jobs);
 					pager.pager('refresh', len, jobs.length, 0, 6, true);
 				}
-				for (; skip < jobs.length && jobs[skip].done; ++skip);
+				for (; skip < jobs.length && jobs[skip].completed; ++skip);
 			}
 			setTimeout(tick, 1000);
 		});

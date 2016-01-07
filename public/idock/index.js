@@ -7,7 +7,7 @@ $(function() {
 		if (!job.scheduled) {
 			status = 'Queued for execution';
 			progress = 0;
-		} else if (!job.done) {
+		} else if (!job.completed) {
 			status = 'Execution in progress';
 			var num_completed_ligands = 0;
 			for (var i = 0; i < job.scheduled; ++i) {
@@ -15,7 +15,7 @@ $(function() {
 			}
 			progress = num_completed_ligands * job.max_ligands_inv;
 		} else {
-			status = 'Done ' + $.format.date(new Date(job.done), 'yyyy/MM/dd HH:mm:ss');
+			status = 'Completed ' + $.format.date(new Date(job.completed), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
 			result += '<a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
 		}
@@ -37,7 +37,7 @@ $(function() {
 				for (var i = skip; i < jobs.length; ++i) {
 					var job = res[i - skip];
 					jobs[i].scheduled = job.scheduled;
-					jobs[i].done = job.done;
+					jobs[i].completed = job.completed;
 					for (var s = 0; s < job.scheduled; ++s) {
 						jobs[i][s] = job[s];
 					}
@@ -46,7 +46,7 @@ $(function() {
 				if (res.length > jobs.length - skip) {
 					var newJobs = res.slice(jobs.length - skip);
 					newJobs.forEach(function(job) {
-						if (!job.done) {
+						if (!job.completed) {
 							job.max_ligands_inv = 1 / Math.min(job.ligands, 1e+6);
 						}
 					});
@@ -55,7 +55,7 @@ $(function() {
 					pager.pager('source', jobs);
 					pager.pager('refresh', len, jobs.length, 0, 6, true);
 				}
-				for (; skip < jobs.length && jobs[skip].done; ++skip);
+				for (; skip < jobs.length && jobs[skip].completed; ++skip);
 			}
 			setTimeout(tick, 1000);
 		});

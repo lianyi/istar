@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
 			// Fetch an incompleted job in a first-come-first-served manner.
 			if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 			BSONObj info;
-			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("done" << BSON("$exists" << false) << "scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+			conn.runCommand("istar", BSON("findandmodify" << "idock" << "query" << BSON("completed" << BSON("$exists" << false) << "scheduled" << BSON("$lt" << static_cast<unsigned int>(num_slices))) << "sort" << BSON("submitted" << 1) << "update" << BSON("$inc" << BSON("scheduled" << 1)) << "fields" << jobid_fields), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 			const auto value = info["value"];
 			if (value.isNull())
 			{
@@ -726,10 +726,10 @@ int main(int argc, char* argv[])
 		curl_easy_perform(curl);
 		curl_easy_cleanup(curl);
 
-		// Set done time.
-		cout << local_time() << "Setting done time" << endl;
+		// Set completed time.
+		cout << local_time() << "Setting completed time" << endl;
 		const auto millis_since_epoch = duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
+		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << Date_t(millis_since_epoch))));
 
 		// Send a completion notification email.
 		const auto compt_cursor = conn.query(collection, QUERY("_id" << _id), 1, 0, &compt_fields);
