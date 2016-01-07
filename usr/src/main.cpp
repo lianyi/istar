@@ -181,27 +181,23 @@ int main(int argc, char* argv[])
 	alignas(32) array<double, qn.back()> q;
 	alignas(32) array<double, qn.back()> l;
 
-	// Read ZINC ID file.
-	const string_array<size_t> zincids("16_zincid.txt");
+	// Read necessary files.
+	const path library = "16";
+	const string_array<size_t> zincids(library / "zincid.txt");
 	const auto num_ligands = zincids.size();
-
-	// Read SMILES file.
-	const string_array<size_t> smileses("16_smiles.txt");
+	const string_array<size_t> smileses(library / "smiles.txt");
 	assert(smileses.size() == num_ligands);
-
-	// Read supplier file.
-	const string_array<size_t> suppliers("16_supplier.txt");
+	const string_array<size_t> suppliers(library / "supplier.txt");
 	assert(suppliers.size() == num_ligands);
-
-	// Read property files of floating point types and integer types.
-	const auto zfproperties = read<array<float, 4>>("16_zfprop.f32");
+	const auto zfproperties = read<array<float, 4>>(library / "zfprop.f32");
 	assert(zfproperties.size() == num_ligands);
-	const auto ziproperties = read<array<int16_t, 5>>("16_ziprop.i16");
+	const auto ziproperties = read<array<int16_t, 5>>(library / "ziprop.i16");
 	assert(ziproperties.size() == num_ligands);
 
 	// Open files for subsequent reading.
-	std::ifstream usrcat_bin("16_usrcat.f64");
-	stream_array<size_t> ligands("16_ligand.pdbqt");
+	boost::filesystem::ifstream usrcat_bin(library / "usrcat.f64");
+	stream_array<size_t> ligands(library / "ligand.pdbqt");
+
 	assert(ligands.size() == num_ligands);
 	array<vector<double>, 2> scores
 	{{
