@@ -561,10 +561,10 @@ int main(int argc, char* argv[])
 		}
 
 		// Sort summaries.
-		const auto num_summaries = summaries.size(); // Number of ligands to be written to log.csv.gz
+		const auto num_summaries = summaries.size(); // Number of ligands to be written to hits.csv.gz
 		cout << local_time() << "Sorting " << num_summaries << " ligands" << endl;
 		summaries.sort();
-		const auto num_hits = min<size_t>(num_summaries, 1000); // Number of ligands to be written to ligands.pdbqt.gz
+		const auto num_hits = min<size_t>(num_summaries, 1000); // Number of ligands to be written to hits.pdbqt.gz
 		BOOST_ASSERT(num_hits <= num_ligands);
 
 		// Write results for successfully docked ligands.
@@ -610,7 +610,7 @@ int main(int argc, char* argv[])
 					<< "http://zinc.docking.org/substance/" << zincid << ','
 					<< supplier << '\n';
 
-				// Only write conformations of the top ligands to ligands.pdbqt.gz.
+				// Only write conformations of the top ligands to hits.pdbqt.gz.
 				if (idx >= num_hits) continue;
 
 				// Locate and parse the ligand.
@@ -714,13 +714,13 @@ int main(int argc, char* argv[])
 		curl_easy_setopt(curl, CURLOPT_SSH_PUBLIC_KEYFILE, public_keyfile.c_str());
 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 		curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
-		cout << local_time() << "Writing log.csv.gz" << endl;
-		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "log.csv.gz").c_str());
+		cout << local_time() << "Writing hits.csv.gz" << endl;
+		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "hits.csv.gz").c_str());
 		curl_easy_setopt(curl, CURLOPT_INFILESIZE, sslog.tellp());
 		curl_easy_setopt(curl, CURLOPT_READDATA, &sslog);
 		curl_easy_perform(curl);
-		cout << local_time() << "Writing ligands.pdbqt.gz" << endl;
-		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "ligands.pdbqt.gz").c_str());
+		cout << local_time() << "Writing hits.pdbqt.gz" << endl;
+		curl_easy_setopt(curl, CURLOPT_URL, (rmt_job_path / "hits.pdbqt.gz").c_str());
 		curl_easy_setopt(curl, CURLOPT_INFILESIZE, sslig.tellp());
 		curl_easy_setopt(curl, CURLOPT_READDATA, &sslig);
 		curl_easy_perform(curl);

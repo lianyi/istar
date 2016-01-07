@@ -1569,7 +1569,7 @@ void main()\n\
 				});
 			};
 			$.ajax({
-				url: path + 'ligands.pdbqt.gz',
+				url: path + 'hits.pdbqt.gz',
 				mimeType: 'application/octet-stream; charset=x-user-defined',
 			}).done(function (lsrcz) {
 				if (lsrcz.length == 2) return;
