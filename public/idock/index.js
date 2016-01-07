@@ -2,7 +2,7 @@ $(function() {
 
 	// Initialize pager
 	var pager = $('#pager');
-	pager.pager('init', [ 'Description', 'Ligands', 'Submitted', 'Status', 'Progress', 'Result' ], function(job) {
+	pager.pager('init', [ 'Description', 'Compounds', 'Submitted', 'Status', 'Progress', 'Result' ], function(job) {
 		var status, progress, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
 		if (!job.scheduled) {
 			status = 'Queued for execution';
@@ -17,7 +17,7 @@ $(function() {
 		} else {
 			status = 'Completed ' + $.format.date(new Date(job.completed), 'yyyy/MM/dd HH:mm:ss');
 			progress = 1;
-			result += '<a href="jobs/' + job._id + '/log.csv.gz"><img src="/excel.png" alt="log.csv.gz"></a><a href="jobs/' + job._id + '/ligands.pdbqt.gz"><img src="/molecule.png" alt="ligands.pdbqt.gz"></a>';
+			result += '<a href="jobs/' + job._id + '/hits.csv.gz"><img src="/excel.png" alt="hits.csv.gz"></a><a href="jobs/' + job._id + '/hits.pdbqt.gz"><img src="/molecule.png" alt="hits.pdbqt.gz"></a>';
 		}
 		return [
 			job.description,
