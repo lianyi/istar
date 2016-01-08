@@ -5,9 +5,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mongo/client/dbclient.h>
-#include <Poco/Net/MailMessage.h>
-#include <Poco/Net/MailRecipient.h>
-#include <Poco/Net/SMTPClientSession.h>
 #include <curl/curl.h>
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
@@ -26,7 +23,6 @@ using namespace boost::gregorian;
 using namespace boost::posix_time;
 using namespace mongo;
 using namespace bson;
-using namespace Poco::Net;
 
 inline static string local_time()
 {
@@ -707,7 +703,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Write output files remotely via SSH SCP.
-		const auto curl = curl_easy_init();
+		auto curl = curl_easy_init();
 //		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 		curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
 		curl_easy_setopt(curl, CURLOPT_SSH_PRIVATE_KEYFILE, private_keyfile.c_str());
@@ -736,15 +732,23 @@ int main(int argc, char* argv[])
 		const auto compt = compt_cursor->next();
 		const auto email = compt["email"].String();
 		cout << local_time() << "Sending an email to " << email << endl;
-		MailMessage message;
-		message.setSender("idock <noreply@cse.cuhk.edu.hk>");
-		message.setSubject("Your idock job has completed");
-		message.setContent("Description: " + compt["description"].String() + "\nLigands selected to dock: " + lexical_cast<string>(num_ligands) + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nLigands successfully docked: " + lexical_cast<string>(num_summaries) + "\nLigands written to output: " + lexical_cast<string>(num_hits) + "\nResult: http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str());
-		message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
-		SMTPClientSession session("137.189.91.190");
-		session.login();
-		session.sendMessage(message);
-		session.close();
+		stringstream msg;
+		msg
+			<< "From: idock <noreply@cse.cuhk.edu.hk>\n"
+			<< "Subject: Your idock job has completed\n"
+			<< '\n' // empty line to divide headers from body, see RFC5322
+			<< "Description: " + compt["description"].String() + "\nCompounds selected to dock: " + lexical_cast<string>(num_ligands) + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(compt["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nCompounds successfully docked: " + lexical_cast<string>(num_summaries) + "\nHit compounds written to output: " + lexical_cast<string>(num_hits) + "\nResult: http://istar.cse.cuhk.edu.hk/idock/iview/?" + _id.str();
+		const auto recipients = curl_slist_append(NULL, email.c_str());
+		curl = curl_easy_init();
+		curl_easy_setopt(curl, CURLOPT_URL, "smtp://137.189.91.190");
+		curl_easy_setopt(curl, CURLOPT_MAIL_FROM, "noreply@cse.cuhk.edu.hk");
+		curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
+		curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_from_stringstream);
+		curl_easy_setopt(curl, CURLOPT_READDATA, &msg);
+		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+		curl_easy_perform(curl);
+		curl_easy_cleanup(curl);
+		curl_slist_free_all(recipients);
 
 		// Remove slice csv files.
 		if (summaries.size())
