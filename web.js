@@ -241,7 +241,7 @@ if (cluster.isMaster) {
 					}
 					v.res.ligands = ligands;
 					v.res.scheduled = 0;
-					v.res.completed = 0;
+					v.res.finished = 0;
 					for (var i = 0; i < 10; ++i) {
 						v.res[i] = 0;
 					}
