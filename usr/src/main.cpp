@@ -147,7 +147,8 @@ public:
 		assert(ligands.size() == num_ligands);
 		assert(zfproperties.size() == num_ligands);
 		assert(ziproperties.size() == num_ligands);
-		assert(usrcat_bin.tellg() == 480 * num_ligands);
+		assert(usrcat_bin.tellg() == sizeof(double) * 60 * num_ligands);
+		cout << local_time() << "Found " << num_ligands << " ligands" << endl;
 		for (auto& ss : scores)
 		{
 			ss.resize(num_ligands, 0);
