@@ -60,12 +60,21 @@ template <typename size_type>
 class header_array
 {
 public:
+	header_array()
+	{
+	}
+
 	explicit header_array(const path& p)
 	{
-		const auto q = p.stem().replace_extension(".ftr");
-		boost::filesystem::ifstream ifs(q, ios::binary | ios::ate);
+		open(p);
+	}
+
+	void open(path p)
+	{
+		p.replace_extension(".ftr");
+		boost::filesystem::ifstream ifs(p, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << q << " of " << num_bytes << " bytes" << endl;
+		cout << local_time() << "Reading " << p << " of " << num_bytes << " bytes" << endl;
 		hdr.resize(1 + num_bytes / sizeof(size_type));
 		hdr.front() = 0;
 		ifs.seekg(0);
@@ -85,8 +94,18 @@ template <typename size_type>
 class string_array : public header_array<size_type>
 {
 public:
+	string_array() : header_array<size_type>()
+	{
+	}
+
 	explicit string_array(const path& p) : header_array<size_type>(p)
 	{
+		open(p);
+	}
+
+	void open(const path& p)
+	{
+		static_cast<header_array<size_type>*>(this)->open(p);
 		boost::filesystem::ifstream ifs(p, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
 		cout << local_time() << "Reading " << p << " of " << num_bytes << " bytes" << endl;
@@ -110,8 +129,19 @@ template <typename size_type>
 class stream_array : public header_array<size_type>
 {
 public:
-	explicit stream_array(const path& p) : header_array<size_type>(p), ifs(p, ios::binary)
+	stream_array() : header_array<size_type>()
 	{
+	}
+
+	explicit stream_array(const path& p) : header_array<size_type>(p)
+	{
+		open(p);
+	}
+
+	void open(const path& p)
+	{
+		static_cast<header_array<size_type>*>(this)->open(p);
+		ifs.open(p, ios::binary);
 	}
 
 	string operator[](const size_t index)
@@ -132,22 +162,38 @@ protected:
 class library
 {
 public:
-	explicit library(const path& dir) :
-		zincids(dir / "zincid.txt"),
-		smileses(dir / "smiles.txt"),
-		suppliers(dir / "supplier.txt"),
-		zfproperties(read<array<float, 4>>(dir / "zfprop.f32")),
-		ziproperties(read<array<int16_t, 5>>(dir / "ziprop.i16")),
-		num_ligands(zincids.size()),
-		usrcat_bin(dir / "usrcat.f64", ios::ate),
-		ligands(dir / "ligand.pdbqt")
+	library()
 	{
+	}
+
+	explicit library(const path& dir)
+	{
+		open(dir);
+	}
+
+	void open(const path& dir)
+	{
+		zincids.open(dir / "zincid.txt");
+		num_ligands = zincids.size();
+		assert(num_ligands);
+
+		smileses.open(dir / "smiles.txt");
 		assert(smileses.size() == num_ligands);
+
+		suppliers.open(dir / "supplier.txt");
 		assert(suppliers.size() == num_ligands);
+
+		ligands.open(dir / "ligand.pdbqt");
 		assert(ligands.size() == num_ligands);
+
+		zfproperties = read<array<float, 4>>(dir / "zfprop.f32");
 		assert(zfproperties.size() == num_ligands);
+		ziproperties = read<array<int16_t, 5>>(dir / "ziprop.i16");
 		assert(ziproperties.size() == num_ligands);
+
+		usrcat_bin.open(dir / "usrcat.f64", ios::ate),
 		assert(usrcat_bin.tellg() == sizeof(double) * 60 * num_ligands);
+
 		cout << local_time() << "Found " << num_ligands << " ligands" << endl;
 		for (auto& ss : scores)
 		{
@@ -156,14 +202,14 @@ public:
 		scase.resize(num_ligands);
 	}
 
-	const string_array<size_t> zincids;
-	const string_array<size_t> smileses;
-	const string_array<size_t> suppliers;
-	const vector<array<float, 4>> zfproperties;
-	const vector<array<int16_t, 5>> ziproperties;
-	const size_t num_ligands;
-	boost::filesystem::ifstream usrcat_bin;
+	size_t num_ligands;
+	string_array<size_t> zincids;
+	string_array<size_t> smileses;
+	string_array<size_t> suppliers;
 	stream_array<size_t> ligands;
+	vector<array<float, 4>> zfproperties;
+	vector<array<int16_t, 5>> ziproperties;
+	boost::filesystem::ifstream usrcat_bin;
 	array<vector<double>, 2> scores;
 	vector<size_t> scase;
 };
@@ -214,8 +260,9 @@ int main(int argc, char* argv[])
 	}};
 
 	// Read library files.
-	library lib_16("16");
-	library lib_dfn("dfn");
+	array<library, 2> libraries;
+	libraries[0].open("16");
+	libraries[1].open("dfn");
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
@@ -414,7 +461,7 @@ int main(int argc, char* argv[])
 		assert(qo == qn.back());
 
 		// Obtain references to the selected library.
-		auto& lib = library == "16" ? lib_16 : lib_dfn;
+		auto& lib = library == "16" ? libraries[0] : libraries[1];
 		const auto& num_ligands = lib.num_ligands;
 		const auto& smileses = lib.smileses;
 		const auto& suppliers = lib.suppliers;
