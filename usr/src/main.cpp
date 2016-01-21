@@ -44,11 +44,11 @@ inline static Date_t milliseconds_since_epoch()
 }
 
 template <typename T>
-inline vector<T> read(const path src)
+inline vector<T> read(const path& p)
 {
-	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+	boost::filesystem::ifstream ifs(p, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
-	cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
+	cout << local_time() << "Reading " << p << " of " << num_bytes << " bytes" << endl;
 	vector<T> buf;
 	buf.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
@@ -60,12 +60,12 @@ template <typename size_type>
 class header_array
 {
 public:
-	explicit header_array(path src)
+	explicit header_array(const path& p)
 	{
-		src.replace_extension(".ftr");
-		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+		const auto q = p.stem().replace_extension(".ftr");
+		boost::filesystem::ifstream ifs(q, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
+		cout << local_time() << "Reading " << q << " of " << num_bytes << " bytes" << endl;
 		hdr.resize(1 + num_bytes / sizeof(size_type));
 		hdr.front() = 0;
 		ifs.seekg(0);
@@ -85,11 +85,11 @@ template <typename size_type>
 class string_array : public header_array<size_type>
 {
 public:
-	explicit string_array(const path src) : header_array<size_type>(src)
+	explicit string_array(const path& p) : header_array<size_type>(p)
 	{
-		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+		boost::filesystem::ifstream ifs(p, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
+		cout << local_time() << "Reading " << p << " of " << num_bytes << " bytes" << endl;
 		buf.resize(num_bytes);
 		ifs.seekg(0);
 		ifs.read(const_cast<char*>(buf.data()), num_bytes);
@@ -110,7 +110,7 @@ template <typename size_type>
 class stream_array : public header_array<size_type>
 {
 public:
-	explicit stream_array(const path src) : header_array<size_type>(src), ifs(src, ios::binary)
+	explicit stream_array(const path& p) : header_array<size_type>(p), ifs(p, ios::binary)
 	{
 	}
 
@@ -132,7 +132,7 @@ protected:
 class library
 {
 public:
-	explicit library(const path dir) :
+	explicit library(const path& dir) :
 		zincids(dir / "zincid.txt"),
 		smileses(dir / "smiles.txt"),
 		suppliers(dir / "supplier.txt"),
